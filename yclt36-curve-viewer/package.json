@@ -1,0 +1,30 @@
+{
+  "name": "yclt36-curve-viewer",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
+    "ant-design-vue": "^4.2.6",
+    "axios": "^1.13.2",
+    "dayjs": "^1.11.19",
+    "echarts": "^5.4.3",
+    "lodash": "^4.17.21",
+    "vue": "^3.3.11",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "@types/lodash": "^4.17.23",
+    "@types/node": "^25.0.9",
+    "@vitejs/plugin-vue": "^5.0.10",
+    "terser": "^5.46.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10",
+    "vue-tsc": "^2.0.0"
+  }
+}
