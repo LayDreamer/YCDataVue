@@ -12,11 +12,6 @@
     <div v-else class="dashboard-content">
       <div class="dashboard-header">
         <h2 class="dashboard-title">仪表盘</h2>
-        <DashboardToolbar 
-          :isRefreshing="isRefreshing"
-          @refresh="handleRefresh"
-          @export="exportChart"
-        />
       </div>
       
       <!-- 统计卡片 -->
@@ -33,46 +28,86 @@
 
       <!-- 主要内容区域 -->
       <a-row :gutter="[16, 16]" style="margin-top: 24px;">
-        <!-- 左侧区域：业务数据 -->
+        <!-- 左侧区域：个人工作台主要内容 -->
         <a-col :xs="24" :lg="16">
-          <!-- 销售趋势和用户分布 -->
+          <!-- 快速操作栏 -->
           <a-row :gutter="[16, 16]" class="dashboard-section">
-            <a-col :xs="24" :md="12">
-              <a-card title="销售趋势" :bordered="false" hoverable>
-                <div class="chart-header">
-                  <a-radio-group v-model:value="salesPeriod" @change="handleSalesPeriodChange" size="small">
-                    <a-radio-button value="7">近7天</a-radio-button>
-                    <a-radio-button value="30">近30天</a-radio-button>
-                    <a-radio-button value="90">近90天</a-radio-button>
-                  </a-radio-group>
+            <a-col :span="24">
+              <a-card title="快速操作" :bordered="false" hoverable>
+                <div class="quick-actions">
+                  <div class="action-item" v-for="action in quickActions" :key="action.title" @click="handleQuickAction(action)">
+                    <div class="action-icon" :style="{ backgroundColor: action.color }">
+                      {{ action.icon }}
+                    </div>
+                    <span class="action-title">{{ action.title }}</span>
+                  </div>
                 </div>
-                <ChartComponent :option="salesChartOption" />
-              </a-card>
-            </a-col>
-            <a-col :xs="24" :md="12">
-              <a-card title="用户分布" :bordered="false" hoverable>
-                <div class="chart-header">
-                  <a-select v-model:value="userType" @change="handleUserTypeChange" size="small" style="width: 120px;">
-                    <a-option value="source">用户来源</a-option>
-                    <a-option value="region">地区分布</a-option>
-                    <a-option value="device">设备类型</a-option>
-                  </a-select>
-                </div>
-                <ChartComponent :option="userChartOption" />
               </a-card>
             </a-col>
           </a-row>
 
-          <!-- 热力图和雷达图 -->
-          <a-row :gutter="[16, 16]" style="margin-top: 16px;" class="dashboard-section">
-            <a-col :xs="24" :md="12">
-              <a-card title="用户活跃度热力图" :bordered="false" hoverable>
-                <ChartComponent :option="heatmapChartOption" />
+          <!-- 今日日程和工作统计 -->
+          <a-row :gutter="[16, 16]" style="margin-top: 16px;">
+            <a-col :xs="24" :md="12" class="dashboard-section">
+              <a-card title="今日日程" :bordered="false" hoverable>
+                <a-list :data-source="todaySchedule" :split="false">
+                  <template #renderItem="{ item }">
+                    <a-list-item class="schedule-item">
+                      <div class="schedule-time">{{ item.time }}</div>
+                      <div class="schedule-content">
+                        <div class="schedule-title">{{ item.title }}</div>
+                        <div class="schedule-location" v-if="item.location">{{ item.location }}</div>
+                      </div>
+                      <a-badge :status="item.status" />
+                    </a-list-item>
+                  </template>
+                </a-list>
               </a-card>
             </a-col>
-            <a-col :xs="24" :md="12">
-              <a-card title="业务指标雷达图" :bordered="false" hoverable>
-                <ChartComponent :option="radarChartOption" />
+            <a-col :xs="24" :md="12" class="dashboard-section">
+              <a-card title="工作统计" :bordered="false" hoverable>
+                <div class="work-stats">
+                  <div class="stat-row">
+                    <span class="stat-label">今日已完成任务</span>
+                    <span class="stat-value">{{ workStats.todayCompleted }} 个</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-label">本周任务完成率</span>
+                    <span class="stat-value">{{ workStats.weekCompletion }}%</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-label">待审批事项</span>
+                    <span class="stat-value">{{ workStats.pendingApproval }} 个</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-label">本月协作次数</span>
+                    <span class="stat-value">{{ workStats.monthCollaboration }} 次</span>
+                  </div>
+                </div>
+              </a-card>
+            </a-col>
+          </a-row>
+
+          <!-- 团队成员动态 -->
+          <a-row :gutter="[16, 16]" style="margin-top: 16px;" class="dashboard-section">
+            <a-col :span="24">
+              <a-card title="团队成员动态" :bordered="false" hoverable>
+                <div class="team-activities">
+                  <a-row :gutter="[16, 16]">
+                    <a-col :xs="24" :sm="12" :md="6" v-for="member in teamMembers" :key="member.name">
+                      <div class="member-card">
+                        <a-avatar :src="member.avatar" size="large">{{ member.name.charAt(0) }}</a-avatar>
+                        <div class="member-info">
+                          <div class="member-name">{{ member.name }}</div>
+                          <div class="member-role">{{ member.role }}</div>
+                          <div class="member-status">
+                            <a-badge :status="member.online ? 'success' : 'default'" :text="member.online ? '在线' : '离线'" />
+                          </div>
+                        </div>
+                      </div>
+                    </a-col>
+                  </a-row>
+                </div>
               </a-card>
             </a-col>
           </a-row>
@@ -85,43 +120,30 @@
             <PersonalWorkbench />
           </div>
 
-          <!-- 项目进度 -->
+          <!-- 快捷链接 -->
           <div class="dashboard-section" style="margin-top: 16px;">
-            <a-card title="项目进度" :bordered="false" hoverable>
-              <div class="progress-item">
-                <div class="progress-header">
-                  <span>任务完成率</span>
-                  <span class="progress-percent">80%</span>
-                </div>
-                <a-progress :percent="80" status="active" />
-              </div>
-              <div class="progress-item">
-                <div class="progress-header">
-                  <span>预算使用率</span>
-                  <span class="progress-percent">45%</span>
-                </div>
-                <a-progress :percent="45" />
-              </div>
-              <div class="progress-item">
-                <div class="progress-header">
-                  <span>客户满意度</span>
-                  <span class="progress-percent">92%</span>
-                </div>
-                <a-progress :percent="92" :stroke-color="'#52c41a'" />
+            <a-card title="快捷链接" :bordered="false" hoverable>
+              <div class="quick-links">
+                <a href="#" class="link-item" v-for="link in quickLinks" :key="link.title">
+                  <span class="link-icon" :style="{ color: link.color }">{{ link.icon }}</span>
+                  <span class="link-title">{{ link.title }}</span>
+                </a>
               </div>
             </a-card>
           </div>
 
-          <!-- 最近订单 -->
+          <!-- 系统公告 -->
           <div class="dashboard-section" style="margin-top: 16px;">
-            <a-card title="最近订单" :bordered="false" hoverable>
-              <a-list :data-source="orderList" :split="false">
+            <a-card title="系统公告" :bordered="false" hoverable>
+              <a-list :data-source="systemNotices" :split="false">
                 <template #renderItem="{ item }">
-                  <a-list-item class="order-item">
-                    <div class="order-info">
-                      <span class="order-no">{{ item.no }}</span>
-                      <span class="order-amount">{{ item.amount }}</span>
-                      <span class="order-status" :class="'status-' + item.statusClass">{{ item.statusText }}</span>
+                  <a-list-item class="notice-item">
+                    <a-tag :color="item.type === 'important' ? 'red' : 'blue'" style="margin-right: 8px;">
+                      {{ item.type === 'important' ? '重要' : '通知' }}
+                    </a-tag>
+                    <div class="notice-content">
+                      <div class="notice-title">{{ item.title }}</div>
+                      <div class="notice-time">{{ item.time }}</div>
                     </div>
                   </a-list-item>
                 </template>
@@ -135,26 +157,65 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import StatCard from '../components/StatCard.vue';
-import ChartComponent from '../components/ChartComponent.vue';
-import DashboardToolbar from '../components/DashboardToolbar.vue';
 import PersonalWorkbench from '../components/PersonalWorkbench.vue';
 
-// 订单数据
-const orderList = ref([
-  { no: 'ORD-202310001', amount: '¥ 123.45', statusText: '已完成', statusClass: 'completed' },
-  { no: 'ORD-202310002', amount: '¥ 2,345.00', statusText: '处理中', statusClass: 'processing' },
-  { no: 'ORD-202310003', amount: '¥ 876.50', statusText: '已取消', statusClass: 'cancelled' },
-  { no: 'ORD-202310004', amount: '¥ 432.00', statusText: '已完成', statusClass: 'completed' },
-  { no: 'ORD-202310005', amount: '¥ 1,299.90', statusText: '处理中', statusClass: 'processing' },
-]);
+
 
 // 状态管理
-const salesPeriod = ref('30');
-const userType = ref('source');
-const isRefreshing = ref(false);
 const isLoading = ref(true);
+
+// 快速操作数据
+const quickActions = ref([
+  { title: '新建任务', icon: '📝', color: '#1890ff', action: 'createTask' },
+  { title: '发起审批', icon: '✏️', color: '#52c41a', action: 'createApproval' },
+  { title: '安排会议', icon: '📅', color: '#faad14', action: 'scheduleMeeting' },
+  { title: '提交报告', icon: '📊', color: '#722ed1', action: 'submitReport' },
+  { title: '发送邮件', icon: '📧', color: '#eb2f96', action: 'sendEmail' },
+  { title: '查看文档', icon: '📖', color: '#13c2c2', action: 'viewDocuments' }
+]);
+
+// 今日日程数据
+const todaySchedule = ref([
+  { time: '09:00', title: '项目启动会', location: '会议室A', status: 'success' },
+  { time: '10:30', title: '与客户沟通', location: '线上会议', status: 'processing' },
+  { time: '14:00', title: '代码评审', location: '开发区', status: 'default' },
+  { time: '16:00', title: '团队周会', location: '会议室B', status: 'default' }
+]);
+
+// 工作统计数据
+const workStats = ref({
+  todayCompleted: 5,
+  weekCompletion: 78,
+  pendingApproval: 3,
+  monthCollaboration: 42
+});
+
+// 团队成员数据
+const teamMembers = ref([
+  { name: '李四', role: '前端开发', avatar: '', online: true },
+  { name: '王五', role: '后端开发', avatar: '', online: true },
+  { name: '赵六', role: 'UI设计', avatar: '', online: false },
+  { name: '钱七', role: '测试工程师', avatar: '', online: true }
+]);
+
+// 快捷链接数据
+const quickLinks = ref([
+  { title: '项目管理', icon: '📁', color: '#1890ff' },
+  { title: '文档中心', icon: '📚', color: '#52c41a' },
+  { title: '知识库', icon: '💡', color: '#faad14' },
+  { title: '人事管理', icon: '👨‍👩‍👧‍👦', color: '#722ed1' },
+  { title: '财务系统', icon: '💰', color: '#eb2f96' },
+  { title: 'IT支持', icon: '🔧', color: '#13c2c2' }
+]);
+
+// 系统公告数据
+const systemNotices = ref([
+  { title: '系统维护通知', time: '2023-10-10 09:00', type: 'important' },
+  { title: '新功能上线公告', time: '2023-10-08 14:00', type: 'normal' },
+  { title: '季度会议安排', time: '2023-10-07 10:00', type: 'normal' }
+]);
 
 // 统计卡片数据
 const statCards = ref([
@@ -164,340 +225,7 @@ const statCards = ref([
   { title: '访问量', value: 45600, prefix: '👀', type: 'visit' }
 ]);
 
-// 图表数据生成函数
-function generateSalesData(days) {
-  const labels = [];
-  const sales = [];
-  const orders = [];
-  
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    labels.push(`${date.getMonth() + 1}/${date.getDate()}`);
-    
-    // 生成随机数据
-    const baseSales = 100000;
-    const baseOrders = 100;
-    sales.push(Math.round(baseSales + Math.random() * 300000));
-    orders.push(Math.round(baseOrders + Math.random() * 150));
-  }
-  
-  return { labels, sales, orders };
-}
 
-function generateUserData(type) {
-  switch (type) {
-    case 'source':
-      return {
-        title: '用户来源',
-        data: [
-          { value: 300, name: '直接访问' },
-          { value: 278, name: '邮件营销' },
-          { value: 188, name: '联盟广告' },
-          { value: 235, name: '搜索引擎' },
-          { value: 342, name: '社交媒体' }
-        ]
-      };
-    case 'region':
-      return {
-        title: '地区分布',
-        data: [
-          { value: 400, name: '北京' },
-          { value: 300, name: '上海' },
-          { value: 200, name: '广州' },
-          { value: 150, name: '深圳' },
-          { value: 350, name: '其他' }
-        ]
-      };
-    case 'device':
-      return {
-        title: '设备类型',
-        data: [
-          { value: 500, name: '移动端' },
-          { value: 300, name: 'PC端' },
-          { value: 100, name: '平板' },
-          { value: 50, name: '其他' }
-        ]
-      };
-    default:
-      return {
-        title: '用户来源',
-        data: [
-          { value: 300, name: '直接访问' },
-          { value: 278, name: '邮件营销' },
-          { value: 188, name: '联盟广告' },
-          { value: 235, name: '搜索引擎' },
-          { value: 342, name: '社交媒体' }
-        ]
-      };
-  }
-}
-
-function generateHeatmapData() {
-  const data = [];
-  const days = 7;
-  const hours = 24;
-  
-  for (let i = 0; i < days; i++) {
-    for (let j = 0; j < hours; j++) {
-      // 生成随机活跃度数据，模拟用户行为
-      let value;
-      if (j >= 9 && j <= 18) {
-        // 工作时间活跃度较高
-        value = Math.round(50 + Math.random() * 50);
-      } else if (j >= 19 && j <= 23) {
-        // 晚上活跃度中等
-        value = Math.round(30 + Math.random() * 40);
-      } else {
-        // 凌晨活跃度较低
-        value = Math.round(0 + Math.random() * 20);
-      }
-      data.push([j, i, value]);
-    }
-  }
-  
-  return data;
-}
-
-function generateRadarData() {
-  return {
-    current: [85, 75, 90, 92, 78, 82],
-    target: [100, 100, 100, 100, 100, 100]
-  };
-}
-
-// 图表选项计算
-const salesChartOption = computed(() => {
-  const period = parseInt(salesPeriod.value);
-  const data = generateSalesData(period);
-  
-  return {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross',
-        label: {
-          backgroundColor: '#6a7985'
-        }
-      },
-      formatter: function(params) {
-        let result = params[0].name + '<br/>';
-        params.forEach(item => {
-          if (item.seriesName === '销售额') {
-            result += `${item.marker}${item.seriesName}: ¥${item.value.toLocaleString()}<br/>`;
-          } else {
-            result += `${item.marker}${item.seriesName}: ${item.value}单<br/>`;
-          }
-        });
-        return result;
-      }
-    },
-    legend: {
-      data: ['销售额', '订单量'],
-      top: 0
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: [
-      {
-        type: 'category',
-        boundaryGap: false,
-        data: data.labels
-      }
-    ],
-    yAxis: [
-      {
-        type: 'value',
-        name: '销售额',
-        axisLabel: {
-          formatter: '¥{value}'
-        }
-      },
-      {
-        type: 'value',
-        name: '订单量',
-        axisLabel: {
-          formatter: '{value}单'
-        }
-      }
-    ],
-    series: [
-      {
-        name: '销售额',
-        type: 'line',
-        stack: 'Total',
-        areaStyle: {
-          opacity: 0.3
-        },
-        emphasis: {
-          focus: 'series'
-        },
-        data: data.sales
-      },
-      {
-        name: '订单量',
-        type: 'line',
-        yAxisIndex: 1,
-        emphasis: {
-          focus: 'series'
-        },
-        data: data.orders
-      }
-    ]
-  };
-});
-
-const userChartOption = computed(() => {
-  const data = generateUserData(userType.value);
-  
-  return {
-    tooltip: {
-      trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
-    },
-    legend: {
-      top: '5%',
-      left: 'center'
-    },
-    series: [
-      {
-        name: data.title,
-        type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '18',
-            fontWeight: 'bold'
-          },
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: data.data
-      }
-    ]
-  };
-});
-
-const heatmapChartOption = computed(() => {
-  const data = generateHeatmapData();
-  
-  return {
-    tooltip: {
-      position: 'top'
-    },
-    grid: {
-      height: '60%',
-      top: '10%'
-    },
-    xAxis: {
-      type: 'category',
-      data: ['1时', '2时', '3时', '4时', '5时', '6时', '7时', '8时', '9时', '10时', '11时', '12时', '13时', '14时', '15时', '16时', '17时', '18时', '19时', '20时', '21时', '22时', '23时', '24时'],
-      splitArea: {
-        show: true
-      }
-    },
-    yAxis: {
-      type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-      splitArea: {
-        show: true
-      }
-    },
-    visualMap: {
-      min: 0,
-      max: 100,
-      calculable: true,
-      orient: 'horizontal',
-      left: 'center',
-      bottom: '15%',
-      inRange: {
-        color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026']
-      }
-    },
-    series: [
-      {
-        name: '用户活跃度',
-        type: 'heatmap',
-        data: data,
-        label: {
-          show: true,
-          formatter: '{c}'
-        },
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        }
-      }
-    ]
-  };
-});
-
-const radarChartOption = computed(() => {
-  const data = generateRadarData();
-  
-  return {
-    tooltip: {},
-    legend: {
-      data: ['当前值', '目标值'],
-      top: 0
-    },
-    radar: {
-      indicator: [
-        { name: '销售额', max: 100 },
-        { name: '订单量', max: 100 },
-        { name: '用户增长', max: 100 },
-        { name: '客户满意度', max: 100 },
-        { name: '转化率', max: 100 },
-        { name: '复购率', max: 100 }
-      ]
-    },
-    series: [
-      {
-        name: '业务指标',
-        type: 'radar',
-        data: [
-          {
-            value: data.current,
-            name: '当前值',
-            areaStyle: {
-              opacity: 0.3
-            }
-          },
-          {
-            value: data.target,
-            name: '目标值',
-            areaStyle: {
-              opacity: 0.3
-            }
-          }
-        ]
-      }
-    ]
-  };
-});
 
 // 生命周期钩子
 onMounted(() => {
@@ -508,30 +236,29 @@ onMounted(() => {
 });
 
 // 事件处理函数
-function handleSalesPeriodChange() {
-  // 图表会自动更新，因为使用了computed
-}
-
-function handleUserTypeChange() {
-  // 图表会自动更新，因为使用了computed
-}
-
-function handleRefresh() {
-  isRefreshing.value = true;
-  
-  // 模拟数据刷新
-  setTimeout(() => {
-    // 重新生成数据
-    salesPeriod.value = salesPeriod.value; // 触发computed更新
-    userType.value = userType.value; // 触发computed更新
-    isRefreshing.value = false;
-  }, 1000);
-}
-
-function exportChart(type) {
-  // 由于使用了组件化，导出功能需要在ChartComponent中实现
-  // 这里可以添加导出逻辑，或者在ChartComponent中添加导出方法
-  console.log('导出图表:', type);
+function handleQuickAction(action) {
+  console.log('执行快速操作:', action.title);
+  // 这里可以根据 action.action 来执行不同的操作
+  switch (action.action) {
+    case 'createTask':
+      // 新建任务
+      break;
+    case 'createApproval':
+      // 发起审批
+      break;
+    case 'scheduleMeeting':
+      // 安排会议
+      break;
+    case 'submitReport':
+      // 提交报告
+      break;
+    case 'sendEmail':
+      // 发送邮件
+      break;
+    case 'viewDocuments':
+      // 查看文档
+      break;
+  }
 }
 </script>
 
@@ -564,11 +291,11 @@ function exportChart(type) {
 
 /* 仪表盘内容 */
 .dashboard-content {
-  animation: fadeIn 0.8s ease-out;
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
 }
 
 .dashboard-section {
-  animation: fadeIn 0.8s ease-out;
   background-color: #ffffff;
   border-radius: 12px;
   padding: 20px;
@@ -595,140 +322,10 @@ function exportChart(type) {
   font-size: 32px;
   color: #1f2f3d;
   margin: 0;
-  animation: slideInLeft 0.5s ease-out;
 }
 
-/* 统计卡片列 */
-.stat-card-col {
-  animation: slideInUp 0.6s ease-out;
-}
 
-.stat-card-col:nth-child(1) {
-  animation-delay: 0.1s;
-}
 
-.stat-card-col:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.stat-card-col:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-.stat-card-col:nth-child(4) {
-  animation-delay: 0.4s;
-}
-
-/* 卡片动画 */
-.a-card {
-  animation: slideInUp 0.6s ease-out;
-}
-
-.a-card:nth-child(1) {
-  animation-delay: 0.2s;
-}
-
-.a-card:nth-child(2) {
-  animation-delay: 0.3s;
-}
-
-.a-card:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-.a-card:nth-child(4) {
-  animation-delay: 0.5s;
-}
-
-/* 图表样式 */
-.chart-container {
-  width: 100%;
-  height: 300px;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-/* 进度条样式 */
-.progress-item {
-  margin-bottom: 24px;
-}
-
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.progress-percent {
-  color: #1890ff;
-  font-weight: 600;
-}
-
-/* 订单列表样式 */
-.order-item {
-  padding: 12px 0;
-  transition: all 0.2s ease;
-}
-
-.order-item:hover {
-  background-color: #f0f5ff;
-  border-radius: 8px;
-  padding-left: 12px;
-}
-
-.order-info {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  align-items: center;
-}
-
-.order-no {
-  font-weight: 500;
-  color: #1890ff;
-  flex: 1;
-}
-
-.order-amount {
-  color: #52c41a;
-  font-weight: 500;
-  flex: 1;
-  text-align: center;
-}
-
-.order-status {
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  flex: 1;
-  text-align: right;
-}
-
-.status-completed {
-  background-color: #f6ffed;
-  color: #52c41a;
-  border: 1px solid #b7eb8f;
-}
-
-.status-processing {
-  background-color: #e6f7ff;
-  color: #1890ff;
-  border: 1px solid #91d5ff;
-}
-
-.status-cancelled {
-  background-color: #fff2f0;
-  color: #ff4d4f;
-  border: 1px solid #ffccc7;
-}
 
 /* 动画定义 */
 @keyframes fadeIn {
@@ -740,37 +337,203 @@ function exportChart(type) {
   }
 }
 
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+/* 快速操作样式 */
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 0;
 }
 
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #fafafa;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
 }
 
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.action-item:hover {
+  background-color: #f0f5ff;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+}
+
+.action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.action-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2f3d;
+}
+
+/* 日程样式 */
+.schedule-item {
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.schedule-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1890ff;
+  min-width: 60px;
+}
+
+.schedule-content {
+  flex: 1;
+}
+
+.schedule-title {
+  font-size: 14px;
+  color: #1f2f3d;
+  margin-bottom: 4px;
+}
+
+.schedule-location {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 工作统计样式 */
+.work-stats {
+  padding: 8px 0;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+/* 团队成员样式 */
+.team-activities {
+  padding: 8px 0;
+}
+
+.member-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background-color: #fafafa;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.member-card:hover {
+  background-color: #f0f5ff;
+  transform: translateY(-2px);
+}
+
+.member-info {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.member-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2f3d;
+  margin-bottom: 4px;
+}
+
+.member-role {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.member-status {
+  font-size: 12px;
+}
+
+/* 快捷链接样式 */
+.quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #fafafa;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+}
+
+.link-item:hover {
+  background-color: #f0f5ff;
+  transform: translateX(4px);
+}
+
+.link-icon {
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.link-title {
+  font-size: 14px;
+  color: #1f2f3d;
+}
+
+/* 系统公告样式 */
+.notice-item {
+  padding: 8px 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.notice-content {
+  flex: 1;
+}
+
+.notice-title {
+  font-size: 14px;
+  color: #1f2f3d;
+  margin-bottom: 4px;
+}
+
+.notice-time {
+  font-size: 12px;
+  color: #999;
 }
 
 /* 响应式设计 */
@@ -787,38 +550,18 @@ function exportChart(type) {
     font-size: 24px;
     margin: 0;
   }
-  .dashboard-toolbar {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .chart-container {
-    height: 250px;
-  }
-  .chart-header {
+  .quick-actions {
     justify-content: center;
   }
-  .order-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .order-no,
-  .order-amount,
-  .order-status {
-    text-align: left;
-    flex: none;
+  .action-item {
+    min-width: 80px;
+    padding: 12px 16px;
   }
 }
 
 @media (max-width: 480px) {
   .dashboard-title {
     font-size: 20px;
-  }
-  .chart-container {
-    height: 200px;
-  }
-  .progress-item {
-    margin-bottom: 16px;
   }
 }
 </style>

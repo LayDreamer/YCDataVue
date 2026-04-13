@@ -131,7 +131,9 @@ import {
   ColumnWidthOutlined, LineOutlined,AntCloudOutlined,
   DashboardOutlined, ShoppingOutlined, SettingOutlined,
   TeamOutlined, ToolOutlined, FileDoneOutlined,
-  ScheduleOutlined, LineChartOutlined, ContainerOutlined
+  ScheduleOutlined, LineChartOutlined, ContainerOutlined,
+  FunnelPlotOutlined, ExperimentOutlined, ProjectOutlined,
+  DollarCircleOutlined
 } from '@ant-design/icons-vue'
 import WeChatSendModal from '../views/WeChatWork/WeChatSendModal.vue'
 
@@ -148,14 +150,18 @@ const iconMap = {
   FileDoneOutlined,
   ScheduleOutlined,
   LineChartOutlined,
-  ContainerOutlined
+  ContainerOutlined,
+  FunnelPlotOutlined,
+  ExperimentOutlined,
+  ProjectOutlined,
+  DollarCircleOutlined
 }
 
 const DASHBOARD_CONF = {
   title: '仪表盘',
   fullPath: '/dashboard', // 请确保与你路由定义的仪表盘路径一致
   name: 'Dashboard',
-  icon: 'DashboardOutlined',
+  icon: DashboardOutlined,
   closable: false
 }
 
@@ -202,9 +208,23 @@ const getInitialTabs = (): TabItem[] => {
 const tabList = ref<TabItem[]>(getInitialTabs())
 const activeTabKey = ref(route.fullPath)
 
-// 2. 持久化存储
+// 2. 持久化存储 - 只保存图标名称字符串
 watch(tabList, (newList) => {
-  localStorage.setItem(TABS_KEY, JSON.stringify(newList))
+  const listToSave = newList.map(tab => {
+    // 找到图标组件对应的名称
+    let iconName = ''
+    for (const [name, icon] of Object.entries(iconMap)) {
+      if (icon === tab.icon) {
+        iconName = name
+        break
+      }
+    }
+    return {
+      ...tab,
+      icon: iconName // 保存图标名称而不是组件
+    }
+  })
+  localStorage.setItem(TABS_KEY, JSON.stringify(listToSave))
 }, { deep: true })
 
 // 3. 添加标签逻辑
@@ -298,12 +318,12 @@ const ensureValidActiveTab = () => {
 // --- 侧边栏菜单生成 ---
 const generateMenuItems = (routes: any[], basePath = '') => {
   return routes
-    .filter(route => route.meta?.title)
+    .filter(route => route.meta?.title && !route.meta.hidden)
     .sort((a, b) => (a.meta.order || 0) - (b.meta.order || 0))
     .map(route => {
       const fullPath = basePath + (route.path.startsWith('/') ? route.path : '/' + route.path)
       const item: any = { key: route.name || fullPath, label: route.meta.title, icon: route.meta.icon }
-      if (route.children?.some((child: any) => child.meta?.title)) {
+      if (route.children?.some((child: any) => child.meta?.title && !child.meta.hidden)) {
         item.children = generateMenuItems(route.children, fullPath)
       }
       return item
@@ -327,17 +347,36 @@ const handleSendSuccess = (res: any) => console.log('Send Success', res)
 
 <style scoped>
 .app-container { min-height: 100vh; background: #f0f2f5; }
-.sider { background: #fff; box-shadow: 2px 0 10px rgba(0,0,0,0.05); position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; }
-.sider-trigger { height: 50px; display: flex;  justify-content: center; /* 核心：水平居中 */align-items: center; padding: 0 16px; border-bottom: 1px solid #f0f0f0; }
+
+/* 侧边栏样式优化 */
+.sider { 
+  background: #fff; 
+  box-shadow: 2px 0 10px rgba(0,0,0,0.05); 
+  position: fixed; 
+  left: 0; 
+  top: 0; 
+  bottom: 0; 
+  z-index: 100; 
+}
+
+.sider-trigger { 
+  height: 50px; 
+  display: flex;  
+  justify-content: center;
+  align-items: center; 
+  padding: 0 16px; 
+  border-bottom: 1px solid #f0f0f0; 
+}
+
 .logo-wrapper {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #1890ff; /* 使用品牌蓝色 */
+  color: #1890ff;
 }
 
 .logo-icon {
-  font-size: 28px; /* 大图标 */
+  font-size: 28px;
 }
 
 .logo-text-title {
@@ -345,49 +384,171 @@ const handleSendSuccess = (res: any) => console.log('Send Success', res)
   font-weight: bold;
   white-space: nowrap;
   letter-spacing: 0.5px;
-  color: #262626; /* 深色文字 */
+  color: #262626;
 }
 
-.right-layout { margin-left: 220px; transition: all 0.2s; min-height: 100vh; display: flex; flex-direction: column; }
+/* 侧边栏菜单样式优化 */
+.sider-menu {
+  border-right: none;
+}
+
+.sider-menu :deep(.ant-menu-item),
+.sider-menu :deep(.ant-menu-submenu-title) {
+  margin: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.sider-menu :deep(.ant-menu-item:hover),
+.sider-menu :deep(.ant-menu-submenu-title:hover) {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.sider-menu :deep(.ant-menu-item-selected) {
+  background-color: #1890ff !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+.sider-menu :deep(.ant-menu-item-selected:hover) {
+  background-color: #40a9ff !important;
+}
+
+.sider-menu :deep(.ant-menu-submenu-selected > .ant-menu-submenu-title) {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.sider-menu :deep(.ant-menu-inline .ant-menu-item::after) {
+  display: none;
+}
+
+/* 右侧布局 */
+.right-layout { 
+  margin-left: 220px; 
+  transition: all 0.2s; 
+  min-height: 100vh; 
+  display: flex; 
+  flex-direction: column; 
+}
 .right-layout.sider-collapsed { margin-left: 80px; }
 .layout-narrow.right-layout,
 .layout-narrow .right-layout { margin-left: 0 !important; }
 .layout-narrow .sider { box-shadow: 2px 0 12px rgba(0,0,0,0.12); }
 
-.header { background: #fff; padding: 0 16px; height: 50px; line-height: 50px; display: flex; align-items: center; position: sticky; top: 0; z-index: 99; border-bottom: 1px solid #f0f2f5; }
+/* 头部样式 */
+.header { 
+  background: #fff; 
+  padding: 0 16px; 
+  height: 50px; 
+  line-height: 50px; 
+  display: flex; 
+  align-items: center; 
+  position: sticky; 
+  top: 0; 
+  z-index: 99; 
+  border-bottom: 1px solid #f0f2f5; 
+}
 .header-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
 .header-left { display: flex; align-items: center; }
-.header-icon-btn { font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.header-icon-btn { 
+  font-size: 18px; 
+  width: 40px; 
+  height: 40px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  transition: all 0.3s;
+}
+.header-icon-btn:hover {
+  background-color: #f0f2f5;
+  border-radius: 6px;
+}
 .breadcrumb-nav { margin-left: 8px; }
 .breadcrumb-item-content { display: inline-flex; align-items: center; gap: 4px; }
 
 /* Tabs 样式优化 */
-.tabs-container { background: #fff; padding: 6px 12px 0 12px; border-bottom: 1px solid #e5e7eb; position: sticky; top: 50px; z-index: 98; }
+.tabs-container { 
+  background: #fff; 
+  padding: 6px 12px 0 12px; 
+  border-bottom: 1px solid #e5e7eb; 
+  position: sticky; 
+  top: 50px; 
+  z-index: 98; 
+}
 .nav-tabs :deep(.ant-tabs-nav) { margin-bottom: 0 !important; }
 .nav-tabs :deep(.ant-tabs-tab) { 
-  background: #fff !important; border: 1px solid #d1d5db !important; 
-  margin-right: 4px !important; border-radius: 4px 4px 0 0 !important; 
-  padding: 4px 12px !important; font-size: 13px; transition: all 0.2s;
+  background: #f5f5f5 !important; 
+  border: 1px solid #d9d9d9 !important; 
+  margin-right: 4px !important; 
+  border-radius: 6px 6px 0 0 !important; 
+  padding: 6px 14px !important; 
+  font-size: 13px; 
+  transition: all 0.3s ease;
+}
+.nav-tabs :deep(.ant-tabs-tab:hover) {
+  background: #e6f7ff !important;
+  border-color: #1890ff !important;
+  color: #1890ff;
 }
 .nav-tabs :deep(.ant-tabs-tab-active) { 
   background: #fff !important; 
   border-top: 2px solid #1890ff !important; 
   border-bottom-color: transparent !important;
+  box-shadow: 0 -2px 8px rgba(24, 144, 255, 0.1);
 }
 .tab-title-wrapper { display: flex; align-items: center; gap: 6px; cursor: context-menu; user-select: none; }
 .tab-icon { font-size: 14px; }
 
-.main-content { padding: 16px; flex: 1; overflow-x: hidden; box-sizing: border-box; width: 100%; max-width: 100%; }
+/* 主内容区域 */
+.main-content { 
+  padding: 16px; 
+  flex: 1; 
+  overflow-x: hidden; 
+  box-sizing: border-box; 
+  width: 100%; 
+  max-width: 100%; 
+}
+
+/* 响应式布局优化 */
 @media (max-width: 991px) {
   .main-content { padding: 8px; }
   .header-content { flex-wrap: wrap; gap: 8px; }
   .tabs-container { padding-left: 8px; padding-right: 8px; }
   .breadcrumb-nav { display: none; }
+  .header { padding: 0 8px; }
+  .wecom-btn span { display: none; }
+  .wecom-btn { padding: 0 8px; }
 }
+
+@media (max-width: 576px) {
+  .header-left { flex-wrap: wrap; }
+  .tabs-container { overflow-x: auto; }
+  .nav-tabs :deep(.ant-tabs-tab) { padding: 4px 8px !important; font-size: 12px; }
+}
+
 .footer { text-align: center; padding: 12px; color: #999; font-size: 12px; }
 
 /* 页面切换动画 */
-.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.3s; }
+.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.3s ease; }
 .fade-slide-enter-from { opacity: 0; transform: translateX(-20px); }
 .fade-slide-leave-to { opacity: 0; transform: translateX(20px); }
+
+/* 滚动条样式优化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
 </style>
