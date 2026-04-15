@@ -90,7 +90,7 @@
         <a-table :columns="columns" :data-source="dataSource" :pagination="false"
           :scroll="{ x: 2200, y: 'calc(100vh - 280px)' }" bordered row-key="key" :expand-icon-column-index="1"
           :indent-size="18" :expanded-row-keys="expandedKeys"
-          @expand="(expanded, record) => handleExpand(expanded, record)">
+          @expand="(expanded: boolean, record: any) => handleExpand(expanded, record)">
           <!-- 自定义展开图标：渲染在“货号”列中 -->
           <template #expandIcon="{ expanded, onExpand, record }">
             <div class="product-symbol-wrapper">
@@ -172,8 +172,9 @@ import { useRoute } from 'vue-router';
 // 模拟API调用（实际项目中应替换为真实接口）
 // import { getProductionAnalysis, updateProductionAnalysis, saveProductionAnalysis } from './api';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
-import { PMCSalesControl, RequestDto } from '../types';
+import { PMCWorkOrder, PMCRequestDto } from '@/api-generated/api';
 import { salesControlService } from '@/services/salesControlService';
+import { workOrderService } from '@/services/workOrderService';
 import { columns } from './types';
 
 // ProductionItem 类型定义
@@ -211,8 +212,6 @@ const closeTab = inject('closeTab') as (path?: string) => void;
 const loading = ref(false);
 const updateLoading = ref(false);
 const saveLoading = ref(false);
-
-
 
 // 表单数据
 const form = reactive({
@@ -360,7 +359,7 @@ const loadData = async () => {
       message.error('缺少货号参数');
       return;
     }
-    const requestDto: RequestDto = { 货号: partNo };
+    const requestDto = new PMCRequestDto({ 货号: partNo });
     // 直接获取BOM数据
     const bomData = await salesControlService.getSchedulingAnalysisList(requestDto);
     
@@ -422,27 +421,25 @@ const handleUpdate = async () => {
 
 // 保存分析
 const handleSave = async () => {
-  // saveLoading.value = true;
-  // try {
-  //   // 收集当前编辑后的完整数据
-  //   const saveData = {
-  //     orderNo: form.orderNo,
-  //     partNo: form.partNo,
-  //     productName: form.productName,
-  //     spec: form.spec,
-  //     qty: form.qty,
-  //     analysisType: form.analysisType,
-  //     bomData: dataSource.value
-  //   };
+  saveLoading.value = true;
+  try {
+    // 构建工单数据
+    const workOrderData = new PMCWorkOrder({
+      编号:"",
+      工单单号: form.partNo , // 示例工单单号，实际项目中应根据规则生成
+      成品品名: form.productName,
+      规格: form.spec,
+    });
 
-  //   await saveProductionAnalysis(saveData);
-  //   message.success('分析数据已保存');
-  // } catch (error) {
-  //   console.error('保存分析失败:', error);
-  //   message.error('保存分析失败，请稍后重试');
-  // } finally {
-  //   saveLoading.value = false;
-  // }
+    // 调用添加工单方法
+    await workOrderService.addPMCWorkOrder(workOrderData);
+    message.success('分析数据已保存为工单');
+  } catch (error) {
+    console.error('保存分析失败:', error);
+    message.error('保存分析失败，请稍后重试');
+  } finally {
+    saveLoading.value = false;
+  }
 };
 
 // 展开/收起处理

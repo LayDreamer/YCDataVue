@@ -81,7 +81,7 @@ class WeChatWorkService {
 
  async getDepartmentList(): Promise<WeChatDepartment[]> {
     try {
-       const response = await get<ApiResponse<WeChatDepartment[]>>('/WechatWork/departments')
+       const response = await get<ApiResponse<WeChatDepartment[]>>('/api/WechatWork/departments')
        if (!response.Success) {
         throw new Error(response.Message || '请求失败')
     }
@@ -96,7 +96,7 @@ class WeChatWorkService {
   //获取用户列表  
   async getUserList(deptId:number): Promise<WeChatUser[]> {
      try {
-       const response = await post<ApiResponse<WeChatUser[]>>('/WechatWork/users', {departmentId:deptId})
+       const response = await post<ApiResponse<WeChatUser[]>>('/api/WechatWork/users', {departmentId:deptId})
        if (!response.Success) {
         throw new Error(response.Message || '请求失败')
     }

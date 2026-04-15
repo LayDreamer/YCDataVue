@@ -84,7 +84,7 @@
             :data-source="tableData"
             :pagination="{ 
               pageSize: 10, 
-              showTotal: (total) => `共 ${total} 条数据` 
+              showTotal: (total: any) => `共 ${total} 条数据` 
             }" 
             :loading="isLoading" 
             size="middle"
@@ -117,7 +117,7 @@ const router = useRouter()
 const isLoading = ref(false)
 const chartRef = ref()
 const isDataSidebarCollapsed = ref(false)
-const chartOptions = shallowRef<EChartsOption | null>(null)
+const chartOptions = shallowRef<EChartsOption>({})
 const recordData = ref<BLFParameter | null>(null)
 
 // 从路由参数获取数据 (实时计算)
@@ -181,7 +181,7 @@ const loadData = async () => {
 const updateChartOptions = () => {
   // 如果 recordData 本身就是空的，确保 options 也为空
   if (!recordData.value) {
-    chartOptions.value = null;
+    chartOptions.value = {};
     return;
   }
 

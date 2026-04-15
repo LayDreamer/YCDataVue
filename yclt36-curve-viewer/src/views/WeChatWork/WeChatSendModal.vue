@@ -169,8 +169,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { message } from 'ant-design-vue'
-import type { FormInstance, FormRules } from 'ant-design-vue'
+import { message, } from 'ant-design-vue'
+import type{  FormInstance, Rule  } from 'ant-design-vue/es/form'
 import { UserOutlined, TeamOutlined, WechatOutlined } from '@ant-design/icons-vue'
 import { weChatWorkService, type WeChatUser, type WeChatChat, WeChatMessage } from '@/services/wechatWorkService'
 
@@ -212,9 +212,9 @@ const wechatForm = reactive({
   content: props.defaultContent || ''
 })
 
-const wechatRules: FormRules = {
+const wechatRules: Record<string, Rule[]>  = {
   sendType: [{ required: true, message: '请选择发送类型' }],
-  targets: [{ required: true, message: '请选择接收目标', type: 'any' }],
+  targets: [{ required: true, message: '请选择接收目标', type: 'array' }],
   content: [{ required: true, message: '请输入内容' }]
 }
 

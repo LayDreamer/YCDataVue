@@ -25,18 +25,22 @@
         @click="handleMenuClick"
       >
         <template v-for="item in menuItems" :key="item.key">
-          <a-sub-menu v-if="item.children" :key="item.key">
-            <template #icon><component :is="item.icon" /></template>
-            <template #title>{{ item.label }}</template>
-            <a-menu-item v-for="child in item.children" :key="child.key">
-              <template #icon><component :is="child.icon" /></template>
-              <span>{{ child.label }}</span>
+          <template v-if="item.children">
+            <a-sub-menu :key="item.key">
+              <template #icon><component :is="item.icon" /></template>
+              <template #title>{{ item.label }}</template>
+              <a-menu-item v-for="child in item.children" :key="child.key">
+                <template #icon><component :is="child.icon" /></template>
+                <span>{{ child.label }}</span>
+              </a-menu-item>
+            </a-sub-menu>
+          </template>
+          <template v-else>
+            <a-menu-item :key="item.key">
+              <template #icon><component :is="item.icon" /></template>
+              <span>{{ item.label }}</span>
             </a-menu-item>
-          </a-sub-menu>
-          <a-menu-item v-else :key="item.key">
-            <template #icon><component :is="item.icon" /></template>
-            <span>{{ item.label }}</span>
-          </a-menu-item>
+          </template>
         </template>
       </a-menu>
     </a-layout-sider>
@@ -85,7 +89,7 @@
                   {{ tab.title }}
                 </span>
                 <template #overlay>
-                  <a-menu @click="(e) => handleContextMenuClick(e.key, tab)">
+                  <a-menu @click="(e: any) => handleContextMenuClick(e.key, tab)">
                     <a-menu-item key="refreshTab"><template #icon><ReloadOutlined /></template>重新加载</a-menu-item>
                     <a-menu-item key="closeCurrent" :disabled="!tab.closable"><template #icon><CloseOutlined /></template>关闭标签页</a-menu-item>
                     <a-menu-divider />
@@ -196,7 +200,7 @@ const getInitialTabs = (): TabItem[] => {
       // 处理图标，将字符串转换为组件
       return tabs.map((tab: any) => ({
         ...tab,
-        icon: typeof tab.icon === 'string' ? iconMap[tab.icon] : tab.icon
+        icon: typeof tab.icon === 'string' ? iconMap[tab.icon as keyof typeof iconMap] : tab.icon
       }))
     } catch (e) {
       return [DASHBOARD_CONF]
@@ -238,8 +242,8 @@ const addTab = () => {
     const dynamicTitle = (query.tabTitle as string) || (meta.title as string) || '新标签页'
     // 处理图标，确保是组件形式
     let tabIcon = meta.icon
-    if (typeof tabIcon === 'string' && iconMap[tabIcon]) {
-      tabIcon = iconMap[tabIcon]
+    if (typeof tabIcon === 'string' && iconMap[tabIcon as keyof typeof iconMap]) {
+      tabIcon = iconMap[tabIcon as keyof typeof iconMap]
     }
     tabList.value.push({
       title: dynamicTitle,
