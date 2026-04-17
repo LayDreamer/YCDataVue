@@ -105,7 +105,7 @@ const routes = [
             path: 'profit-analysis',
             name: 'profitAnalysis',
             component: ProfitAnalysis,
-            meta: { title: '利润分红分析', icon: DollarCircleOutlined, hidden: true }
+            meta: { title: '利润分红分析', icon: DollarCircleOutlined }
           }
         ]
       },

@@ -100,9 +100,10 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { message, Grid } from 'ant-design-vue';
 import ReviewModal from '../DeliveryReview/ReviewDetailModal.vue';
-import type { PMCDeliveryReview, PMCProductInfo } from '../DeliveryReview/types';
+import type { PMCProductInfo } from '../DeliveryReview/types';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { RequestDto } from '../types';
+import { PMCRequestDto,PMCDeliveryReview  } from '@/api-generated/api';
 
 const columns = [
   { title: '合同号', dataIndex: '合同号', key: '合同号' },
@@ -188,10 +189,10 @@ const productionUserOptions = computed(() => {
 const fetchProductData = async () => {
   loading.value = true;
   try {
-    const requestDto: RequestDto = {
+    const requestDto = new PMCRequestDto({
       合同号: searchForm.contractNo,
       分析单号: searchForm.analysisNo
-    };
+    });
     const response = await deliveryReviewService.getPMCProductInfoList(requestDto);
 
     if (!response || response.length === 0) {
@@ -200,31 +201,33 @@ const fetchProductData = async () => {
       return;
     }
 
-    const mappedData: PMCDeliveryReview[] = response.map((item: PMCProductInfo, index: number) => ({
-      编号: item.编号 || String(index),
-      用户编号: item.用户编号 || '',
-      用户铭: item.用户铭 || '',
-      修改状态: item.修改状态 || '',
-      创建时间: item.创建时间 || '',
-      锁定用户: item.锁定用户 || '',
-      审核过程: item.审核过程 || '',
-      打印: item.打印 || '',
-      合同号: item.合同号 || '',
-      排产编号: item.排产编号 || '',
-      层: item.层 || '-',
-      分析单号: item.分析单号 || '',
-      货号: item.货号 || '',
-      线圈货号: item.线圈 || '',
-      中文品名: item.中文品名 || '',
-      中文规格: item.中文规格 || '',
-      来源编号: item.来源编号 || '',
-      来源: item.来源 || '',
-      工单单号: item.工单单号 || '',
-      交货日期: item.交货日期 || '',
-      排产用户: item.排产用户 || '',
-      电压: item.电压 || '',
-      状态: item.状态 || '待评审',
-    }));
+    const mappedData: PMCDeliveryReview[] = response.map((item: PMCProductInfo, index: number) => 
+      new PMCDeliveryReview({
+        编号: item.编号 || String(index),
+        用户编号: item.用户编号 || '',
+        用户铭: item.用户铭 || '',
+        修改状态: item.修改状态 || '',
+        创建时间: item.创建时间 || '',
+        锁定用户: item.锁定用户 || '',
+        审核过程: item.审核过程 || '',
+        打印: item.打印 || '',
+        合同号: item.合同号 || '',
+        排产编号: item.排产编号 || '',
+        层: item.层 || '-',
+        分析单号: item.分析单号 || '',
+        货号: item.货号 || '',
+        线圈货号: item.线圈 || '',
+        中文品名: item.中文品名 || '',
+        中文规格: item.中文规格 || '',
+        来源编号: item.来源编号 || '',
+        来源: item.来源 || '',
+        工单单号: item.工单单号 || '',
+        交货日期: item.交货日期 || '',
+        排产用户: item.排产用户 || '',
+        电压: item.电压 || '',
+        状态: item.状态 || '待评审',
+      })
+    );
 
     mappedData.sort((a, b) => {
       const aVal = a.编号 || '';
@@ -256,31 +259,33 @@ const fetchReviewedData = async () => {
       return;
     }
 
-    const mappedData: PMCDeliveryReview[] = response.map((item: any, index: number) => ({
-      编号: item.编号 || item.id || String(index),
-      用户编号: item.用户编号 || '',
-      用户铭: item.用户铭 || '',
-      修改状态: item.修改状态 || '',
-      创建时间: item.创建时间 || '',
-      锁定用户: item.锁定用户 || '',
-      审核过程: item.审核过程 || '',
-      打印: item.打印 || '',
-      合同号: item.合同号 || '',
-      排产编号: item.排产编号 || '',
-      层: item.层 || '-',
-      分析单号: item.分析单号 || '',
-      货号: item.货号 || '',
-      线圈货号: item.线圈货号 || item.线圈 || '',
-      中文品名: item.中文品名 || '',
-      中文规格: item.中文规格 || '',
-      来源编号: item.来源编号 || '',
-      来源: item.来源 || '',
-      工单单号: item.工单单号 || '',
-      交货日期: item.交货日期 || '',
-      排产用户: item.排产用户 || '',
-      电压: item.电压 || '',
-      状态: item.状态 || '',
-    }));
+    const mappedData: PMCDeliveryReview[] = response.map((item: any, index: number) => 
+      new PMCDeliveryReview({
+        编号: item.编号 || item.id || String(index),  
+        用户编号: item.用户编号 || '',
+        用户铭: item.用户铭 || '',
+        修改状态: item.修改状态 || '',
+        创建时间: item.创建时间 || '',
+        锁定用户: item.锁定用户 || '',
+        审核过程: item.审核过程 || '',
+        打印: item.打印 || '',
+        合同号: item.合同号 || '',
+        排产编号: item.排产编号 || '',
+        层: item.层 || '-',
+        分析单号: item.分析单号 || '',
+        货号: item.货号 || '',
+        线圈货号: item.线圈货号 || item.线圈 || '',
+        中文品名: item.中文品名 || '',
+        中文规格: item.中文规格 || '',
+        来源编号: item.来源编号 || '',
+        来源: item.来源 || '',
+        工单单号: item.工单单号 || '',
+        交货日期: item.交货日期 || '',
+        排产用户: item.排产用户 || '',
+        电压: item.电压 || '',
+        状态: item.状态 || '',
+      })
+    );
 
     mappedData.sort((a, b) => {
       const aVal = a.编号 || '';

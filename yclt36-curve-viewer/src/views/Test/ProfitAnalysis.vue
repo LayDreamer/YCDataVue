@@ -95,13 +95,15 @@
               <div ref="stackChartRef" class="chart-container medium"></div>
             </a-card>
           </a-col>
+          <a-col :span="24">
+            <a-card title="👥 股东分红占比" class="chart-card">
+              <div ref="pieChartRef" class="chart-container medium"></div>
+            </a-card>
+          </a-col>
         </a-row>
       </a-col>
 
       <a-col :xs="24" :lg="8">
-        <a-card title="👥 股东分红占比" class="chart-card">
-          <div ref="pieChartRef" class="chart-container"></div>
-        </a-card>
 
         <a-card title="� 两期对比分析" class="chart-card compare-phase-card" style="margin-top: 16px;">
           <a-row :gutter="[12, 12]">
@@ -173,7 +175,8 @@
       <template #extra>
         <a-space>
           <a-input-search v-model:value="searchText" placeholder="搜索..." style="width: 200px;" />
-          <a-button @click="exportTable"><DownloadOutlined /> 导出Excel</a-button>
+          <a-button type="primary" @click="showAddModal"><PlusOutlined /> 新增数据</a-button>
+          <a-button danger @click="clearData"><DeleteOutlined /> 清除数据</a-button>
         </a-space>
       </template>
       
@@ -277,6 +280,69 @@
     <a-card title="📊 月度环比分析" class="compare-card" style="margin-top: 16px;">
       <div ref="compareChartRef" class="chart-container large"></div>
     </a-card>
+
+    <!-- 新增数据模态框 -->
+    <a-modal
+      v-model:open="addModalVisible"
+      title="新增利润分红数据"
+      width="500px"
+      @ok="handleAddData"
+      @cancel="addModalVisible = false"
+    >
+      <a-form :model="newDataForm" :rules="addFormRules" ref="addFormRef">
+        <a-form-item label="月份" name="date" required>
+          <a-date-picker
+            v-model:value="datePickerValue"
+            picker="month"
+            format="YY.MM"
+            style="width: 100%"
+            @change="handleDateChange"
+          />
+        </a-form-item>
+        <a-form-item label="总利润" name="totalProfit" required>
+          <a-input-number
+            v-model:value="newDataForm.totalProfit"
+            style="width: 100%"
+            :min="0"
+            placeholder="请输入总利润"
+          />
+        </a-form-item>
+        <a-form-item label="投资期" name="phase">
+          <a-select v-model:value="newDataForm.phase" style="width: 100%" disabled>
+            <a-select-option value="二期">二期</a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 修改数据模态框 -->
+    <a-modal
+      v-model:open="editModalVisible"
+      title="修改利润分红数据"
+      width="500px"
+      @ok="handleEditData"
+      @cancel="editModalVisible = false"
+    >
+      <a-form :model="editDataForm" :rules="editFormRules" ref="editFormRef">
+        <a-form-item label="月份" name="date" required>
+          <a-input v-model:value="editDataForm.date" disabled />
+        </a-form-item>
+        <a-form-item label="总利润" name="totalProfit" required>
+          <a-input-number
+            v-model:value="editDataForm.totalProfit"
+            style="width: 100%"
+            :min="0"
+            placeholder="请输入总利润"
+          />
+        </a-form-item>
+        <a-form-item label="投资期" name="phase">
+          <a-select v-model:value="editDataForm.phase" style="width: 100%" disabled>
+            <a-select-option value="一期">一期</a-select-option>
+            <a-select-option value="二期">二期</a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -284,7 +350,7 @@
 import { ref, computed, onMounted, onUnmounted, h } from 'vue';
 import { message } from 'ant-design-vue';
 import * as echarts from 'echarts';
-import { DownloadOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 
 const viewMode = ref('analysis');
 const chartType = ref('line');
@@ -301,32 +367,121 @@ let compareChart = null;
 
 const totalInvestment = 500000;
 
-const rawData = [
-  { date: '25.12', totalProfit: 40634, totalDividend: 6140, xulao: 1023, zuimai: 0, xiaokeai: 409, lixiao: 614, remaining: 4094, phase: '一期', capital: 300000, rate: 0.15 },
-  { date: '26.01', totalProfit: 62667, totalDividend: 9400, xulao: 1567, zuimai: 0, xiaokeai: 627, lixiao: 940, remaining: 6266, phase: '一期', capital: 300000, rate: 0.15 },
-  { date: '26.02', totalProfit: 66534, totalDividend: 9980, xulao: 1663, zuimai: 0, xiaokeai: 665, lixiao: 998, remaining: 6654, phase: '一期', capital: 300000, rate: 0.15 },
-  { date: '26.03', totalProfit: 60140, totalDividend: 12029, xulao: 3609, zuimai: 2406, xiaokeai: 481, lixiao: 722, remaining: 4812, phase: '二期', capital: 500000, rate: 0.25 },
-  { date: '26.04', totalProfit: 68000, totalDividend: 17000, xulao: 5100, zuimai: 3400, xiaokeai: 680, lixiao: 1020, remaining: 6800, phase: '二期', capital: 500000, rate: 0.25 },
-  { date: '26.05', totalProfit: 62875, totalDividend: 15719, xulao: 4716, zuimai: 3144, xiaokeai: 629, lixiao: 943, remaining: 6288, phase: '二期', capital: 500000, rate: 0.25 },
-];
+// 本地存储键名
+const STORAGE_KEY = 'profit_analysis_data';
+
+// 新增数据相关
+const addModalVisible = ref(false);
+const addFormRef = ref(null);
+const newDataForm = ref({
+  date: '',
+  totalProfit: null,
+  phase: '二期'
+});
+
+const datePickerValue = ref(null);
+
+// 修改数据相关
+const editModalVisible = ref(false);
+const editFormRef = ref(null);
+const editDataForm = ref({
+  date: '',
+  totalProfit: null,
+  phase: '二期'
+});
+
+const editFormRules = ref({
+  totalProfit: [
+    { required: true, message: '请输入总利润', trigger: 'blur' },
+    { type: 'number', min: 0, message: '总利润必须大于等于0', trigger: 'blur' }
+  ]
+});
+
+// 响应式数据源
+const rawData = ref([
+  { date: '25.11', totalProfit: 40934, totalDividend: 6140, xulao: 1023, zuimai: 0, xiaokeai: 409, lixiao: 614, remaining: 4094, phase: '一期', capital: 300000, rate: 0.15 },  
+  { date: '25.12', totalProfit: 62667, totalDividend: 9400, xulao: 1567, zuimai: 0, xiaokeai: 627, lixiao: 940, remaining: 6266, phase: '一期', capital: 300000, rate: 0.15 },
+  { date: '26.01', totalProfit: 66534, totalDividend: 9980, xulao: 1663, zuimai: 0, xiaokeai: 665, lixiao: 998, remaining: 6654, phase: '一期', capital: 300000, rate: 0.15 },
+  { date: '26.02', totalProfit: 60140, totalDividend: 12029, xulao: 3008, zuimai: 1504, xiaokeai: 601, lixiao: 902, remaining: 6014, phase: '二期', capital: 500000, rate: 0.25 },
+  { date: '26.03', totalProfit: 68000, totalDividend: 17000, xulao: 5100, zuimai: 3400, xiaokeai: 680, lixiao: 1020, remaining: 6800, phase: '二期', capital: 500000, rate: 0.25 },
+  { date: '26.04', totalProfit: 62875, totalDividend: 15719, xulao: 4716, zuimai: 3144, xiaokeai: 629, lixiao: 943, remaining: 6288, phase: '二期', capital: 500000, rate: 0.25 },
+]);
+
+// 计算最近的月份
+function getLatestMonth() {
+  if (rawData.value.length === 0) return null;
+  
+  // 将日期转换为可比较的格式（YYYYMM）
+  const dates = rawData.value.map(item => {
+    const [year, month] = item.date.split('.');
+    return parseInt(`20${year}${month}`, 10);
+  });
+  
+  const maxDate = Math.max(...dates);
+  const year = String(maxDate).slice(2, 4);
+  const month = String(maxDate).slice(4);
+  return `${year}.${month}`;
+}
+
+// 比较两个月份字符串，返回true如果第一个月份大于第二个
+function isMonthGreater(month1, month2) {
+  const [year1, monthNum1] = month1.split('.').map(Number);
+  const [year2, monthNum2] = month2.split('.').map(Number);
+  
+  if (year1 > year2) return true;
+  if (year1 === year2 && monthNum1 > monthNum2) return true;
+  return false;
+}
+
+const addFormRules = ref({
+  date: [
+    { required: true, message: '请选择月份', trigger: 'change' },
+    {
+      validator: (_, value, callback) => {
+        const isDuplicate = rawData.value.some(item => item.date === value);
+        if (isDuplicate) {
+          callback(new Error('该月份数据已存在'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'change'
+    },
+    {
+      validator: (_, value, callback) => {
+        const latestMonth = getLatestMonth();
+        if (latestMonth && !isMonthGreater(value, latestMonth)) {
+          callback(new Error(`请选择大于 ${latestMonth} 的月份`));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'change'
+    }
+  ],
+  totalProfit: [
+    { required: true, message: '请输入总利润', trigger: 'blur' },
+    { type: 'number', min: 0, message: '总利润必须大于等于0', trigger: 'blur' }
+  ]
+});
 
 const filteredData = computed(() => {
-  if (!searchText.value) return rawData;
-  return rawData.filter(item => 
+  if (!searchText.value) return rawData.value;
+  return rawData.value.filter(item => 
     item.date.includes(searchText.value) ||
     item.totalProfit.toString().includes(searchText.value)
   );
 });
 
-const totalProfit = computed(() => rawData.reduce((sum, item) => sum + item.totalProfit, 0));
-const totalDividend = computed(() => rawData.reduce((sum, item) => sum + item.totalDividend, 0));
+const totalProfit = computed(() => rawData.value.reduce((sum, item) => sum + item.totalProfit, 0));
+const totalDividend = computed(() => rawData.value.reduce((sum, item) => sum + item.totalDividend, 0));
 
 const monthlyAvgDividend = computed(() => {
-  return rawData.length > 0 ? totalDividend.value / rawData.length : 0;
+  return rawData.value.length > 0 ? totalDividend.value / rawData.value.length : 0;
 });
 
-const phase1Data = computed(() => rawData.filter(d => d.phase === '一期'));
-const phase2Data = computed(() => rawData.filter(d => d.phase === '二期'));
+const phase1Data = computed(() => rawData.value.filter(d => d.phase === '一期'));
+const phase2Data = computed(() => rawData.value.filter(d => d.phase === '二期'));
 
 const phase1TotalDividend = computed(() => phase1Data.value.reduce((s, d) => s + d.totalDividend, 0));
 const phase2TotalDividend = computed(() => phase2Data.value.reduce((s, d) => s + d.totalDividend, 0));
@@ -353,17 +508,18 @@ const annualizedROI = computed(() => (monthlyAvgDividend.value * 12 / totalInves
 const yearlyForecast = computed(() => monthlyAvgDividend.value * 12);
 
 const profitGrowthRate = computed(() => {
-  const lastTwo = rawData.slice(-2);
+  const lastTwo = rawData.value.slice(-2);
   if (lastTwo.length < 2) return 0;
   return (((lastTwo[1].totalDividend - lastTwo[0].totalDividend) / lastTwo[0].totalDividend) * 100).toFixed(1);
 });
 
 const avgProfitMargin = computed(() => {
-  const valid = rawData.filter(d => d.totalProfit > 0);
+  const valid = rawData.value.filter(d => d.totalProfit > 0);
   return valid.length > 0 ? (valid.reduce((s, d) => s + d.profitMargin, 0) / valid.length).toFixed(1) : 0;
 }).value;
 
-rawData.forEach(item => {
+// 初始化利润率
+rawData.value.forEach(item => {
   item.profitMargin = item.totalProfit > 0 ? Number(((item.totalDividend / item.totalProfit) * 100).toFixed(1)) : 0;
 });
 
@@ -396,14 +552,69 @@ const tableColumns = [
   { title: '投资期', dataIndex: 'phase', key: 'phase', width: 80,
     customRender: ({ text }) => h('a-tag', { color: text === '一期' ? 'blue' : 'green' }, text)
   },
-  { title: '总利润', dataIndex: 'totalProfit', key: 'totalProfit', width: 105, sorter: (a, b) => a.totalProfit - b.totalProfit },
-  { title: '分红率', dataIndex: 'rate', key: 'rate', width: 75, customRender: ({ text }) => `${(text * 100).toFixed(0)}%` },
-  { title: '总分红', dataIndex: 'totalDividend', key: 'totalDividend', width: 95 },
-  { title: '罪老婆', dataIndex: 'xulao', key: 'xulao', width: 90 },
-  { title: '罪+麦', dataIndex: 'zuimai', key: 'zuimai', width: 85 },
-  { title: '小可爱', dataIndex: 'xiaokeai', key: 'xiaokeai', width: 85 },
+  { title: '总利润', dataIndex: 'totalProfit', key: 'totalProfit', width: 120, sorter: (a, b) => a.totalProfit - b.totalProfit },
+  { title: '分红率', dataIndex: 'rate', key: 'rate', width: 80, customRender: ({ text }) => `${(text * 100).toFixed(0)}%` },
+  { title: '总分红', dataIndex: 'totalDividend', key: 'totalDividend', width: 80 },
+  { title: '罪老婆', dataIndex: 'xulao', key: 'xulao', width: 80 },
+  { title: '罪+麦', dataIndex: 'zuimai', key: 'zuimai', width: 80 },
+  { title: '小可爱', dataIndex: 'xiaokeai', key: 'xiaokeai', width: 80 },
   { title: '力孝', dataIndex: 'lixiao', key: 'lixiao', width: 80 },
-  { title: '剩余', dataIndex: 'remaining', key: 'remaining', width: 90 }
+  { title: '剩余', dataIndex: 'remaining', key: 'remaining', width: 80 },
+  
+  { title: '操作', key: 'action', width: 160, fixed: 'right',
+    customRender: ({ record }) => {
+      return h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', padding: '4px 0' } }, [
+        h('button', {
+          style: {
+            flex: 1,
+            textAlign: 'center',
+            borderRadius: '6px',
+            fontSize: '12px',
+            height: '28px',
+            lineHeight: '28px',
+            border: '1px solid #1890ff',
+            backgroundColor: '#1890ff',
+            color: 'white',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          },
+          onMouseEnter: (e) => {
+            e.target.style.transform = 'translateY(-1px)';
+            e.target.style.boxShadow = '0 2px 8px rgba(24, 144, 255, 0.3)';
+          },
+          onMouseLeave: (e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = 'none';
+          },
+          onClick: () => handleEdit(record)
+        }, '修改'),
+        h('button', {
+          style: {
+            flex: 1,
+            textAlign: 'center',
+            borderRadius: '6px',
+            fontSize: '12px',
+            height: '28px',
+            lineHeight: '28px',
+            border: '1px solid #ff4d4f',
+            backgroundColor: '#ff4d4f',
+            color: 'white',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          },
+          onMouseEnter: (e) => {
+            e.target.style.transform = 'translateY(-1px)';
+            e.target.style.boxShadow = '0 2px 8px rgba(255, 77, 79, 0.3)';
+          },
+          onMouseLeave: (e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = 'none';
+          },
+          onClick: () => handleDelete(record)
+        }, '删除')
+      ]);
+    }
+  }
 ];
 
 function formatMoney(num) {
@@ -426,9 +637,252 @@ function exportReport() {
   message.success('报告导出中...');
 }
 
-function exportTable() {
-  message.success('Excel导出中...');
+
+
+function showAddModal() {
+  newDataForm.value = {
+    date: '',
+    totalProfit: null,
+    phase: '二期'
+  };
+  datePickerValue.value = null;
+  addModalVisible.value = true;
 }
+
+function handleDateChange(date) {
+  if (date) {
+    const year = date.year().toString().slice(2); // 取年份后两位
+    const month = String(date.month() + 1).padStart(2, '0'); // 月份从0开始，所以加1
+    newDataForm.value.date = `${year}.${month}`;
+  } else {
+    newDataForm.value.date = '';
+  }
+}
+
+function handleAddData() {
+  addFormRef.value.validate().then(() => {
+    const { date, totalProfit } = newDataForm.value;
+    
+    // 计算分红数据（二期分红率25%）
+    const totalDividend = Math.round(totalProfit * 0.25);
+    const xulao = Math.round(totalDividend * 0.3); // 罪老婆 30%
+    const zuimai = Math.round(totalDividend * 0.2); // 罪+麦 20%
+    const xiaokeai = Math.round(totalDividend * 0.04); // 小可爱 4%
+    const lixiao = Math.round(totalDividend * 0.06); // 力孝 6%
+    const remaining = totalDividend - xulao - zuimai - xiaokeai - lixiao;
+    
+    // 计算利润率
+    const profitMargin = totalProfit > 0 ? Number(((totalDividend / totalProfit) * 100).toFixed(1)) : 0;
+    
+    // 构建新数据对象
+    const newData = {
+      date,
+      totalProfit,
+      totalDividend,
+      xulao,
+      zuimai,
+      xiaokeai,
+      lixiao,
+      remaining,
+      phase: '二期',
+      capital: 500000,
+      rate: 0.25,
+      profitMargin
+    };
+    
+    // 添加到数据数组
+    rawData.value.push(newData);
+    
+    // 保存数据到文件
+    saveDataToFile();
+    
+    // 更新图表
+    updateCharts();
+    
+    // 关闭模态框并重置表单
+    addModalVisible.value = false;
+    message.success('数据添加成功！');
+  }).catch(error => {
+    console.error('表单验证失败:', error);
+  });
+}
+
+function updateCharts() {
+  // 重新初始化所有图表
+  setTimeout(() => {
+    initMainChart();
+    initStackChart();
+    initPieChart();
+    initCompareChart();
+  }, 100);
+}
+
+// 从本地存储读取数据
+function loadDataFromFile() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) {
+      const parsedData = JSON.parse(data);
+      if (Array.isArray(parsedData)) {
+        rawData.value = parsedData;
+        message.success('数据加载成功');
+      }
+    } else {
+      // 本地存储不存在，写入初始数据
+      saveDataToFile();
+      message.info('数据不存在，已创建初始数据');
+    }
+  } catch (error) {
+    console.error('读取数据失败:', error);
+    message.error('读取数据失败，使用默认数据');
+  }
+}
+
+// 保存数据到本地存储
+function saveDataToFile() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData.value, null, 2));
+    message.success('数据保存成功');
+  } catch (error) {
+    console.error('保存数据失败:', error);
+    message.error('保存数据失败');
+  }
+}
+
+// 清除数据
+function clearData() {
+  // 显示确认对话框
+  if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+    try {
+      // 清除本地存储
+      localStorage.removeItem(STORAGE_KEY);
+      
+      // 重置为初始数据
+      rawData.value = [
+        { date: '25.11', totalProfit: 40934, totalDividend: 6140, xulao: 1023, zuimai: 0, xiaokeai: 409, lixiao: 614, remaining: 4094, phase: '一期', capital: 300000, rate: 0.15 },        
+        { date: '25.12', totalProfit: 62667, totalDividend: 9400, xulao: 1567, zuimai: 0, xiaokeai: 627, lixiao: 940, remaining: 6266, phase: '一期', capital: 300000, rate: 0.15 },
+        { date: '26.01', totalProfit: 66534, totalDividend: 9980, xulao: 1663, zuimai: 0, xiaokeai: 665, lixiao: 998, remaining: 6654, phase: '一期', capital: 300000, rate: 0.15 },
+        { date: '26.02', totalProfit: 60140, totalDividend: 12029, xulao: 3008, zuimai: 1504, xiaokeai: 601, lixiao: 902, remaining: 6014, phase: '二期', capital: 500000, rate: 0.25 },
+        { date: '26.03', totalProfit: 68000, totalDividend: 17000, xulao: 5100, zuimai: 3400, xiaokeai: 680, lixiao: 1020, remaining: 6800, phase: '二期', capital: 500000, rate: 0.25 },
+        { date: '26.04', totalProfit: 62875, totalDividend: 15719, xulao: 4716, zuimai: 3144, xiaokeai: 629, lixiao: 943, remaining: 6288, phase: '二期', capital: 500000, rate: 0.25 },
+       
+      ];
+      
+      // 重新计算利润率
+      rawData.value.forEach(item => {
+        item.profitMargin = item.totalProfit > 0 ? Number(((item.totalDividend / item.totalProfit) * 100).toFixed(1)) : 0;
+      });
+      
+      // 保存初始数据到本地存储
+      saveDataToFile();
+      
+      // 更新图表
+      updateCharts();
+      
+      message.success('数据已清除，已恢复到初始状态！');
+    } catch (error) {
+      console.error('清除数据失败:', error);
+      message.error('清除数据失败');
+    }
+  }
+}
+
+// 处理修改操作
+function handleEdit(record) {
+  // 填充表单数据
+  editDataForm.value = {
+    date: record.date,
+    totalProfit: record.totalProfit,
+    phase: record.phase
+  };
+  editModalVisible.value = true;
+}
+
+// 处理修改数据
+function handleEditData() {
+  editFormRef.value.validate().then(() => {
+    const { date, totalProfit, phase } = editDataForm.value;
+    
+    // 计算分红数据
+    const rate = phase === '二期' ? 0.25 : 0.15;
+    const totalDividend = Math.round(totalProfit * rate);
+    
+    // 根据投资期计算各股东分红
+    let xulao, zuimai, xiaokeai, lixiao, remaining;
+    if (phase === '二期') {
+      xulao = Math.round(totalDividend * 0.3); // 罪老婆 30%
+      zuimai = Math.round(totalDividend * 0.2); // 罪+麦 20%
+      xiaokeai = Math.round(totalDividend * 0.04); // 小可爱 4%
+      lixiao = Math.round(totalDividend * 0.06); // 力孝 6%
+      remaining = totalDividend - xulao - zuimai - xiaokeai - lixiao;
+    } else {
+      xulao = Math.round(totalDividend * (1/6)); // 罪老婆 1/6
+      zuimai = 0; // 罪+麦 仅二期参与
+      xiaokeai = Math.round(totalDividend * 0.04); // 小可爱 4%
+      lixiao = Math.round(totalDividend * 0.06); // 力孝 6%
+      remaining = totalDividend - xulao - zuimai - xiaokeai - lixiao;
+    }
+    
+    // 计算利润率
+    const profitMargin = totalProfit > 0 ? Number(((totalDividend / totalProfit) * 100).toFixed(1)) : 0;
+    const capital = phase === '二期' ? 500000 : 300000;
+    
+    // 更新数据
+    const index = rawData.value.findIndex(item => item.date === date);
+    if (index !== -1) {
+      rawData.value[index] = {
+        ...rawData.value[index],
+        totalProfit,
+        totalDividend,
+        xulao,
+        zuimai,
+        xiaokeai,
+        lixiao,
+        remaining,
+        profitMargin
+      };
+      
+      // 保存数据到本地存储
+      saveDataToFile();
+      
+      // 更新图表
+      updateCharts();
+      
+      // 关闭模态框
+      editModalVisible.value = false;
+      message.success('数据修改成功！');
+    }
+  }).catch(error => {
+    console.error('表单验证失败:', error);
+  });
+}
+
+// 处理删除操作
+function handleDelete(record) {
+  // 显示确认对话框
+  if (confirm(`确定要删除 ${record.date} 的数据吗？`)) {
+    try {
+      // 从数据数组中删除记录
+      const index = rawData.value.findIndex(item => item.date === record.date);
+      if (index !== -1) {
+        rawData.value.splice(index, 1);
+        
+        // 保存数据到本地存储
+        saveDataToFile();
+        
+        // 更新图表
+        updateCharts();
+        
+        message.success('数据删除成功！');
+      }
+    } catch (error) {
+      console.error('删除数据失败:', error);
+      message.error('删除数据失败');
+    }
+  }
+}
+
+
 
 function initCharts() {
   setTimeout(() => {
@@ -454,9 +908,9 @@ function initMainChart() {
   mainChartRef.value.style.height = '380px';
   mainChart = echarts.init(mainChartRef.value);
 
-  const dates = rawData.map(d => d.date);
-  const profits = rawData.map(d => d.totalProfit);
-  const dividends = rawData.map(d => d.totalDividend);
+  const dates = rawData.value.map(d => d.date);
+  const profits = rawData.value.map(d => d.totalProfit);
+  const dividends = rawData.value.map(d => d.totalDividend);
 
   const option = {
     tooltip: {
@@ -468,8 +922,8 @@ function initMainChart() {
           html += `${p.marker}${p.seriesName}: ¥${Number(p.value).toLocaleString()}<br/>`;
         });
         const idx = dates.indexOf(params[0].axisValue);
-        if (idx >= 0 && rawData[idx]) {
-          html += `<hr/><small>分红比例: ${rawData[idx].profitMargin}%</small>`;
+        if (idx >= 0 && rawData.value[idx]) {
+          html += `<hr/><small>分红比例: ${rawData.value[idx].profitMargin}%</small>`;
         }
         return html;
       }
@@ -504,7 +958,7 @@ function initMainChart() {
         name: '分红比例',
         type: 'line',
         yAxisIndex: 1,
-        data: rawData.map(d => d.profitMargin),
+        data: rawData.value.map(d => d.profitMargin),
         lineStyle: { type: 'dashed', color: '#faad14' },
         itemStyle: { color: '#faad14' },
         symbol: 'diamond',
@@ -525,14 +979,14 @@ function initStackChart() {
     tooltip: { trigger: 'axis' },
     legend: { data: ['罪老婆', '罪+麦', '小可爱', '力孝', '剩余'], bottom: 0 },
     grid: { left: '3%', right: '4%', bottom: '14%', top: '5%', containLabel: true },
-    xAxis: { type: 'category', data: rawData.map(d => d.date), axisLabel: { rotate: 30 } },
+    xAxis: { type: 'category', data: rawData.value.map(d => d.date), axisLabel: { rotate: 30 } },
     yAxis: { type: 'value', axisLabel: { formatter: '{value}' } },
     series: [
-      { name: '罪老婆', type: 'bar', stack: 'total', data: rawData.map(d => d.xulao), itemStyle: { color: '#ff4d4f' } },
-      { name: '罪+麦', type: 'bar', stack: 'total', data: rawData.map(d => d.zuimai), itemStyle: { color: '#faad14' } },
-      { name: '小可爱', type: 'bar', stack: 'total', data: rawData.map(d => d.xiaokeai), itemStyle: { color: '#1890ff' } },
-      { name: '力孝', type: 'bar', stack: 'total', data: rawData.map(d => d.lixiao), itemStyle: { color: '#722ed1' } },
-      { name: '剩余', type: 'bar', stack: 'total', data: rawData.map(d => d.remaining), itemStyle: { color: '#13c2c2' } }
+      { name: '罪老婆', type: 'bar', stack: 'total', data: rawData.value.map(d => d.xulao), itemStyle: { color: '#ff4d4f' } },
+      { name: '罪+麦', type: 'bar', stack: 'total', data: rawData.value.map(d => d.zuimai), itemStyle: { color: '#faad14' } },
+      { name: '小可爱', type: 'bar', stack: 'total', data: rawData.value.map(d => d.xiaokeai), itemStyle: { color: '#1890ff' } },
+      { name: '力孝', type: 'bar', stack: 'total', data: rawData.value.map(d => d.lixiao), itemStyle: { color: '#722ed1' } },
+      { name: '剩余', type: 'bar', stack: 'total', data: rawData.value.map(d => d.remaining), itemStyle: { color: '#13c2c2' } }
     ]
   };
   stackChart.setOption(option);
@@ -544,11 +998,11 @@ function initPieChart() {
   pieChartRef.value.style.height = '280px';
   pieChart = echarts.init(pieChartRef.value);
 
-  const totalXulao = rawData.reduce((s, d) => s + d.xulao, 0);
-  const totalZuimai = rawData.reduce((s, d) => s + d.zuimai, 0);
-  const totalXiaokeai = rawData.reduce((s, d) => s + d.xiaokeai, 0);
-  const totalLixiao = rawData.reduce((s, d) => s + d.lixiao, 0);
-  const totalRemaining = rawData.reduce((s, d) => s + d.remaining, 0);
+  const totalXulao = rawData.value.reduce((s, d) => s + d.xulao, 0);
+  const totalZuimai = rawData.value.reduce((s, d) => s + d.zuimai, 0);
+  const totalXiaokeai = rawData.value.reduce((s, d) => s + d.xiaokeai, 0);
+  const totalLixiao = rawData.value.reduce((s, d) => s + d.lixiao, 0);
+  const totalRemaining = rawData.value.reduce((s, d) => s + d.remaining, 0);
 
   const option = {
     tooltip: {
@@ -581,7 +1035,7 @@ function initCompareChart() {
   compareChartRef.value.style.height = '320px';
   compareChart = echarts.init(compareChartRef.value);
 
-  const validData = rawData.filter(d => d.totalProfit > 0);
+  const validData = rawData.value.filter(d => d.totalProfit > 0);
   const momChanges = [];
   for (let i = 1; i < validData.length; i++) {
     const prev = validData[i - 1];
@@ -608,7 +1062,10 @@ function initCompareChart() {
   compareChart.setOption(option);
 }
 
-onMounted(initCharts);
+onMounted(() => {
+  loadDataFromFile();
+  initCharts();
+});
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   mainChart?.dispose();
@@ -718,10 +1175,56 @@ onUnmounted(() => {
 .phase-growth strong.green { color: #52c41a; font-size: 18px; margin-left: 8px; }
 .phase-growth strong.red { color: #ff4d4f; font-size: 18px; margin-left: 8px; }
 
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.edit-button {
+  flex: 1;
+  text-align: center;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.edit-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+.delete-button {
+  flex: 1;
+  text-align: center;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.delete-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 77, 79, 0.3);
+}
+
 @media (max-width: 768px) {
   .profit-analysis-container { padding: 12px; }
   .page-header { flex-direction: column; }
   .header-right { width: 100%; margin-top: 12px; justify-content: space-between; }
   .kpi-value { font-size: 22px; }
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .edit-button,
+  .delete-button {
+    width: 100%;
+  }
 }
 </style>

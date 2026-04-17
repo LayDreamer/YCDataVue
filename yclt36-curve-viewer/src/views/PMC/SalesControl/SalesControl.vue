@@ -378,8 +378,7 @@ async function fetchData() {
   }
   loading.value = true
   try {
-    const requestDto: RequestDto = {}
-    const data = await salesControlService.addPMCSalesControlList(requestDto)
+    const data = await salesControlService.addPMCSalesControlList()
     productList.value = data || []
   } catch (error) {
     console.error('获取数据失败:', error)

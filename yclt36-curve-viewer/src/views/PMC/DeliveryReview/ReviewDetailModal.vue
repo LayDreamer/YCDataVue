@@ -1,16 +1,7 @@
 <template>
-  <a-modal
-    :visible="visible"
-    @update:visible="handleVisibleUpdate"
-    title="交期详细评审"
-    :width="modalWidth"
-    wrapClassName="review-detail-modal-wrap"
-    :style="modalStyle"
-    @ok="submitReview"
-    :confirm-loading="confirmLoading"
-    ok-text="提交评审结果"
-    cancel-text="取消"
-  >
+  <a-modal :visible="visible" @update:visible="handleVisibleUpdate" title="交期详细评审" :width="modalWidth"
+    wrapClassName="review-detail-modal-wrap" :style="modalStyle" @ok="submitReview" :confirm-loading="confirmLoading"
+    ok-text="提交评审结果" cancel-text="取消">
     <a-row :gutter="[16, 16]">
       <!-- 左侧区域：基础资料 + BOM核对 -->
       <a-col :xs="24" :lg="16">
@@ -35,20 +26,13 @@
         <!-- BOM 表单核对卡片 -->
         <a-card title="BOM一级物料确认" :bordered="false" class="mb-16">
           <div class="bom-table-wrap">
-            <a-table 
-              :columns="bomColumns" 
-              :data-source="bomData" 
-              :pagination="false" 
-              :size="bomTableSize"
-              row-key="partNo"
-              :loading="bomLoading"
-              :scroll="{ x: 'max-content' }"
-            >
-               <!--<template #bodyCell="{ column, record }">
+            <a-table :columns="bomColumns" :data-source="bomData" :pagination="false" :size="bomTableSize"
+              row-key="partNo" :loading="bomLoading" :scroll="{ x: 'max-content' }">
+              <!--<template #bodyCell="{ column, record }">
             <template v-if="column.key === 'confirm'">
                 <a-checkbox v-model:checked="record.isConfirmed"></a-checkbox>
-              </template> 
-            </template>-->
+              </template>
+</template>-->
             </a-table>
           </div>
         </a-card>
@@ -60,28 +44,13 @@
         <a-card title="核心要素校验" :bordered="false" class="mb-16 shadow-card">
           <a-form layout="vertical">
             <a-form-item label="线圈货号确认" required>
-              <a-input-search
-                v-model:value="reviewForm.coilItemNo"
-                placeholder="请输入线圈货号进行系统反查"
-                enter-button="校验"
-                :loading="validatingCoil"
-                @search="validateCoil"
-              />
+              <a-input-search v-model:value="reviewForm.coilItemNo" placeholder="请输入线圈货号进行系统反查" enter-button="校验"
+                :loading="validatingCoil" @search="validateCoil" />
               <div v-if="verifyStatus !== 'none'" class="verify-result">
-                <a-alert 
-                  v-if="verifyStatus === 'success'" 
-                  message="校验通过：该线圈货号匹配正确" 
-                  type="success" 
-                  show-icon 
-                  size="small"
-                />
-                <a-alert
-                  v-if="verifyStatus === 'error'" 
-                  message="匹配失败：未匹配到相关线圈货号" 
-                  type="error" 
-                  show-icon 
-                  size="small"
-                />
+                <a-alert v-if="verifyStatus === 'success'" message="校验通过：该线圈货号匹配正确" type="success" show-icon
+                  size="small" />
+                <a-alert v-if="verifyStatus === 'error'" message="匹配失败：未匹配到相关线圈货号" type="error" show-icon
+                  size="small" />
               </div>
             </a-form-item>
           </a-form>
@@ -93,20 +62,16 @@
             <a-form-item label="最终生产交期" required>
               <a-date-picker v-model:value="reviewForm.finalDate" style="width: 100%" size="large" />
             </a-form-item>
-            
+
             <a-form-item label="评审结果">
-            <a-radio-group v-model:value="reviewForm.resultStatus" button-style="solid" class="w-full">
-              <a-radio-button value="pass" class="half-width pass-radio">通过</a-radio-button>
-              <a-radio-button value="reject" class="half-width reject-radio">驳回</a-radio-button>
-            </a-radio-group>
+              <a-radio-group v-model:value="reviewForm.resultStatus" button-style="solid" class="w-full">
+                <a-radio-button value="pass" class="half-width pass-radio">通过</a-radio-button>
+                <a-radio-button value="reject" class="half-width reject-radio">驳回</a-radio-button>
+              </a-radio-group>
             </a-form-item>
 
             <a-form-item label="评审备注">
-              <a-textarea 
-                v-model:value="reviewForm.remark" 
-                placeholder="请输入评审意见或异常说明..." 
-                :rows="4" 
-              />
+              <a-textarea v-model:value="reviewForm.remark" placeholder="请输入评审意见或异常说明..." :rows="4" />
             </a-form-item>
           </a-form>
         </a-card>
@@ -121,7 +86,8 @@ import { message, Grid } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 // 修改类型导入：ReviewRecord 替换为 DeliveryReviewData
-import type { PMCDeliveryReview, ProductDataAssemblyList } from '../DeliveryReview/types';
+import type { ProductDataAssemblyList } from '../DeliveryReview/types';
+import { PMCDeliveryReview, PMCRequestDto } from '@/api-generated/api';
 
 const props = defineProps<{
   visible: boolean;
@@ -177,7 +143,7 @@ const loadBomData = async () => {
 
   bomLoading.value = true;
   try {
-    const assemblyList = await deliveryReviewService.getProductDataAssemblyList({货号: itemNo});
+    const assemblyList = await deliveryReviewService.getProductDataAssemblyList(new PMCRequestDto({ 货号: itemNo }));
     if (!assemblyList || assemblyList.length === 0) {
       message.warning('未获取到BOM清单数据');
       bomData.value = [];
@@ -220,12 +186,12 @@ watch(
       reviewForm.coilItemNo = props.record.线圈货号 || '';
       verifyStatus.value = 'none';
       validatingCoil.value = false;
-      
+
       // 最终交期从 record.交货日期 获取
       reviewForm.finalDate = dayjs(props.record.交货日期);
       reviewForm.resultStatus = 'pass';
       reviewForm.remark = '';
-      
+
       loadBomData();
     }
   }
@@ -242,7 +208,7 @@ const validateCoil = async () => {
   verifyStatus.value = 'none';
 
   try {
-    const result = await deliveryReviewService.checkIsExistInAssemblyList({线圈货号: reviewForm.coilItemNo });
+    const result = await deliveryReviewService.checkIsExistInAssemblyList(new PMCRequestDto({ 线圈货号: reviewForm.coilItemNo }));
     if (result) {
       verifyStatus.value = 'success';
     } else {
@@ -262,7 +228,7 @@ const submitReview = async () => {
     message.error('线圈货号未经验证或验证不通过，无法提交评审！');
     return;
   }
-  
+
   // 校验BOM确认状态
   // const unconfirmedBOM = bomData.value.find(item => !item.isConfirmed);
   // if (unconfirmedBOM) {
@@ -274,27 +240,27 @@ const submitReview = async () => {
   const mappedStatus = reviewForm.resultStatus === 'pass' ? '评审通过' : '评审驳回';
 
   const {
-  编号, 用户编号, 合同号, 排产编号, 层, 货号, 中文品名,中文规格,
-  分析单号, 来源编号, 来源, 工单单号, 排产用户, 电压
-} = props.record!;
+    编号, 用户编号, 合同号, 排产编号, 层, 货号, 中文品名, 中文规格,
+    分析单号, 来源编号, 来源, 工单单号, 排产用户, 电压
+  } = props.record!;
 
 
- // 构造提交数据：基于原始记录，更新线圈、状态、最终交期、评审备注
-  const reviewData : PMCDeliveryReview  = {
-    编号,用户编号,合同号,排产编号,层,货号,中文品名,中文规格,分析单号,来源编号,来源 ,工单单号,排产用户,电压,
+  // 构造提交数据：基于原始记录，更新线圈、状态、最终交期、评审备注
+
+  const reviewData = new PMCDeliveryReview({
+    编号, 用户编号, 合同号, 排产编号, 层, 货号, 中文品名, 中文规格, 分析单号, 来源编号, 来源, 工单单号, 排产用户, 电压,
     物料货号: bomData.value[0].itemNo,
-    状态: mappedStatus==='评审通过'?'评审通过' : '评审驳回',   
-    线圈货号: reviewForm.coilItemNo,               
+    状态: mappedStatus === '评审通过' ? '评审通过' : '评审驳回',
+    线圈货号: reviewForm.coilItemNo,
     交货日期: dayjs(reviewForm.finalDate).format('YYYY-MM-DD'), // 最终生产交期
-    备注: reviewForm.remark,          // 评审备注
-  };
-
+    备注: reviewForm.remark,          // 评审备注   
+  });
   confirmLoading.value = true;
-   try {
+  try {
     await deliveryReviewService.addPMCDeliveryReview(reviewData);
     // 提交成功，关闭弹窗并触发父组件事件
     emit('update:visible', false);
-    emit('confirm', { id: props.record!.编号, status: mappedStatus });
+    emit('confirm', { id: props.record!.编号 || '', status: mappedStatus });
     message.success('评审结果提交成功!');
   } catch (error) {
     console.error('提交评审失败:', error);
@@ -310,6 +276,7 @@ const submitReview = async () => {
 .review-section {
   margin-top: 20px;
 }
+
 .section-title {
   font-size: 16px;
   font-weight: 600;
@@ -317,48 +284,65 @@ const submitReview = async () => {
   padding-left: 8px;
   border-left: 4px solid #1890ff;
 }
+
 .query-box {
   background: #f8f9fa;
   padding: 16px;
   border-radius: 4px;
   margin-bottom: 8px;
 }
+
 .match-res {
   margin-top: 8px;
   font-size: 13px;
 }
-.match-res.success { color: #52c41a; }
-.match-res.error { color: #ff4d4f; }
+
+.match-res.success {
+  color: #52c41a;
+}
+
+.match-res.error {
+  color: #ff4d4f;
+}
+
 .mb-16 {
   margin-bottom: 16px;
 }
+
 .w-full {
   width: 100%;
 }
+
 .half-width {
   width: 50%;
   text-align: center;
 }
+
 .shadow-card {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
+
 .copyable-text {
   font-family: 'Courier New', Courier, monospace;
   font-weight: bold;
   color: #1890ff;
 }
+
 .verify-result {
   margin-top: 12px;
 }
+
 .bom-table-wrap {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+
 :deep(.reject-radio.ant-radio-button-wrapper-checked) {
   background-color: #ff4d4f;
   border-color: #ff4d4f;
 }
+
 :deep(.reject-radio.ant-radio-button-wrapper-checked):hover {
   background-color: #ff7875;
   border-color: #ff7875;
