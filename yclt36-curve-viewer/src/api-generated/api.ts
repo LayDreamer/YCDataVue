@@ -217,6 +217,48 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
+    convertToPMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<PMCDeliveryReviewListApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/ConvertToPMCDeliveryReviewList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processConvertToPMCDeliveryReviewList(_response);
+        });
+    }
+
+    protected processConvertToPMCDeliveryReviewList(response: Response): Promise<PMCDeliveryReviewListApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PMCDeliveryReviewListApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PMCDeliveryReviewListApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     productListInfo(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/ProductListInfo";
         url_ = url_.replace(/[?&]$/, "");
@@ -340,15 +382,20 @@ export class Service {
     }
 
     /**
+     * @param body (optional) 
      * @return OK
      */
-    pMCDeliveryReviewList(): Promise<ObjectApiResponse> {
+    pMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/PMCDeliveryReviewList";
         url_ = url_.replace(/[?&]$/, "");
 
+        const content_ = JSON.stringify(body);
+
         let options_: RequestInit = {
+            body: content_,
             method: "POST",
             headers: {
+                "Content-Type": "application/json",
                 "Accept": "application/json"
             }
         };
@@ -685,6 +732,48 @@ export class Service {
     }
 
     protected processAddPMCWorkOrder(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addPMCWorkOrderByRequest(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddPMCWorkOrderByRequest";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddPMCWorkOrderByRequest(_response);
+        });
+    }
+
+    protected processAddPMCWorkOrderByRequest(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -1545,7 +1634,6 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
     打印?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
-    层?: string | undefined;
     货号?: string | undefined;
     中文品名?: string | undefined;
     中文规格?: string | undefined;
@@ -1582,7 +1670,6 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
             this.打印 = _data["打印"];
             this.合同号 = _data["合同号"];
             this.排产编号 = _data["排产编号"];
-            this.层 = _data["层"];
             this.货号 = _data["货号"];
             this.中文品名 = _data["中文品名"];
             this.中文规格 = _data["中文规格"];
@@ -1619,7 +1706,6 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
         data["打印"] = this.打印;
         data["合同号"] = this.合同号;
         data["排产编号"] = this.排产编号;
-        data["层"] = this.层;
         data["货号"] = this.货号;
         data["中文品名"] = this.中文品名;
         data["中文规格"] = this.中文规格;
@@ -1649,7 +1735,6 @@ export interface IPMCDeliveryReview {
     打印?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
-    层?: string | undefined;
     货号?: string | undefined;
     中文品名?: string | undefined;
     中文规格?: string | undefined;
@@ -1664,6 +1749,62 @@ export interface IPMCDeliveryReview {
     状态?: string | undefined;
     物料货号?: string | undefined;
     备注?: string | undefined;
+}
+
+export class PMCDeliveryReviewListApiResponse implements IPMCDeliveryReviewListApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: PMCDeliveryReview[] | undefined;
+    timestamp?: Date;
+
+    constructor(data?: IPMCDeliveryReviewListApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            if (Array.isArray(_data["Data"])) {
+                this.data = [] as any;
+                for (let item of _data["Data"])
+                    this.data!.push(PMCDeliveryReview.fromJS(item));
+            }
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): PMCDeliveryReviewListApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new PMCDeliveryReviewListApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        if (Array.isArray(this.data)) {
+            data["Data"] = [];
+            for (let item of this.data)
+                data["Data"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IPMCDeliveryReviewListApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: PMCDeliveryReview[] | undefined;
+    timestamp?: Date;
 }
 
 export class PMCRequestDto implements IPMCRequestDto {

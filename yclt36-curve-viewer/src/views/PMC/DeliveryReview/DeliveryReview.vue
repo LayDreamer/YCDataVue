@@ -3,24 +3,25 @@
     <a-row :gutter="[16, 16]" class="stat-cards">
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card shadow="never">
-          <a-statistic title="待评审总数" :value="12" :value-style="{ color: '#1890ff' }" />
+          <a-statistic title="待评审总数" :value="unreviewedCount" :value-style="{ color: '#1890ff' }" />
         </a-card>
       </a-col>
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card shadow="never">
-          <a-statistic title="本周需交付" :value="45" />
+          <a-statistic title="已完成评审" :value="reviewedCount" :value-style="{ color: '#3f9142' }" />
         </a-card>
       </a-col>
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card shadow="never">
-          <a-statistic title="交期预警" :value="3" :value-style="{ color: '#cf1322' }" />
+          <a-statistic title="本周需交付" :value="0" />
         </a-card>
       </a-col>
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card shadow="never">
-          <a-statistic title="已完成评审" :value="128" :value-style="{ color: '#3f9142' }" />
+          <a-statistic title="交期预警" :value="0" :value-style="{ color: '#cf1322' }" />
         </a-card>
       </a-col>
+      
     </a-row>
 
     <a-card class="search-card" size="small">
@@ -45,7 +46,7 @@
             </a-select>
           </a-form-item>
           <a-form-item class="search-actions">
-            <a-button type="primary" @click="handleSearch">查询</a-button>
+            <!-- <a-button type="primary" @click="handleSearch">查询</a-button> -->
             <a-button class="btn-reset" @click="resetSearch">重置</a-button>
           </a-form-item>
         </div>
@@ -92,7 +93,7 @@
     </a-card>
 
     <!-- 评审弹窗 -->
-    <ReviewModal v-model:visible="modalVisible" :record="currentItem" @confirm="handleReviewConfirmed" />
+    <ReviewModal v-model:visible="modalVisible" :record="currentItem" @confirm="handleReviewConfirmed" @refresh="handleRefresh" />
   </div>
 </template>
 
@@ -108,7 +109,6 @@ import { PMCRequestDto,PMCDeliveryReview  } from '@/api-generated/api';
 const columns = [
   { title: '合同号', dataIndex: '合同号', key: '合同号' },
   { title: '排产编号', dataIndex: '排产编号', key: '排产编号' },
-  { title: '层', dataIndex: '层', key: '层' },
   { title: '分析单号', dataIndex: '分析单号', key: '分析单号' },
   { title: '货号', dataIndex: '货号', key: '货号' },
   { title: '中文品名', dataIndex: '中文品名', key: '中文品名' },
@@ -145,35 +145,53 @@ const tablePagination = computed(() => ({
   simple: !screens.value?.md,
 }));
 const loading = ref(false);
+const loadingCount = ref(0);
+
+// 设置加载状态（使用计数器处理并发请求）
+const setLoading = (isLoading: boolean) => {
+  if (isLoading) {
+    loadingCount.value++;
+    loading.value = true;
+  } else {
+    loadingCount.value--;
+    if (loadingCount.value <= 0) {
+      loadingCount.value = 0;
+      loading.value = false;
+    }
+  }
+};
 
 // 模式切换：unreviewed（未评审）/ reviewed（已评审）
 const viewMode = ref<'unreviewed' | 'reviewed'>('unreviewed');
-// 缓存完整的已评审数据（用于前端筛选）
+// 缓存完整的数据（用于前端筛选）
 const fullReviewedData = ref<PMCDeliveryReview[]>([]);
+const fullUnreviewedData = ref<PMCDeliveryReview[]>([]);
+
+// 统计数据
+const unreviewedCount = ref(0);
+const reviewedCount = ref(0);
+
 
 // 计算属性：根据当前模式及筛选条件过滤数据
 const filteredData = computed(() => {
   let result = [...dataSource.value];
+  if (searchForm.contractNo) {
   
-  if (viewMode.value === 'reviewed') {
-    // 已评审模式：前端过滤合同号、分析单号
-    if (searchForm.contractNo) {
-      result = result.filter(item => 
-        item.合同号 && item.合同号.includes(searchForm.contractNo)
-      );
-    }
-    if (searchForm.analysisNo) {
-      result = result.filter(item => 
-        item.分析单号 && item.分析单号.includes(searchForm.analysisNo)
-      );
-    }
+  // 两种模式都进行前端过滤合同号、分析单号
+    result = result.filter(item => 
+      item.合同号 && item.合同号.includes(searchForm.contractNo)
+    );
+  }
+  if (searchForm.analysisNo) {
+    result = result.filter(item => 
+      item.分析单号 && item.分析单号.includes(searchForm.analysisNo)
+    );
   }
   
   // 排产用户筛选（两种模式均适用）
   if (selectedProductionUser.value) {
     result = result.filter(item => item.排产用户 === selectedProductionUser.value);
-  }
-  
+  }  
   return result;
 });
 
@@ -186,120 +204,77 @@ const productionUserOptions = computed(() => {
 });
 
 // 获取未评审数据（产品信息）
-const fetchProductData = async () => {
-  loading.value = true;
+const  fetchProductData = async () => {
+  setLoading(true);
   try {
     const requestDto = new PMCRequestDto({
       合同号: searchForm.contractNo,
       分析单号: searchForm.analysisNo
     });
-    const response = await deliveryReviewService.getPMCProductInfoList(requestDto);
+    const response = await deliveryReviewService.convertToPMCDeliveryReviewList(requestDto);
 
     if (!response || response.length === 0) {
       dataSource.value = [];
+      fullUnreviewedData.value = [];
       message.info('暂无数据');
       return;
     }
-
-    const mappedData: PMCDeliveryReview[] = response.map((item: PMCProductInfo, index: number) => 
-      new PMCDeliveryReview({
-        编号: item.编号 || String(index),
-        用户编号: item.用户编号 || '',
-        用户铭: item.用户铭 || '',
-        修改状态: item.修改状态 || '',
-        创建时间: item.创建时间 || '',
-        锁定用户: item.锁定用户 || '',
-        审核过程: item.审核过程 || '',
-        打印: item.打印 || '',
-        合同号: item.合同号 || '',
-        排产编号: item.排产编号 || '',
-        层: item.层 || '-',
-        分析单号: item.分析单号 || '',
-        货号: item.货号 || '',
-        线圈货号: item.线圈 || '',
-        中文品名: item.中文品名 || '',
-        中文规格: item.中文规格 || '',
-        来源编号: item.来源编号 || '',
-        来源: item.来源 || '',
-        工单单号: item.工单单号 || '',
-        交货日期: item.交货日期 || '',
-        排产用户: item.排产用户 || '',
-        电压: item.电压 || '',
-        状态: item.状态 || '待评审',
-      })
-    );
-
+  const mappedData=response;
     mappedData.sort((a, b) => {
       const aVal = a.编号 || '';
       const bVal = b.编号 || '';
       return aVal.localeCompare(bVal, 'zh');
     });
-    console.log(mappedData);
 
     dataSource.value = mappedData;
+    fullUnreviewedData.value = [...mappedData];
+    unreviewedCount.value = mappedData.length;
   } catch (error) {
     console.error('获取产品数据失败:', error);
     message.error('加载数据失败，请稍后重试');
   } finally {
-    loading.value = false;
+    setLoading(false);
   }
 };
 
 // 获取已评审数据（评审记录）
 const fetchReviewedData = async () => {
-  loading.value = true;
+  setLoading(true);
   try {
-    const response = await deliveryReviewService.getPMCDeliveryReviewList();
+    const response = await deliveryReviewService.getPMCDeliveryReviewList(new PMCRequestDto({
+      合同号: searchForm.contractNo,
+      分析单号: searchForm.analysisNo
+    }));
     
-  
     if (!response || response.length === 0) {
-      dataSource.value = [];
+      if (viewMode.value === 'reviewed') {
+        dataSource.value = [];
+      }
       fullReviewedData.value = [];
-      message.info('暂无已评审记录');
+      reviewedCount.value = 0;
+      if (viewMode.value === 'reviewed') {
+        message.info('暂无已评审记录');
+      }
       return;
     }
-
-    const mappedData: PMCDeliveryReview[] = response.map((item: any, index: number) => 
-      new PMCDeliveryReview({
-        编号: item.编号 || item.id || String(index),  
-        用户编号: item.用户编号 || '',
-        用户铭: item.用户铭 || '',
-        修改状态: item.修改状态 || '',
-        创建时间: item.创建时间 || '',
-        锁定用户: item.锁定用户 || '',
-        审核过程: item.审核过程 || '',
-        打印: item.打印 || '',
-        合同号: item.合同号 || '',
-        排产编号: item.排产编号 || '',
-        层: item.层 || '-',
-        分析单号: item.分析单号 || '',
-        货号: item.货号 || '',
-        线圈货号: item.线圈货号 || item.线圈 || '',
-        中文品名: item.中文品名 || '',
-        中文规格: item.中文规格 || '',
-        来源编号: item.来源编号 || '',
-        来源: item.来源 || '',
-        工单单号: item.工单单号 || '',
-        交货日期: item.交货日期 || '',
-        排产用户: item.排产用户 || '',
-        电压: item.电压 || '',
-        状态: item.状态 || '',
-      })
-    );
-
+const mappedData: PMCDeliveryReview[]=response;
     mappedData.sort((a, b) => {
       const aVal = a.编号 || '';
       const bVal = b.编号 || '';
       return aVal.localeCompare(bVal, 'zh');
     });
      
-    dataSource.value = mappedData;
+    // 仅在当前模式为 'reviewed' 时更新 dataSource
+    if (viewMode.value === 'reviewed') {
+      dataSource.value = mappedData;
+    }
     fullReviewedData.value = [...mappedData];
+    reviewedCount.value = mappedData.length;
   } catch (error) {
     console.error('获取已评审数据失败:', error);
     message.error('加载已评审数据失败，请稍后重试');
   } finally {
-    loading.value = false;
+    setLoading(false);
   }
 };
 
@@ -327,9 +302,13 @@ const handleSearch = () => {
     } else {
       fetchReviewedData();
     }
+    // 未评审模式：前端过滤依赖 filteredData 的 computed，只需确保 dataSource 为完整数据
   } else {
-    // 未评审模式：调用后端接口查询
-    fetchProductData();
+    if (fullUnreviewedData.value.length) {
+      dataSource.value = [...fullUnreviewedData.value];
+    } else {
+      fetchProductData();
+    }
   }
 };
 
@@ -344,15 +323,19 @@ const resetSearch = () => {
   
   if (viewMode.value === 'reviewed') {
     if (fullReviewedData.value.length) {
-      dataSource.value = [...fullReviewedData.value];
     } else {
+      dataSource.value = [...fullReviewedData.value];
       fetchReviewedData();
     }
   } else {
-    fetchProductData();
+    if (fullUnreviewedData.value.length) {
+      dataSource.value = [...fullUnreviewedData.value];
+    } else {
+      fetchProductData();
+    }
   }
 };
-
+  
 // 打开评审弹窗（仅未评审模式使用）
 const openReview = (record: PMCDeliveryReview) => {
   currentItem.value = record;
@@ -368,8 +351,17 @@ const handleReviewConfirmed = (payload: { id: string; status: string }) => {
   }
 };
 
+// 处理刷新事件
+const handleRefresh = () => {
+  // 刷新待评审数据
+  fetchProductData();
+  // 刷新已评审数据（用于更新统计信息）
+  fetchReviewedData();
+};
+
 onMounted(() => {
   fetchProductData();
+  fetchReviewedData();
 });
 </script>
 
@@ -385,11 +377,24 @@ onMounted(() => {
 .stat-cards {
   margin-bottom: 16px;
 }
+.stat-cards :deep(.ant-card) {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+.stat-cards :deep(.ant-card:hover) {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
 .search-card {
   margin-bottom: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 .table-card {
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 .table-scroll {
@@ -405,44 +410,76 @@ onMounted(() => {
 .search-form {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+  padding: 16px;
 }
 .search-controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 8px 12px;
+  align-items: center;
+  gap: 16px;
   flex: 1 1 auto;
   min-width: 0;
 }
 .search-field {
   width: 100%;
-  min-width: 0;
+  min-width: 200px;
   max-width: 280px;
 }
 .search-select {
+  width: 100%;
+  min-width: 200px;
   max-width: 280px;
 }
 .search-actions {
   margin-bottom: 0;
+  display: flex;
+  gap: 8px;
 }
 .btn-reset {
-  margin-left: 8px;
+  margin-left: 0;
 }
 .data-range-item {
   margin-left: auto;
   margin-right: 0;
   margin-bottom: 0;
+  display: flex;
+  align-items: center;
 }
 .view-mode-group {
   display: flex;
   flex-wrap: wrap;
+  gap: 0;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.view-mode-group :deep(.ant-radio-button-wrapper) {
+  border-radius: 0;
+  margin-right: 0;
+  border-left: none !important;
+}
+.view-mode-group :deep(.ant-radio-button-wrapper:first-child) {
+  border-radius: 4px 0 0 4px;
+  border-left: 1px solid #d9d9d9 !important;
+}
+.view-mode-group :deep(.ant-radio-button-wrapper:last-child) {
+  border-radius: 0 4px 4px 0;
+}
+.view-mode-group :deep(.ant-radio-button-wrapper:not(:first-child)) {
+  border-left: none !important;
 }
 
 @media (max-width: 767px) {
   .page-container {
+    padding: 12px;
+  }
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
     padding: 12px;
   }
   .search-field,
@@ -452,10 +489,12 @@ onMounted(() => {
   .data-range-item {
     margin-left: 0;
     width: 100%;
+    justify-content: flex-start;
   }
   .search-controls {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
   .search-actions {
     display: flex;
@@ -466,6 +505,23 @@ onMounted(() => {
   }
   .btn-reset {
     margin-left: 0;
+  }
+  .view-mode-group {
+    width: 100%;
+  }
+  .view-mode-group :deep(.ant-radio-button-wrapper) {
+    flex: 1;
+    text-align: center;
+    margin-right: 0;
+    border-radius: 0;
+    border-left: none !important;
+  }
+  .view-mode-group :deep(.ant-radio-button-wrapper:first-child) {
+    border-radius: 4px 0 0 4px;
+    border-left: 1px solid #d9d9d9 !important;
+  }
+  .view-mode-group :deep(.ant-radio-button-wrapper:last-child) {
+    border-radius: 0 4px 4px 0;
   }
 }
 </style>

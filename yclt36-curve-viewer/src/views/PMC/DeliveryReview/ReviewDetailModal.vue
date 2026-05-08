@@ -106,6 +106,7 @@ const bomTableSize = computed(() => (screens.value?.md ? 'middle' : 'small'));
 const emit = defineEmits<{
   (e: 'update:visible', visible: boolean): void;
   (e: 'confirm', payload: { id: string; status: string }): void;
+  (e: 'refresh'): void;
 }>();
 
 // BOM表格列定义（保持不变）
@@ -191,7 +192,6 @@ watch(
       reviewForm.finalDate = dayjs(props.record.交货日期);
       reviewForm.resultStatus = 'pass';
       reviewForm.remark = '';
-
       loadBomData();
     }
   }
@@ -240,15 +240,14 @@ const submitReview = async () => {
   const mappedStatus = reviewForm.resultStatus === 'pass' ? '评审通过' : '评审驳回';
 
   const {
-    编号, 用户编号, 合同号, 排产编号, 层, 货号, 中文品名, 中文规格,
+    编号, 用户编号, 合同号, 排产编号,  货号, 中文品名, 中文规格,
     分析单号, 来源编号, 来源, 工单单号, 排产用户, 电压
   } = props.record!;
 
 
-  // 构造提交数据：基于原始记录，更新线圈、状态、最终交期、评审备注
-
+  // 构造提交数据：基于原始记录，更新线圈、物料编号, 状态、最终交期、评审备注
   const reviewData = new PMCDeliveryReview({
-    编号, 用户编号, 合同号, 排产编号, 层, 货号, 中文品名, 中文规格, 分析单号, 来源编号, 来源, 工单单号, 排产用户, 电压,
+    编号, 用户编号, 合同号, 排产编号, 货号, 中文品名, 中文规格, 分析单号, 来源编号, 来源, 工单单号, 排产用户, 电压,
     物料货号: bomData.value[0].itemNo,
     状态: mappedStatus === '评审通过' ? '评审通过' : '评审驳回',
     线圈货号: reviewForm.coilItemNo,
@@ -261,6 +260,8 @@ const submitReview = async () => {
     // 提交成功，关闭弹窗并触发父组件事件
     emit('update:visible', false);
     emit('confirm', { id: props.record!.编号 || '', status: mappedStatus });
+    // 触发主页面刷新
+    emit('refresh');
     message.success('评审结果提交成功!');
   } catch (error) {
     console.error('提交评审失败:', error);

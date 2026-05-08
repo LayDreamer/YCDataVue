@@ -21,12 +21,12 @@
         <div class="search-bar">
           <!-- 第一行：基础信息输入（改为只读展示） -->
           <div class="input-row">
-            <div class="input-group">
+            <!-- <div class="input-group">
               <span class="label">订单号</span>
               <a-tooltip :title="form.orderNo" placement="top">
                 <span class="display-field w-180">{{ form.orderNo || '-' }}</span>
               </a-tooltip>
-            </div>
+            </div> -->
             <div class="input-group">
               <span class="label">货号</span>
               <a-tooltip :title="form.partNo" placement="top">
@@ -150,7 +150,13 @@
       <!-- 3. 底部信息栏 -->
       <div class="footer-bar">
         <div class="formula">
-          <SettingOutlined /> 需求量 = 成品数量 × 累计用量 × (1+损耗) (库存上限 再减库存下限)
+          <SettingOutlined />
+          <span v-if="form.analysisType === 'normal'">
+            需求量 = 成品数量 × 累计用量 × (1+损耗) (普通)
+          </span>
+          <span v-else>
+            需求量 = 成品数量 × 累计用量 × (1+损耗) (库存上限: 再减库存下限)
+          </span>
         </div>
         <div class="save-info">点击货号/品名/规格替换物料</div>
       </div>
@@ -201,6 +207,19 @@ interface ProductionItem {
   unit?: string;
   createTime?: string;
   userName?: string;
+  // 工序相关字段
+  process?: string;
+  workshop?: string;
+  warehouse?: string;
+  stock?: number;
+  transit?: number;
+  wip?: number;
+  max?: number;
+  min?: number;
+  avail?: number;
+  attr?: string;
+  needQty?: number;
+  remark?: string;
 }
 
 
@@ -220,8 +239,14 @@ const form = reactive({
   productName: '',
   spec: '',
   qty: 0,
-  analysisType: 'limit' as 'normal' | 'limit'
+  analysisType: 'normal' as 'normal' | 'limit'
 });
+
+// 主记录数据（全局变量）
+const mainRecord = ref<any>(null);
+
+
+
 
 // 表格数据
 const dataSource = ref<ProductionItem[]>([]);
@@ -250,101 +275,84 @@ const generateKey = (prefix: string, index: number) => {
 
 // 计算需求量
 const calculateDemandQty = (qty: number, usage: number, loss: number, analysisType: string, upperStock?: number, lowerStock?: number) => {
+  // 普通分析：需求量 = 成品数量 × 累计用量 × (1+损耗)
   let demand = qty * usage * (1 + loss / 100);
+  
+  // 库存上限分析：需求量 = 成品数量 × 累计用量 × (1+损耗) - 库存下限
   if (analysisType === 'limit' && upperStock !== undefined && lowerStock !== undefined) {
     demand = demand - lowerStock;
   }
+  
+  // 确保需求量不为负数
+  demand = Math.max(0, demand);
+  
   return Math.ceil(demand);
 };
 
 // 构建树形数据（适配新BOM格式，层数按原数据字段显示）
+// 构建树形数据（适配新BOM格式，支持多层嵌套）
 const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): ProductionItem[] => {
   const treeData: ProductionItem[] = [];
-  const parentStack: ProductionItem[] = [];
   let rowCounter = 0; // 全局行号计数器
 
-  bomData.forEach((record, index) => {
-    const level = Number(record.层) || 0;
-    const key = generateKey('item', index);
-    rowCounter++; // 每处理一条记录，行号递增
-    // 处理层0（顶级父节点）
-    // if (level === 0) {
-    //   const parentItem: ProductionItem = {
-    //     key,
-    //     level: level, // 直接使用原数据的层数字段
-    //     name: record.品名 || record.货号 || '',
-    //     source: record.产品属性 || '自制',
-    //     produceQty: 0,
-    //     purchaseQty: 0,
-    //     loss: 0,
-    //     rowNum: rowCounter,
-    //     // 额外字段
-    //     spec: record.规格 || '',
-    //     partNo: record.货号 || '',
-    //     children: []
-    //   };
-    //   treeData.push(parentItem);
-    //   parentStack.length = 0;
-    //   parentStack.push(parentItem);
-    // }
-    // 处理层1（中间层级父节点）
-     if (level === 0) {
-      const parentItem: ProductionItem = {
-        key,
-        level: level, // 直接使用原数据的层数字段
-        name: record.品名 || record.货号 || '',
-        source: record.产品属性 || record.来源 || '自制', 
-        produceQty: 0,
-        purchaseQty: 0,
-        loss: 0,
-        rowNum: rowCounter,
-        // 额外字段
-        spec: record.规格 || '',
-        partNo: record.货号 || '',
-        children: []
-      };
-      // 添加到最近父节点的children
-      if (parentStack.length > 0) {
-        const parent = parentStack[parentStack.length - 1];
-        if (!parent.children) parent.children = [];
-        parent.children.push(parentItem);
-      } else {
-        treeData.push(parentItem);
-      }
-      parentStack.length = 0;
-      parentStack.push(parentItem);
-    }
-    // 处理层2（叶子节点）
-    else if (level === 1) {
-      const usage = Number(record.用量) || 1;
-      const loss = 0;
-      const demandQty = calculateDemandQty(qty, usage, loss, analysisType);
-      const childItem: ProductionItem = {
-        key,
-        level: level, // 直接使用原数据的层数字段
-        name: record.品名 || record.货号 || '',
-        source: record.来源 || '外购',
-        produceQty: 0,
-        purchaseQty: demandQty,
-        loss: loss,
-        rowNum: rowCounter,
-        // 额外字段
-        spec: record.规格 || '',
-        partNo: record.货号 || '',
-        usage: usage,
-        unit: record.单位 || '',
-        children: []
-      };
+  // 递归处理BOM数据和子集
+  const processBOMItem = (record: any, parentLevel: number = 0, parentUsage: number = 1): ProductionItem => {
+    const level = Number(record.层) || parentLevel;
+    const key = generateKey('item', rowCounter++);
 
-      // 添加到最近父节点的children
-      if (parentStack.length > 0) {
-        const parent = parentStack[parentStack.length - 1];
-        if (!parent.children) parent.children = [];
-        parent.children.push(childItem);
-      } else {
-        treeData.push(childItem);
-      }
+    // 计算用量：父级用量 × 当前用量
+    const usage = Number(record.用量) || 1;
+    const cumulativeUsage = parentUsage * usage;
+    const loss = Number(record.损耗) || 0;
+    const demandQty = calculateDemandQty(qty, cumulativeUsage, loss, analysisType,
+      record.库存上限 !== undefined && record.库存上限 !== '' ? Number(record.库存上限) : undefined,
+      record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : undefined);
+
+    const item: ProductionItem = {
+      key,
+      level: level,
+      name: record.品名 || record.货号 || '-',
+      source: record.来源 || record.产品属性 || '-',
+      produceQty: 0,
+      purchaseQty: demandQty,
+      loss: loss,
+      rowNum: rowCounter,
+      // 基础字段
+      spec: record.规格 || '-',
+      partNo: record.货号 || '-',
+      usage: cumulativeUsage,
+      unit: record.单位 || '-',
+      // 工序相关字段
+      process: record.工序名称 || '-',
+      workshop: record.工序车间 || '-',
+      warehouse: record.仓库名称 || '-',
+      stock: record.仓库数 !== undefined && record.仓库数 !== '' ? Number(record.仓库数) : undefined,
+      transit: record.在途数 !== undefined && record.在途数 !== '' ? Number(record.在途数) : undefined,
+      wip: record.在产需求 !== undefined && record.在产需求 !== '' ? Number(record.在产需求) : undefined,
+      max: record.库存上限 !== undefined && record.库存上限 !== '' ? Number(record.库存上限) : undefined,
+      min: record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : undefined,
+      avail: record.仓库可用 !== undefined && record.仓库可用 !== '' ? Number(record.仓库可用) : undefined,
+      attr: record.产品属性 || '-',
+      needQty: demandQty,
+      remark: record.备注 || '-',
+      children: []
+    };
+
+    // 递归处理子集（支持多层嵌套）
+    if (record.子集 && Array.isArray(record.子集) && record.子集.length > 0) {
+      record.子集.forEach((childRecord: any) => {
+        const childItem = processBOMItem(childRecord, level + 1, cumulativeUsage);
+        item.children!.push(childItem);
+      });
     }
+
+    return item;
+  };
+
+  // 处理顶层BOM数据
+  bomData.forEach((record) => {
+    const item = processBOMItem(record, 0);
+    treeData.push(item);
   });
 
   return treeData;
@@ -355,30 +363,30 @@ const loadData = async () => {
   loading.value = true;
   try {
     const partNo = route.query.id as string;
+    
+    const productNo = route.query.productNo as string;
     if (!partNo) {
       message.error('缺少货号参数');
       return;
     }
-    const requestDto = new PMCRequestDto({ 货号: partNo });
+    const requestDto = new PMCRequestDto({ 货号: partNo, 排产编号: productNo});
     // 直接获取BOM数据
     const bomData = await salesControlService.getSchedulingAnalysisList(requestDto);
-    
-    // console.log('BOM数据:', bomData);
-
+  
     if (!bomData || !bomData.length) {
       message.warning('未获取到物料数据');
       return;
     }
 
     // 从BOM数据中提取基础信息（从层0的记录）
-    const mainRecord = bomData.find(item => Number(item.层) === 0) || bomData[0];
-    form.orderNo = mainRecord.合同号 || route.query.orderNo || ''; // 优先从BOM数据获取，否则从路由参数
-    form.partNo = mainRecord.货号 || partNo;
-    form.productName = mainRecord.品名 || '';
-    form.spec = mainRecord.规格 || '';
+    mainRecord.value = bomData.find(item => Number(item.层) === 0) || bomData[0];
+    form.orderNo = mainRecord.value?.合同号 || route.query.orderNo || ''; // 优先从BOM数据获取，否则从路由参数
+    form.partNo = mainRecord.value?.货号 || partNo;
+    form.productName = mainRecord.value?.品名 || '';
+    form.spec = mainRecord.value?.规格 || '';
     form.qty = Number(route.query.qty) || 1;
-    form.analysisType = 'limit';
-
+    form.analysisType = 'normal';
+   
     // 构建树形数据
     const treeData = buildTreeFromData(bomData, form.qty, form.analysisType);
 
@@ -420,19 +428,25 @@ const handleUpdate = async () => {
 };
 
 // 保存分析
-const handleSave = async () => {
+const handleSave = async () => { 
   saveLoading.value = true;
-  try {
+  try {    
     // 构建工单数据
-    const workOrderData = new PMCWorkOrder({
-      编号:"",
-      工单单号: form.partNo , // 示例工单单号，实际项目中应根据规则生成
-      成品品名: form.productName,
-      规格: form.spec,
+    // const workOrderData = new PMCWorkOrder({   
+    //   工单单号: '100152771033',
+    //   生产单位:mainRecord.value.工序车间 || '',
+    //   成品编号:form.partNo ,
+    //   成品品名: form.productName,
+    //   规格: form.spec,
+    //   订单编号:mainRecord.value.合同号 || '',
+    // }); 
+    const requestDto= new PMCRequestDto({
+      货号: form.partNo,
     });
 
     // 调用添加工单方法
-    await workOrderService.addPMCWorkOrder(workOrderData);
+    // await workOrderService.addPMCWorkOrder(workOrderData);
+    await workOrderService.addPMCWorkOrderByRequest(requestDto);    
     message.success('分析数据已保存为工单');
   } catch (error) {
     console.error('保存分析失败:', error);

@@ -145,6 +145,7 @@ import DeliveryDetailsModal from './DeliveryDetailsModal.vue'
 import { salesControlService } from '@/services/salesControlService'
 import { statusLegendItems, generateDateRange } from './data.ts'
 import { DeliveryPlan, DeliveryStatus, PMCSalesControl, RequestDto } from '../types.ts'
+import { compile } from 'vue'
 
 interface TableRowData extends PMCSalesControl {
   id: number
@@ -418,11 +419,14 @@ function handleProductClick(record: TableRowData) {
 }
 
 function handleNumberClick(record: TableRowData, column: { key: string }) {
+  console.log(record);
   if (column.key === '缺量' && Number(record.缺量) < 0) {
     router.push({
       name: 'PMCDetail',
       query: {
         id: record.货号,
+        parentId: record.父级货号,
+        productNo:record.排产编号,
         index: column.key,
         tabTitle: `排产详情: ${record.货号}`,
       },

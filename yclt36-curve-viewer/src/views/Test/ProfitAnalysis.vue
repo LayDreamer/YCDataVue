@@ -404,7 +404,7 @@ const rawData = ref([
   { date: '26.01', totalProfit: 66534, totalDividend: 9980, xulao: 1663, zuimai: 0, xiaokeai: 665, lixiao: 998, remaining: 6654, phase: '一期', capital: 300000, rate: 0.15 },
   { date: '26.02', totalProfit: 60140, totalDividend: 12029, xulao: 3008, zuimai: 1504, xiaokeai: 601, lixiao: 902, remaining: 6014, phase: '二期', capital: 500000, rate: 0.25 },
   { date: '26.03', totalProfit: 68000, totalDividend: 17000, xulao: 5100, zuimai: 3400, xiaokeai: 680, lixiao: 1020, remaining: 6800, phase: '二期', capital: 500000, rate: 0.25 },
-  { date: '26.04', totalProfit: 62875, totalDividend: 15719, xulao: 4716, zuimai: 3144, xiaokeai: 629, lixiao: 943, remaining: 6288, phase: '二期', capital: 500000, rate: 0.25 },
+  { date: '26.04', totalProfit: 62875, totalDividend: 15719, xulao: 4716, zuimai: 3144, xiaokeai: 629, lixiao: 943, remaining: 6288, phase: '二期', capital: 500000, rate: 0.25 },  
 ]);
 
 // 计算最近的月份
@@ -477,7 +477,11 @@ const totalProfit = computed(() => rawData.value.reduce((sum, item) => sum + ite
 const totalDividend = computed(() => rawData.value.reduce((sum, item) => sum + item.totalDividend, 0));
 
 const monthlyAvgDividend = computed(() => {
-  return rawData.value.length > 0 ? totalDividend.value / rawData.value.length : 0;
+  // 使用最近3个月的数据来计算月均分红，更能反映当前趋势
+  const recentData = rawData.value.slice(-3);
+  if (recentData.length === 0) return 0;
+  const recentTotalDividend = recentData.reduce((sum, item) => sum + item.totalDividend, 0);
+  return recentTotalDividend / recentData.length;
 });
 
 const phase1Data = computed(() => rawData.value.filter(d => d.phase === '一期'));
@@ -514,9 +518,10 @@ const profitGrowthRate = computed(() => {
 });
 
 const avgProfitMargin = computed(() => {
-  const valid = rawData.value.filter(d => d.totalProfit > 0);
-  return valid.length > 0 ? (valid.reduce((s, d) => s + d.profitMargin, 0) / valid.length).toFixed(1) : 0;
-}).value;
+  // 使用最近3个月的数据来计算平均利润率，更能反映当前趋势
+  const recentValid = rawData.value.slice(-3).filter(d => d.totalProfit > 0);
+  return recentValid.length > 0 ? (recentValid.reduce((s, d) => s + d.profitMargin, 0) / recentValid.length).toFixed(1) : 0;
+});
 
 // 初始化利润率
 rawData.value.forEach(item => {
@@ -911,29 +916,65 @@ function initMainChart() {
   const dates = rawData.value.map(d => d.date);
   const profits = rawData.value.map(d => d.totalProfit);
   const dividends = rawData.value.map(d => d.totalDividend);
+  const profitMargins = rawData.value.map(d => d.profitMargin);
 
   const option = {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },
       formatter(params) {
-        let html = `<strong>${params[0].axisValue}</strong><br/>`;
+        let html = `<div style="padding: 8px;"><strong>${params[0].axisValue}</strong><br/>`;
         params.forEach(p => {
           html += `${p.marker}${p.seriesName}: ¥${Number(p.value).toLocaleString()}<br/>`;
         });
         const idx = dates.indexOf(params[0].axisValue);
         if (idx >= 0 && rawData.value[idx]) {
-          html += `<hr/><small>分红比例: ${rawData.value[idx].profitMargin}%</small>`;
+          html += `<hr style="margin: 4px 0;"/><small>分红比例: ${rawData.value[idx].profitMargin}%</small><br/>`;
+          html += `<small>投资期: ${rawData.value[idx].phase}</small><br/>`;
+          html += `<small>分红率: ${(rawData.value[idx].rate * 100).toFixed(0)}%</small>`;
         }
+        html += `</div>`;
         return html;
-      }
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#ddd',
+      borderWidth: 1,
+      padding: 10,
+      textStyle: { fontSize: 12 }
     },
-    legend: { data: ['总利润', '总分红'], bottom: 0 },
+    legend: {
+      data: ['总利润', '总分红', '分红比例'],
+      bottom: 0,
+      textStyle: { fontSize: 12 },
+      selectedMode: 'multiple'
+    },
     grid: { left: '3%', right: '4%', bottom: '12%', top: '8%', containLabel: true },
-    xAxis: { type: 'category', data: dates, axisLabel: { rotate: 30 } },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLabel: { rotate: 30, fontSize: 11 },
+      axisLine: { lineStyle: { color: '#e8e8e8' } },
+      axisTick: { show: false }
+    },
     yAxis: [
-      { type: 'value', name: '金额(元)', axisLabel: { formatter: val => (val / 10000).toFixed(0) + 'w' } },
-      { type: 'value', name: '分红比例%', max: 25, position: 'right' }
+      {
+        type: 'value',
+        name: '金额(元)',
+        axisLabel: { formatter: val => (val / 10000).toFixed(0) + 'w', fontSize: 11 },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: '#f0f0f0' } }
+      },
+      {
+        type: 'value',
+        name: '分红比例%',
+        max: 25,
+        position: 'right',
+        axisLabel: { fontSize: 11 },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: false }
+      }
     ],
     series: [
       {
@@ -943,7 +984,10 @@ function initMainChart() {
         smooth: true,
         itemStyle: { color: '#1890ff' },
         areaStyle: chartType.value === 'line' ? { opacity: 0.12 } : undefined,
-        barMaxWidth: 40
+        barMaxWidth: 40,
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' }
+        }
       },
       {
         name: '总分红',
@@ -952,19 +996,29 @@ function initMainChart() {
         smooth: true,
         itemStyle: { color: '#52c41a' },
         areaStyle: chartType.value === 'line' ? { opacity: 0.08 } : undefined,
-        barMaxWidth: 40
+        barMaxWidth: 40,
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' }
+        }
       },
       {
         name: '分红比例',
         type: 'line',
         yAxisIndex: 1,
-        data: rawData.value.map(d => d.profitMargin),
-        lineStyle: { type: 'dashed', color: '#faad14' },
+        data: profitMargins,
+        smooth: true,
+        lineStyle: { type: 'dashed', color: '#faad14', width: 2 },
         itemStyle: { color: '#faad14' },
         symbol: 'diamond',
-        symbolSize: 8
+        symbolSize: 8,
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.3)', borderWidth: 2, borderColor: '#fff' }
+        }
       }
-    ]
+    ],
+    animation: true,
+    animationDuration: 1000,
+    animationEasing: 'cubicOut'
   };
   mainChart.setOption(option);
 }
@@ -975,19 +1029,104 @@ function initStackChart() {
   stackChartRef.value.style.height = '280px';
   stackChart = echarts.init(stackChartRef.value);
 
+  const dates = rawData.value.map(d => d.date);
   const option = {
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['罪老婆', '罪+麦', '小可爱', '力孝', '剩余'], bottom: 0 },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter(params) {
+        let html = `<div style="padding: 8px;"><strong>${params[0].axisValue}</strong><br/>`;
+        let total = 0;
+        params.forEach(p => {
+          total += p.value;
+          html += `${p.marker}${p.seriesName}: ¥${Number(p.value).toLocaleString()}<br/>`;
+        });
+        html += `<hr style="margin: 4px 0;"/><strong>总分红: ¥${Number(total).toLocaleString()}</strong>`;
+        html += `</div>`;
+        return html;
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#ddd',
+      borderWidth: 1,
+      padding: 10,
+      textStyle: { fontSize: 12 }
+    },
+    legend: {
+      data: ['罪老婆', '罪+麦', '小可爱', '力孝', '剩余'],
+      bottom: 0,
+      textStyle: { fontSize: 12 },
+      selectedMode: 'multiple'
+    },
     grid: { left: '3%', right: '4%', bottom: '14%', top: '5%', containLabel: true },
-    xAxis: { type: 'category', data: rawData.value.map(d => d.date), axisLabel: { rotate: 30 } },
-    yAxis: { type: 'value', axisLabel: { formatter: '{value}' } },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLabel: { rotate: 30, fontSize: 11 },
+      axisLine: { lineStyle: { color: '#e8e8e8' } },
+      axisTick: { show: false }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { formatter: '{value}', fontSize: 11 },
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: '#f0f0f0' } }
+    },
     series: [
-      { name: '罪老婆', type: 'bar', stack: 'total', data: rawData.value.map(d => d.xulao), itemStyle: { color: '#ff4d4f' } },
-      { name: '罪+麦', type: 'bar', stack: 'total', data: rawData.value.map(d => d.zuimai), itemStyle: { color: '#faad14' } },
-      { name: '小可爱', type: 'bar', stack: 'total', data: rawData.value.map(d => d.xiaokeai), itemStyle: { color: '#1890ff' } },
-      { name: '力孝', type: 'bar', stack: 'total', data: rawData.value.map(d => d.lixiao), itemStyle: { color: '#722ed1' } },
-      { name: '剩余', type: 'bar', stack: 'total', data: rawData.value.map(d => d.remaining), itemStyle: { color: '#13c2c2' } }
-    ]
+      {
+        name: '罪老婆',
+        type: 'bar',
+        stack: 'total',
+        data: rawData.value.map(d => d.xulao),
+        itemStyle: { color: '#ff4d4f' },
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' }
+        }
+      },
+      {
+        name: '罪+麦',
+        type: 'bar',
+        stack: 'total',
+        data: rawData.value.map(d => d.zuimai),
+        itemStyle: { color: '#faad14' },
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' }
+        }
+      },
+      {
+        name: '小可爱',
+        type: 'bar',
+        stack: 'total',
+        data: rawData.value.map(d => d.xiaokeai),
+        itemStyle: { color: '#1890ff' },
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' }
+        }
+      },
+      {
+        name: '力孝',
+        type: 'bar',
+        stack: 'total',
+        data: rawData.value.map(d => d.lixiao),
+        itemStyle: { color: '#722ed1' },
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' }
+        }
+      },
+      {
+        name: '剩余',
+        type: 'bar',
+        stack: 'total',
+        data: rawData.value.map(d => d.remaining),
+        itemStyle: { color: '#13c2c2' },
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' }
+        }
+      }
+    ],
+    animation: true,
+    animationDuration: 1000,
+    animationEasing: 'cubicOut'
   };
   stackChart.setOption(option);
 }
@@ -1003,19 +1142,50 @@ function initPieChart() {
   const totalXiaokeai = rawData.value.reduce((s, d) => s + d.xiaokeai, 0);
   const totalLixiao = rawData.value.reduce((s, d) => s + d.lixiao, 0);
   const totalRemaining = rawData.value.reduce((s, d) => s + d.remaining, 0);
+  const totalDividend = totalXulao + totalZuimai + totalXiaokeai + totalLixiao + totalRemaining;
 
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: ¥{c} ({d}%)'
+      formatter(params) {
+        const percentage = ((params.value / totalDividend) * 100).toFixed(1);
+        return `<div style="padding: 8px;">
+          <strong>${params.name}</strong><br/>
+          <span style="display: inline-block; width: 12px; height: 12px; background-color: ${params.color}; border-radius: 2px; margin-right: 6px;"></span>
+          金额: ¥${Number(params.value).toLocaleString()}<br/>
+          占比: ${percentage}%
+        </div>`;
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#ddd',
+      borderWidth: 1,
+      padding: 10,
+      textStyle: { fontSize: 12 }
     },
-    legend: { orient: 'vertical', left: 'left', top: 'middle' },
+    legend: {
+      orient: 'vertical',
+      left: 'left',
+      top: 'middle',
+      textStyle: { fontSize: 11 },
+      selectedMode: 'multiple'
+    },
     series: [{
       type: 'pie',
       radius: ['35%', '65%'],
       center: ['55%', '50%'],
       avoidLabelOverlap: false,
-      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 14,
+          fontWeight: 'bold'
+        },
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.3)'
+        }
+      },
       data: [
         { value: totalXulao, name: '罪老婆 [30%]', itemStyle: { color: '#ff4d4f' } },
         { value: totalZuimai, name: '罪+麦 [额外]', itemStyle: { color: '#faad14' } },
@@ -1023,8 +1193,16 @@ function initPieChart() {
         { value: totalLixiao, name: '力孝 [3w]', itemStyle: { color: '#722ed1' } },
         { value: totalRemaining, name: '剩余 [40%]', itemStyle: { color: '#13c2c2' } }
       ],
-      label: { show: false }
-    }]
+      label: {
+        show: false
+      },
+      labelLine: {
+        show: false
+      }
+    }],
+    animation: true,
+    animationDuration: 1000,
+    animationEasing: 'cubicOut'
   };
   pieChart.setOption(option);
 }
@@ -1041,14 +1219,47 @@ function initCompareChart() {
     const prev = validData[i - 1];
     const curr = validData[i];
     const change = (((curr.totalProfit - prev.totalProfit) / prev.totalProfit) * 100).toFixed(1);
-    momChanges.push({ date: curr.date, change: parseFloat(change), profit: curr.totalProfit });
+    momChanges.push({ date: curr.date, change: parseFloat(change), profit: curr.totalProfit, prevProfit: prev.totalProfit });
   }
 
   const option = {
-    tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br/>环比: ${p[0].value}%<br/>利润: ¥${momChanges.find(m => m.date === p[0].name)?.profit?.toLocaleString()}` },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter(params) {
+        const item = momChanges.find(m => m.date === params[0].name);
+        if (!item) return '';
+        const isPositive = item.change >= 0;
+        return `<div style="padding: 8px;">
+          <strong>${params[0].name}</strong><br/>
+          <span style="display: inline-block; width: 12px; height: 12px; background-color: ${isPositive ? '#52c41a' : '#ff4d4f'}; border-radius: 2px; margin-right: 6px;"></span>
+          环比: ${isPositive ? '+' : ''}${item.change}%<br/>
+          本期利润: ¥${Number(item.profit).toLocaleString()}<br/>
+          上期利润: ¥${Number(item.prevProfit).toLocaleString()}
+        </div>`;
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#ddd',
+      borderWidth: 1,
+      padding: 10,
+      textStyle: { fontSize: 12 }
+    },
     grid: { left: '3%', right: '4%', bottom: '8%', top: '10%', containLabel: true },
-    xAxis: { type: 'category', data: momChanges.map(d => d.date) },
-    yAxis: { type: 'value', axisLabel: { formatter: '{value}%' }, name: '环比增长率' },
+    xAxis: {
+      type: 'category',
+      data: momChanges.map(d => d.date),
+      axisLabel: { fontSize: 11 },
+      axisLine: { lineStyle: { color: '#e8e8e8' } },
+      axisTick: { show: false }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { formatter: '{value}%', fontSize: 11 },
+      name: '环比增长率',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: '#f0f0f0' } }
+    },
     series: [{
       type: 'bar',
       data: momChanges.map(d => ({
@@ -1056,8 +1267,24 @@ function initCompareChart() {
         itemStyle: { color: d.change >= 0 ? '#52c41a' : '#ff4d4f' }
       })),
       barMaxWidth: 50,
-      label: { show: true, position: 'top', formatter: '{c}%' }
-    }]
+      label: {
+        show: true,
+        position: 'top',
+        formatter: params => `${params.value >= 0 ? '+' : ''}${params.value}%`,
+        fontSize: 11,
+        color: '#666'
+      },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.2)'
+        }
+      }
+    }],
+    animation: true,
+    animationDuration: 1000,
+    animationEasing: 'cubicOut'
   };
   compareChart.setOption(option);
 }

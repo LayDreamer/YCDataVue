@@ -1,5 +1,29 @@
 <template>
   <div class="work-order-page">
+  <!-- 统计卡片 -->
+    <a-row :gutter="[16, 16]" class="stat-cards">
+      <a-col :xs="24" :sm="12" :lg="6">
+        <a-card shadow="never">
+          <a-statistic title="总工单数" :value="filteredData.length" />
+        </a-card>
+      </a-col>
+      <a-col :xs="24" :sm="12" :lg="6">
+        <a-card shadow="never">
+          <a-statistic title="正常工单" :value="stats.normal" />
+        </a-card>
+      </a-col>
+      <a-col :xs="24" :sm="12" :lg="6">
+        <a-card shadow="never">
+          <a-statistic title="延期工单" :value="stats.delayed" :value-style="{ color: '#cf1322' }" />
+        </a-card>
+      </a-col>
+      <a-col :xs="24" :sm="12" :lg="6">
+        <a-card shadow="never">
+          <a-statistic title="异常工单" :value="stats.abnormal" :value-style="{ color: '#fa8c16' }" />
+        </a-card>
+      </a-col>
+    </a-row>
+
     <!-- 筛选区域 -->
     <a-card class="search-card" size="small">
       <a-form :layout="searchFormLayout" :model="searchForm" class="search-form">
@@ -49,29 +73,7 @@
       </a-form>
     </a-card>
 
-    <!-- 统计卡片 -->
-    <a-row :gutter="[16, 16]" class="stat-cards">
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card shadow="never">
-          <a-statistic title="总工单数" :value="filteredData.length" />
-        </a-card>
-      </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card shadow="never">
-          <a-statistic title="正常工单" :value="stats.normal" />
-        </a-card>
-      </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card shadow="never">
-          <a-statistic title="延期工单" :value="stats.delayed" :value-style="{ color: '#cf1322' }" />
-        </a-card>
-      </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card shadow="never">
-          <a-statistic title="异常工单" :value="stats.abnormal" :value-style="{ color: '#fa8c16' }" />
-        </a-card>
-      </a-col>
-    </a-row>
+  
 
     <!-- 操作栏 -->
     <a-card class="table-card" :bordered="false">
@@ -92,6 +94,7 @@
         :pagination="tablePagination"
         :scroll="{ x: 'max-content' }"
         :size="tableSize"
+        :loading="loading"
         row-key="id"
         bordered
         class="track-table"
@@ -136,11 +139,12 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import type { TableProps } from 'ant-design-vue'
 import type { WorkOrderTrackRow } from './types'
-import { mockWorkOrderList } from './mockData'
 import { Grid } from 'ant-design-vue'
+import { workOrderService } from '@/services/workOrderService'
 
 // 响应式数据
-const dataSource = ref<WorkOrderTrackRow[]>([...mockWorkOrderList])
+const dataSource = ref<WorkOrderTrackRow[]>([])
+const loading = ref(false)
 
 // 筛选表单
 const searchForm = reactive({
@@ -189,7 +193,6 @@ const productionUnitOptions = computed(() => {
 // 计算属性：筛选后的数据
 const filteredData = computed(() => {
   let result = [...dataSource.value]
-
   // 工单单号筛选
   if (searchForm.workOrderNo) {
     result = result.filter(item => 
@@ -240,24 +243,24 @@ const stats = computed(() => {
 
 // 表格列配置
 const columns = [
-  { title: '计划开工日', dataIndex: '计划开工日', key: '计划开工日', width: 112, fixed: 'left' as const },
-  { title: '计划完工日', dataIndex: '计划完工日', key: '计划完工日', width: 112, fixed: 'left' as const },
+  // { title: '计划开工日', dataIndex: '计划开工日', key: '计划开工日', width: 112, fixed: 'left' as const },
+  // { title: '计划完工日', dataIndex: '计划完工日', key: '计划完工日', width: 112, fixed: 'left' as const },
   { title: '状态', dataIndex: '状态', key: '状态', width: 88, fixed: 'left' as const },
   { title: '工单单号', dataIndex: '工单单号', key: '工单单号', width: 130, fixed: 'left' as const },
   { title: '物料齐套', dataIndex: '物料齐套', key: '物料齐套', width: 140 },
-  { title: '物料配料', dataIndex: '物料配料', key: '物料配料', width: 100 },
-  { title: '上线情况', dataIndex: '上线情况', key: '上线情况', width: 110 },
+  // { title: '物料配料', dataIndex: '物料配料', key: '物料配料', width: 100 },
+  // { title: '上线情况', dataIndex: '上线情况', key: '上线情况', width: 110 },
   { title: '生产单位', dataIndex: '生产单位', key: '生产单位', width: 140 },
   { title: '成品编号', dataIndex: '成品编号', key: '成品编号', width: 130 },
   { title: '成品品名', dataIndex: '成品品名', key: '成品品名', width: 220 },
   { title: '规格', dataIndex: '规格', key: '规格', width: 260 },
   { title: '需求数量', dataIndex: '需求数量', key: '需求数量', width: 100 },
   { title: '入库数量', dataIndex: '入库数量', key: '入库数量', width: 100 },
-  { title: '未入库数量', dataIndex: '未入库数量', key: '未入库数量', width: 110 },
-  { title: '报工工艺', dataIndex: '报工工艺', key: '报工工艺', width: 160 },
-  { title: '报工数', dataIndex: '报工数', key: '报工数', width: 88 },
-  { title: '报工日期', dataIndex: '报工日期', key: '报工日期', width: 110 },
-  { title: '制单', dataIndex: '制单', key: '制单', width: 96 },
+  // { title: '未入库数量', dataIndex: '未入库数量', key: '未入库数量', width: 110 },
+  // { title: '报工工艺', dataIndex: '报工工艺', key: '报工工艺', width: 160 },
+  // { title: '报工数', dataIndex: '报工数', key: '报工数', width: 88 },
+  // { title: '报工日期', dataIndex: '报工日期', key: '报工日期', width: 110 },
+  // { title: '制单', dataIndex: '制单', key: '制单', width: 96 },
   { title: '订单编号', dataIndex: '订单编号', key: '订单编号', width: 130 },
 ]
 
@@ -320,59 +323,80 @@ const handleExport = () => {
 }
 
 const handleRefresh = () => {
-  // 模拟刷新数据
-  dataSource.value = [...mockWorkOrderList]
-  message.success('数据已刷新')
+  fetchData()
+}
+
+// 获取工单数据
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const response = await workOrderService.getPMCWorkOrderList()
+    dataSource.value = response || []
+  } catch (error) {
+    console.error('获取工单数据失败:', error)
+    message.error('获取工单数据失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(() => {
-  // 初始化逻辑
+  fetchData()
 })
 </script>
 
 <style scoped>
 .work-order-page {
-  min-height: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   padding: 16px;
   background-color: #f0f2f5;
-  box-sizing: border-box;
+  min-height: 0;
 }
 
 /* 筛选区域样式 */
 .search-card {
   margin-bottom: 16px;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 
 .search-form {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+  padding: 16px;
 }
 
 .search-controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 8px 12px;
+  align-items: center;
+  gap: 16px;
   flex: 1 1 auto;
   min-width: 0;
 }
 
 .search-field {
   width: 100%;
-  min-width: 0;
+  min-width: 200px;
   max-width: 280px;
 }
 
 .search-select {
+  width: 100%;
+  min-width: 200px;
   max-width: 280px;
 }
 
 .search-actions {
   margin-bottom: 0;
+  display: flex;
+  gap: 8px;
 }
 
 .btn-reset {
@@ -383,11 +407,36 @@ onMounted(() => {
   margin-left: auto;
   margin-right: 0;
   margin-bottom: 0;
+  display: flex;
+  align-items: center;
 }
 
 .view-mode-group {
   display: flex;
   flex-wrap: wrap;
+  gap: 0;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.view-mode-group :deep(.ant-radio-button-wrapper) {
+  border-radius: 0;
+  margin-right: 0;
+  border-left: none !important;
+}
+
+.view-mode-group :deep(.ant-radio-button-wrapper:first-child) {
+  border-radius: 4px 0 0 4px;
+  border-left: 1px solid #d9d9d9 !important;
+}
+
+.view-mode-group :deep(.ant-radio-button-wrapper:last-child) {
+  border-radius: 0 4px 4px 0;
+}
+
+.view-mode-group :deep(.ant-radio-button-wrapper:not(:first-child)) {
+  border-left: none !important;
 }
 
 /* 统计卡片样式 */
@@ -395,10 +444,21 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
+.stat-cards :deep(.ant-card) {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.stat-cards :deep(.ant-card:hover) {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
 /* 表格区域样式 */
 .table-card {
-  background: #fff;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
@@ -536,7 +596,7 @@ onMounted(() => {
   }
   
   .btn-reset {
-    margin-left: 0;
+    margin-left: 8px;
   }
   
   .table-header {

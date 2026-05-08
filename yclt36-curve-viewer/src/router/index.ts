@@ -102,10 +102,10 @@ const routes = [
             meta: { title: '工作流', icon: ProjectOutlined }
           },
           {
-            path: 'profit-analysis',
+            path: 'profitAnalysis',
             name: 'profitAnalysis',
             component: ProfitAnalysis,
-            meta: { title: '利润分红分析', icon: DollarCircleOutlined }
+            meta: { title: '利润分红分析', icon: DollarCircleOutlined ,hidden: true}  
           }
         ]
       },

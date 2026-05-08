@@ -7,14 +7,18 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL;
 const service = new Service(baseUrl);
 
 export const deliveryReviewService = { 
-  // 获取产品信息列表
-  async getPMCProductInfoList(requestDto: PMCRequestDto): Promise<PMCProductInfo[]> {
+  // 根据外销合同用户产品表->获取评审记录列表
+  async convertToPMCDeliveryReviewList(requestDto: PMCRequestDto): Promise<PMCDeliveryReview[]> {
      try {
-       const response = await service.productListInfo(requestDto);
-        return response.data;
-    } catch (error) {
-      console.error('获取产品信息列表失败:', error)
-      throw error
+       const response = await service.convertToPMCDeliveryReviewList(requestDto);
+        return response.data ?? [];
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('获取评审记录列表失败:'+errorMessage);
     }
   },
  
@@ -23,29 +27,45 @@ export const deliveryReviewService = {
     try {
       const response = await service.productDataAssemblyList(requestDto);
       return response.data;
-    } catch (error) {
-      console.error('获取资料装配清单失败:', error)
-      throw error
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('获取资料装配清单失败:'+errorMessage);
     }
   },
+  
     // 检查装配清单是否存在线圈货号
-  async checkIsExistInAssemblyList(requestDto: PMCRequestDto): Promise<any> {
+  async checkIsExistInAssemblyList(requestDto: PMCRequestDto): Promise<any> 
+  {
     try {
       const response = await service.checkAssemblyList(requestDto);
       return response.data;
-    } catch (error) {
-      console.error('检查装配清单是否存在线圈货号失败:', error)
-      throw error
+    } catch (error: any) {
+      let errorMessage = '';
+      
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error("检查装配清单是否存在线圈货号失败:"+errorMessage);
     }
   },
 
-  async getPMCDeliveryReviewList(): Promise<any> {
+  async  getPMCDeliveryReviewList(requestDto: PMCRequestDto): Promise<any> {
     try {
-      const response = await service.pMCDeliveryReviewList();
+      const response = await service.pMCDeliveryReviewList(requestDto);
       return response.data;
-    } catch (error) {
-      console.error('查询评审记录失败:', error);
-      throw error;
+    } catch (error: any) {
+      let errorMessage = '';
+      
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error("查询评审记录失败"+errorMessage);
     }
   },
 
@@ -53,9 +73,14 @@ export const deliveryReviewService = {
     try {
       const response = await service.addPMCDeliveryReview(reviewData);
       return response.data;
-    } catch (error) {
-      console.error('保存评审记录失败:', error);
-      throw error;
+    } catch (error: any) {
+      let errorMessage = '';
+      
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error("保存评审记录失败"+errorMessage);
     }
   }
 }
