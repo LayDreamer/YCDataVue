@@ -36,7 +36,7 @@
             <div class="input-group">
               <span class="label">品名</span>
               <a-tooltip :title="form.productName" placement="top">
-                <span class="display-field w-280">{{ form.productName || '-' }}</span>
+                <span class="display-field w-300">{{ form.productName || '-' }}</span>
               </a-tooltip>
             </div>
             <div class="input-group">
@@ -47,9 +47,11 @@
             </div>
             <div class="input-group">
               <span class="label">成品数量</span>
-              <a-tooltip :title="form.qty" placement="top">
-                <span class="display-field w-100">{{ form.qty || 0 }}</span>
-              </a-tooltip>
+              <a-input-number v-model:value="form.qty" :min="0" :precision="0" size="small" style="width: 100px" />
+            </div>
+            <div class="input-group">
+              <span class="label">生产交期</span>
+              <a-date-picker v-model:value="form.deliveryDate" placeholder="选择交期" format="YYYY-MM-DD" value-format="YYYY-MM-DD" size="small" style="width: 160px" />
             </div>
           </div>
           <!-- 第二行：分析模式与按钮 (靠左对齐) -->
@@ -70,17 +72,33 @@
             </div>
 
             <div class="button-group">
-              <a-button type="primary" class="btn-update" @click="handleUpdate" :loading="updateLoading">
+              <!-- <a-button type="primary" class="btn-update" @click="handleUpdate" :loading="updateLoading">
                 <template #icon>
                   <ReloadOutlined />
                 </template>更新分析
-              </a-button>
+              </a-button> -->
               <a-button type="primary" class="btn-save" @click="handleSave" :loading="saveLoading">
                 <template #icon>
                   <SaveOutlined />
                 </template>保存分析
               </a-button>
+              <a-button type="primary" class="btn-expand-all" @click="handleExpandAll">
+              <template #icon>
+                <FolderOpenOutlined />
+              </template>全部展开
+            </a-button>
+            <a-button type="primary" class="btn-collapse-all" @click="handleCollapseAll">
+              <template #icon>
+                <FolderOutlined />
+              </template>全部收缩
+            </a-button>
             </div>
+
+            <FixedColumnControl
+              v-model="fixedColumnKeys"
+              :columns="rawColumns"
+              style="margin-left: auto;"
+            />
           </div>
         </div>
       </div>
@@ -91,19 +109,19 @@
           :scroll="{ x: 2200, y: 'calc(100vh - 280px)' }" bordered row-key="key" :expand-icon-column-index="1"
           :indent-size="18" :expanded-row-keys="expandedKeys"
           @expand="(expanded: boolean, record: any) => handleExpand(expanded, record)">
-          <!-- 自定义展开图标：渲染在“货号”列中 -->
+          <!-- 自定义展开图标：渲染在"货号"列中 -->
           <template #expandIcon="{ expanded, onExpand, record }">
             <div class="product-symbol-wrapper">
               <!-- 有子节点显示方框 +/- -->
               <template v-if="record.children && record.children.length">
                 <span class="tree-icon-box" @click="e => onExpand(record, e)">
-                  <MinusSquareOutlined v-if="expanded" />
-                  <PlusSquareOutlined v-else />
+                <FolderOpenOutlined v-if="expanded" />
+                <FolderOutlined v-else />
                 </span>
-              </template>
-              <!-- 叶子节点显示蓝色圆点 -->
+              </template>             
+            <!-- 叶子节点显示文件图标 -->
               <template v-else>
-                <span class="tree-leaf-dot"></span>
+                <FileTextOutlined class="tree-leaf-icon" />
               </template>
             </div>
           </template>
@@ -141,7 +159,13 @@
 
             <!-- 输入框列 -->
             <template v-if="['produceQty', 'purchaseQty', 'loss'].includes(column.key as string)">
-              <a-input-number v-model:value="record[column.key]" size="small" class="cell-input" :controls="false" />
+              <a-input-number 
+                v-model:value="record[column.key]" 
+                size="small" 
+                class="cell-input" 
+                :controls="false" 
+                @change="(val: any) => handleLossChange(record, column.key as string, val)"
+              />
             </template>
           </template>
         </a-table>
@@ -151,12 +175,7 @@
       <div class="footer-bar">
         <div class="formula">
           <SettingOutlined />
-          <span v-if="form.analysisType === 'normal'">
-            需求量 = 成品数量 × 累计用量 × (1+损耗) (普通)
-          </span>
-          <span v-else>
-            需求量 = 成品数量 × 累计用量 × (1+损耗) (库存上限: 再减库存下限)
-          </span>
+          <span>需求量 = 成品数量 × 累计用量 × (1+损耗)</span>
         </div>
         <div class="save-info">点击货号/品名/规格替换物料</div>
       </div>
@@ -165,12 +184,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, inject, onMounted } from 'vue';
+import { ref, reactive, inject, onMounted, computed, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import {
   LeftOutlined, FileTextOutlined, ReloadOutlined, SaveOutlined,
   BarChartOutlined, LineChartOutlined, SettingOutlined,
-  PlusSquareOutlined, MinusSquareOutlined
+  FolderOpenOutlined, FolderOutlined
 } from '@ant-design/icons-vue';
 import router from '@/router';
 import { useRoute } from 'vue-router';
@@ -181,7 +200,8 @@ import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { PMCWorkOrder, PMCRequestDto } from '@/api-generated/api';
 import { salesControlService } from '@/services/salesControlService';
 import { workOrderService } from '@/services/workOrderService';
-import { columns } from './types';
+import { columns as rawColumns } from './types';
+import FixedColumnControl from '@/components/FixedColumnControl.vue';
 
 // ProductionItem 类型定义
 interface ProductionItem {
@@ -239,19 +259,30 @@ const form = reactive({
   productName: '',
   spec: '',
   qty: 0,
+  deliveryDate: undefined as string | undefined,
   analysisType: 'normal' as 'normal' | 'limit'
 });
 
 // 主记录数据（全局变量）
 const mainRecord = ref<any>(null);
-
-
-
-
 // 表格数据
 const dataSource = ref<ProductionItem[]>([]);
 // 展开状态管理
 const expandedKeys = ref<string[]>([]);
+
+// 固定列控制
+const fixedColumnKeys = ref<string[]>(['index', 'partNo']);
+
+// 动态计算带 fixed 属性的 columns
+const columns = computed(() => {
+  return rawColumns.map(col => {
+    const colKey = (col.key || (col as any).dataIndex) as string;
+    return {
+      ...col,
+      fixed: fixedColumnKeys.value.includes(colKey) ? 'left' : undefined
+    };
+  });
+});
 
 // 获取所有父级节点的key（用于默认展开）
 const getParentKeys = (data: ProductionItem[]): string[] => {
@@ -274,22 +305,91 @@ const generateKey = (prefix: string, index: number) => {
 };
 
 // 计算需求量
-const calculateDemandQty = (qty: number, usage: number, loss: number, analysisType: string, upperStock?: number, lowerStock?: number) => {
-  // 普通分析：需求量 = 成品数量 × 累计用量 × (1+损耗)
-  let demand = qty * usage * (1 + loss / 100);
-  
-  // 库存上限分析：需求量 = 成品数量 × 累计用量 × (1+损耗) - 库存下限
-  if (analysisType === 'limit' && upperStock !== undefined && lowerStock !== undefined) {
-    demand = demand - lowerStock;
-  }
-  
+const calculateDemandQty = (qty: number, usage: number, loss: number) => {
+  // 需求量 = 成品数量 × 累计用量 × (1+损耗)
+  let demand = qty * usage * (1 + loss);
   // 确保需求量不为负数
   demand = Math.max(0, demand);
-  
   return Math.ceil(demand);
 };
 
-// 构建树形数据（适配新BOM格式，层数按原数据字段显示）
+// 递归更新树形数据中的需求量
+const updateDemandQtyInTree = (items: ProductionItem[], qty: number) => {
+  items.forEach(item => {
+    const demandQty = calculateDemandQty(qty, item.usage || 1, item.loss || 0);
+    
+    item.needQty = demandQty;
+    if (item.source !== '自制') {
+      item.purchaseQty = demandQty + (item.avail || 0);
+    } else {
+      item.produceQty = demandQty + (item.avail || 0);
+    }
+    if (item.children && item.children.length > 0) {
+      updateDemandQtyInTree(item.children, qty);
+    }
+  });
+};
+
+// 监听成品数量变化，动态更新需求量
+watch(() => form.qty, (newQty) => {
+  if (dataSource.value.length > 0 && newQty >= 0) {
+    updateDemandQtyInTree(dataSource.value, newQty);
+  }
+});
+
+// 监听分析类型变化，动态更新仓库可用量及生产数/采购数
+const updateAvailInTree = (items: ProductionItem[], analysisType: string) => {
+  items.forEach(item => {
+    const stock = item.stock || 0;
+    const transit = item.transit || 0;
+    const wip = item.wip || 0;
+    const min = item.min || 0;
+    item.avail = analysisType === 'limit' ? stock + transit - wip - min : stock + transit - wip;
+    if (item.source !== '自制') {
+      item.purchaseQty = (item.needQty || 0) + (item.avail || 0);
+      item.produceQty = 0;
+    } else {
+      item.produceQty = (item.needQty || 0) + (item.avail || 0);
+      item.purchaseQty = 0;
+    }
+    if (item.children && item.children.length > 0) {
+      updateAvailInTree(item.children, analysisType);
+    }
+  });
+};
+
+watch(() => form.analysisType, (newType) => {
+  if (dataSource.value.length > 0) {
+    updateAvailInTree(dataSource.value, newType);
+  }
+});
+
+// 处理损耗字段变化，动态更新该行及子行的需求量
+const handleLossChange = (record: ProductionItem, field: string, value: number | null) => {
+  if (field === 'loss' && record) {
+    const lossValue = value || 0;
+    // 更新当前行及子行的需求量
+    const updateItemAndChildren = (item: ProductionItem, loss: number) => {
+      item.loss = loss;
+      if (form.qty > 0 && (item.usage || 1)) {
+        const demandQty = calculateDemandQty(form.qty, item.usage || 1, loss);
+       
+        item.needQty = demandQty;
+    if (item.source !== '自制') {
+      item.purchaseQty = demandQty + (item.avail || 0);
+    } else {
+      item.produceQty = demandQty + (item.avail || 0);
+    }
+      }
+      // 递归更新子节点
+      if (item.children && item.children.length > 0) {
+        item.children.forEach(child => updateItemAndChildren(child, child.loss || 0));
+      }
+    };
+    updateItemAndChildren(record, lossValue);
+  }
+};
+
 // 构建树形数据（适配新BOM格式，支持多层嵌套）
 const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): ProductionItem[] => {
   const treeData: ProductionItem[] = [];
@@ -304,17 +404,22 @@ const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): P
     const usage = Number(record.用量) || 1;
     const cumulativeUsage = parentUsage * usage;
     const loss = Number(record.损耗) || 0;
-    const demandQty = calculateDemandQty(qty, cumulativeUsage, loss, analysisType,
-      record.库存上限 !== undefined && record.库存上限 !== '' ? Number(record.库存上限) : undefined,
-      record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : undefined);
+    const demandQty = calculateDemandQty(qty, cumulativeUsage, loss);
+
+    // 提前计算库存相关字段，供 purchaseQty 使用
+    const _stock = record.仓库数 !== undefined && record.仓库数 !== '' ? Number(record.仓库数) : 0;
+    const _transit = record.在途数 !== undefined && record.在途数 !== '' ? Number(record.在途数) : 0;
+    const _wip = record.在产需求 !== undefined && record.在产需求 !== '' ? Number(record.在产需求) : 0;
+    const _min = record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : 0;
+    const _avail = analysisType === 'limit' ? _stock + _transit - _wip - _min : _stock + _transit - _wip;
 
     const item: ProductionItem = {
       key,
       level: level,
-      name: record.品名 || record.货号 || '-',
-      source: record.来源 || record.产品属性 || '-',
-      produceQty: 0,
-      purchaseQty: demandQty,
+      name: record.品名 || '-',
+      source: record.来源 || '-',
+      produceQty: record.来源 === '自制' ? demandQty + _avail : 0,
+      purchaseQty: record.来源 !== '自制' ? demandQty + _avail : 0,
       loss: loss,
       rowNum: rowCounter,
       // 基础字段
@@ -326,12 +431,12 @@ const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): P
       process: record.工序名称 || '-',
       workshop: record.工序车间 || '-',
       warehouse: record.仓库名称 || '-',
-      stock: record.仓库数 !== undefined && record.仓库数 !== '' ? Number(record.仓库数) : undefined,
-      transit: record.在途数 !== undefined && record.在途数 !== '' ? Number(record.在途数) : undefined,
-      wip: record.在产需求 !== undefined && record.在产需求 !== '' ? Number(record.在产需求) : undefined,
+      stock: _stock || undefined,
+      transit: _transit || undefined,
+      wip: _wip || undefined,
       max: record.库存上限 !== undefined && record.库存上限 !== '' ? Number(record.库存上限) : undefined,
-      min: record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : undefined,
-      avail: record.仓库可用 !== undefined && record.仓库可用 !== '' ? Number(record.仓库可用) : undefined,
+      min: _min || undefined,
+      avail: _avail,
       attr: record.产品属性 || '-',
       needQty: demandQty,
       remark: record.备注 || '-',
@@ -396,7 +501,7 @@ const loadData = async () => {
     // 默认展开所有父节点
     expandedKeys.value = getParentKeys(dataSource.value);
   } catch (error) {
-    console.error('加载数据失败:', error);
+    console.error('加载数据失败:', error); 
     message.error('加载数据失败，请稍后重试');
   } finally {
     loading.value = false;
@@ -404,7 +509,7 @@ const loadData = async () => {
 };
 
 // 更新分析
-const handleUpdate = async () => {
+// const handleUpdate = async () => {
   // updateLoading.value = true;
   // try {
   //   const res = await updateProductionAnalysis({
@@ -425,7 +530,7 @@ const handleUpdate = async () => {
   // } finally {
   //   updateLoading.value = false;
   // }
-};
+//};
 
 // 保存分析
 const handleSave = async () => { 
@@ -464,6 +569,36 @@ const handleExpand = (expanded: boolean, record: any) => {
     expandedKeys.value = expandedKeys.value.filter(k => k !== record.key);
   }
 };
+
+// 全部展开
+const handleExpandAll = () => {
+  const getAllKeys = (items: ProductionItem[]): string[] => {
+    const keys: string[] = [];
+    items.forEach(item => {
+      if (item.children && item.children.length) {
+        keys.push(item.key);
+        keys.push(...getAllKeys(item.children));
+      }
+    });
+    return keys;
+  };
+  const allKeys = getAllKeys(dataSource.value);
+  if (allKeys.length === expandedKeys.value.length && allKeys.every(k => expandedKeys.value.includes(k))) {
+    message.info('当前已是全部展开状态');
+    return;
+  }
+  expandedKeys.value = allKeys;
+};
+
+// 全部收缩
+const handleCollapseAll = () => {
+  if (expandedKeys.value.length === 0) {
+    message.info('当前已是全部收缩状态');
+    return;
+  }
+  expandedKeys.value = [];
+};
+
 
 // 来源标签颜色
 const getSourceColor = (src: string) => {
@@ -656,6 +791,7 @@ onMounted(() => {
 .button-group {
   display: flex;
   gap: 12px;
+  align-items: center;
 }
 
 .btn-update {
@@ -667,6 +803,12 @@ onMounted(() => {
   background-color: #004d4f;
   border-color: #004d4f;
 }
+
+.btn-expand-all, .btn-collapse-all {
+  background-color: #004d4f;
+  border-color: #004d4f;
+}
+
 
 /* 表格定制 */
 .table-wrapper {
@@ -710,16 +852,15 @@ onMounted(() => {
 
 .tree-icon-box {
   cursor: pointer;
-  color: #1890ff;
-  font-size: 14px;
+  color:yellowgreen;
+  font-size: 18px;
   display: flex;
   align-items: center;
 }
 
-.tree-leaf-dot {
-  width: 6px;
-  height: 6px;
-  background-color: #1890ff;
+.tree-leaf-icon {
+  font-size: 12px;
+  color: gray;
   border-radius: 50%;
   display: inline-block;
 }
