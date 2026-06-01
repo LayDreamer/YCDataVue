@@ -149,7 +149,7 @@ import { compile } from 'vue'
 
 interface TableRowData extends PMCSalesControl {
   id: number
-  deliveryMap: Record<string, { quantity: number; status: string } | null>
+  deliveryMap: Record<string, { quantity: number; status: string; 排产用户: string } | null>
   _deliveryPlans: DeliveryPlan[]
   _plansByDate?: Map<string, DeliveryPlan[]>
 }
@@ -157,8 +157,8 @@ interface TableRowData extends PMCSalesControl {
 interface ComputedDeliveryInfo {
   quantity: number
   status: string
+  排产用户: string
 }
-
 // ==================== 常量配置 ====================
 const dateFormat = 'YYYY-MM-DD'
 const COLUMN_WIDTHS = {
@@ -241,8 +241,9 @@ function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
     const plans = Array.isArray(parsed) ? parsed : [parsed]
     return plans.filter(p => p && typeof p === 'object').map(p => ({
       交货日期: p.交货日期 || '',
-      交货数量: p.交货数量?.toString() || '0',
+      交货数量: Number(p.交货数量) || 0,
       状态: p.状态 || '',
+      排产用户: p.排产用户 || '',
     }))
   } catch {
     console.error('解析交货计划失败')
@@ -347,12 +348,12 @@ const tableData = computed<TableRowData[]>(() => {
     // 2. 基于初始可用量 + 全部计划，按日期顺序计算每个日期的状态和数量
     const statusMap = computeDeliveryStatuses(rawPlans, initialAvailable)
     // 3. 构建交付列映射（仅针对当前日期范围）
-    const deliveryMap: Record<string, { quantity: number; status: string } | null> = {}
+    const deliveryMap: Record<string, { quantity: number; status: string; 排产用户: string } | null> = {}
     for (const date of activeDisplayDates.value) {
       const dateKey = toDateColumnKey(date)
       const planInfo = statusMap.get(date)
       deliveryMap[dateKey] = planInfo
-        ? { quantity: planInfo.quantity, status: planInfo.status }
+        ? { quantity: planInfo.quantity, status: planInfo.status, 排产用户: planInfo.排产用户 || '' }
         : null
     }
 
@@ -427,6 +428,7 @@ function handleNumberClick(record: TableRowData, column: { key: string }) {
         id: record.货号,
         parentId: record.父级货号,
         productNo:record.排产编号,
+        demand:record.订单总需求,
         index: column.key,
         tabTitle: `排产详情: ${record.货号}`,
       },
@@ -469,6 +471,7 @@ function handleDeliveryClick(record: TableRowData, dateKey: string) {
       交货日期: targetDate,
       交货数量: totalQuantity,
       状态: planInfo.status as DeliveryStatus,
+      排产用户: planInfo.排产用户 || '',
     },
     cumulativeDelivered: cumulativeShortage,
   }
@@ -486,12 +489,17 @@ function computeDeliveryStatuses(
   initialAvailable: number
 ): Map<string, ComputedDeliveryInfo> {
   // 1. 按日期聚合数量（同一天可能有多个计划）
-  const grouped = new Map<string, number>()
+  const grouped = new Map<string, { quantity: number; 排产用户: string }>()
   for (const p of plans) {
     const date = p.交货日期
     if (!date) continue
     const qty = Number(p.交货数量) || 0
-    grouped.set(date, (grouped.get(date) || 0) + qty)
+    const entry = grouped.get(date)
+    if (entry) {
+      entry.quantity += qty
+    } else {
+      grouped.set(date, { quantity: qty, 排产用户: p.排产用户 || '' })
+    }
   }
 
   // 2. 转为数组并按日期升序排序
@@ -501,7 +509,8 @@ function computeDeliveryStatuses(
   let cumulativeBefore = 0 // 当前日期之前已经累计的交货总量
 
   for (const date of sortedDates) {
-    const qty = grouped.get(date)!
+    const entry = grouped.get(date)!
+    const qty = entry.quantity
     // 根据规则判定状态
     let status: string
     if (cumulativeBefore >= initialAvailable) {
@@ -515,7 +524,7 @@ function computeDeliveryStatuses(
         status = 'partial' // 当前批次只能部分交付
       }
     }
-    result.set(date, { quantity: qty, status })
+    result.set(date, { quantity: qty, status, 排产用户: entry.排产用户 })
     // 更新累计（包含当前批次）
     cumulativeBefore += qty
   }

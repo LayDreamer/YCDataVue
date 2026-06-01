@@ -468,7 +468,7 @@ const loadData = async () => {
   loading.value = true;
   try {
     const partNo = route.query.id as string;
-    
+
     const productNo = route.query.productNo as string;
     if (!partNo) {
       message.error('缺少货号参数');
@@ -485,13 +485,14 @@ const loadData = async () => {
 
     // 从BOM数据中提取基础信息（从层0的记录）
     mainRecord.value = bomData.find(item => Number(item.层) === 0) || bomData[0];
+
+    form.analysisType = 'normal';
     form.orderNo = mainRecord.value?.合同号 || route.query.orderNo || ''; // 优先从BOM数据获取，否则从路由参数
     form.partNo = mainRecord.value?.货号 || partNo;
     form.productName = mainRecord.value?.品名 || '';
     form.spec = mainRecord.value?.规格 || '';
-    form.qty = Number(route.query.qty) || 1;
-    form.analysisType = 'normal';
-   
+    form.qty = Number(route.query.demand) || 1;
+ 
     // 构建树形数据
     const treeData = buildTreeFromData(bomData, form.qty, form.analysisType);
 

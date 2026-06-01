@@ -109,11 +109,12 @@ import { PMCRequestDto,PMCDeliveryReview  } from '@/api-generated/api';
 const columns = [
   { title: '合同号', dataIndex: '合同号', key: '合同号' },
   { title: '排产编号', dataIndex: '排产编号', key: '排产编号' },
-  { title: '分析单号', dataIndex: '分析单号', key: '分析单号' },
+  // { title: '分析单号', dataIndex: '分析单号', key: '分析单号' },
   { title: '货号', dataIndex: '货号', key: '货号' },
   { title: '中文品名', dataIndex: '中文品名', key: '中文品名' },
   { title: '线圈货号', dataIndex: '线圈货号', key: '线圈货号' },
-  { title: '来源编号', dataIndex: '来源编号', key: '来源编号' },
+  // { title: '来源编号', dataIndex: '来源编号', key: '来源编号' },
+  { title: '数量', dataIndex: '数量', key: '数量' },
   { title: '来源', dataIndex: '来源', key: '来源' },
   { title: '工单单号', dataIndex: '工单单号', key: '工单单号' },
   { title: '交货日期', dataIndex: '交货日期', key: '交货日期' },
@@ -132,8 +133,9 @@ const pagination = reactive({
   pageSize: 10,
   showSizeChanger: false,
   showQuickJumper: true,
-  showTotal: (total: number) => `共 ${total} 条`,
+  showTotal: (total: number) => `共 ${total} 条`
 });
+
 const screens = Grid.useBreakpoint();
 const searchFormLayout = computed(() => (screens.value?.md ? 'inline' : 'vertical'));
 const tableSize = computed(() => (screens.value?.md ? 'middle' : 'small'));
@@ -212,7 +214,7 @@ const  fetchProductData = async () => {
       分析单号: searchForm.analysisNo
     });
     const response = await deliveryReviewService.convertToPMCDeliveryReviewList(requestDto);
-
+// 
     if (!response || response.length === 0) {
       dataSource.value = [];
       fullUnreviewedData.value = [];

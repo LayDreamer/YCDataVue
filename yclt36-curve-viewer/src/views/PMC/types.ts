@@ -22,9 +22,10 @@ export type DeliveryStatus = 'full' | 'partial' | 'none'
 
 // 交货计划
 export interface DeliveryPlan {
-  交货日期: string 
-  交货数量: number 
+  交货日期: string
+  交货数量: number
   状态: DeliveryStatus
+  排产用户: string
 }
 
 // 产品数据接口

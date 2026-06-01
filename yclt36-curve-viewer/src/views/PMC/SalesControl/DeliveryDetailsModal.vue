@@ -3,42 +3,46 @@
     v-model:open="localVisible"
     :title="modalTitle"
     :footer="null"
-    width="600px"
+    width="800px"
+    :body-style="{ minHeight: '50vh' }"
     class="detail-modal"
     @cancel="handleClose"
   >
-    <!-- 产品信息卡片 -->
-    <a-card v-if="detailType === 'product' && product" :bordered="false" class="detail-card">
-      <div class="card-item">
-        <span class="label">货号：</span>
-        <span class="value">{{ product.货号 }}</span>
+    <!-- 产品信息 -->
+    <template v-if="detailType === 'product' && product">
+      <div class="product-header">
+        <div class="header-item">
+          <span class="header-label">货号：</span>
+          <span class="header-value">{{ product.货号 }}</span>
+        </div>
+        <div class="header-item">
+          <span class="header-label">品名：</span>
+          <span class="header-value">{{ product.中文品名 }}</span>
+        </div>
+        <div class="header-item">
+          <span class="header-label">规格：</span>
+          <span class="header-value">{{ product.中文规格 }}</span>
+        </div>
       </div>
-      <div class="card-item">
-        <span class="label">品名：</span>
-        <span class="value">{{ product.中文品名 }}</span>
-      </div>
-      <div class="card-item">
-        <span class="label">规格：</span>
-        <span class="value">{{ product.中文规格 }}</span>
-      </div>
-      <a-divider />
-      <div class="card-item">
-        <span class="label">订单总需求：</span>
-        <span class="value number">{{ product.订单总需求 }}</span>
-      </div>
-      <div class="card-item">
-        <span class="label">仓库数：</span>
-        <span class="value number">{{ product.仓库数 }}</span>
-      </div>
-      <div class="card-item">
-        <span class="label">在产数：</span>
-        <span class="value number">{{ product.在产数 }}</span>
-      </div>
-      <div class="card-item">
-        <span class="label">初始可用量：</span>
-        <span class="value number">{{ product.初始可用量 }}</span>
-      </div>
-    </a-card>
+      <a-divider style="margin: 12px 0;" />
+      <a-table
+        :columns="productTableColumns"
+        :data-source="productTableData"
+        :pagination="false"
+        size="small"
+        bordered
+        class="detail-table"
+      >
+        <template #bodyCell="{ column, text }">
+          <template v-if="column.key === '状态'">
+            <span :class="'status-badge status-' + text">{{ statusTextMap[text] || text || '-' }}</span>
+          </template>
+          <template v-else-if="column.dataType === 'number'">
+            <span class="table-number">{{ text }}</span>
+          </template>
+        </template>
+      </a-table>
+    </template>
 
     <!-- 交付详情卡片 -->
     <a-card v-else-if="detailType === 'delivery' && delivery" :bordered="false" class="detail-card">
@@ -108,6 +112,65 @@ const statusText = computed(() => {
   if (props.detailType !== 'delivery' || !props.delivery) return ''
   const status = props.delivery.plan.状态
   return status === 'full' ? '满足' : status === 'partial' ? '部分满足' : '不满足'
+})
+
+const statusTextMap: Record<string, string> = {
+  full: '满足',
+  partial: '部分满足',
+  none: '不满足',
+}
+
+// 解析产品交货计划
+const productDeliveryPlans = computed(() => {
+  if (!props.product) return []
+  try {
+    const parsed = JSON.parse(props.product.交货计划 || '[]')
+    const plans = Array.isArray(parsed) ? parsed : [parsed]
+    console.log('Parsed delivery plans:', plans)
+    return plans
+      .filter((p: any) => p && typeof p === 'object')
+      .map((p: any) => ({
+        排产用户: p.排产用户 || '',
+        交货日期: p.交货日期 || '',
+        交货数量: Number(p.交货数量) || 0,
+        状态: (p.状态 || '') as 'full' | 'partial' | 'none',
+      }))
+      .filter((p: any) => p.交货日期)
+      .sort((a: any, b: any) => a.交货日期.localeCompare(b.交货日期))
+  } catch {
+    return []
+  }
+})
+
+const productTableColumns = [
+  { title: '合同号', dataIndex: '合同号', key: '合同号', align: 'center', width: 130 },
+  { title: '业务员', dataIndex: '业务员', key: '业务员', align: 'center', width: 100 },
+  { title: '交货日期', dataIndex: '交货日期', key: '交货日期', align: 'center', width: 120 },
+  { title: '订单数', dataIndex: '订单数', key: '订单数', align: 'center', width: 90, dataType: 'number' },
+  { title: '已发数量', dataIndex: '已发数量', key: '已发数量', align: 'center', width: 100, dataType: 'number' },
+  { title: '待发数量', dataIndex: '待发数量', key: '待发数量', align: 'center', width: 100, dataType: 'number' },
+  { title: '状态', dataIndex: '状态', key: '状态', align: 'center', width: 100 },
+]
+
+const productTableData = computed(() => {
+  if (!props.product) return []
+  const base = {
+    合同号: props.product.合同号,
+    已发数量: props.product.仓库数,
+    待发数量: props.product.在产数,
+  }
+  const plans = productDeliveryPlans.value
+  if (plans.length === 0) {
+    return [{ key: '0', 交货日期: '-', 状态: '', 业务员: '-', 订单数: '-', ...base }]
+  }
+  return plans.map((plan, idx) => ({
+    key: String(idx),
+    交货日期: plan.交货日期,
+    状态: plan.状态,
+    业务员: plan.排产用户 || '-',
+    订单数: plan.交货数量,
+    ...base,
+  }))
 })
 
 // 计算交付缺量（初始可用量 - 累计交付量）
@@ -318,5 +381,79 @@ const handleClose = () => {
 
 .detail-card .card-item:last-child .value::after {
   display: none; /* 如果需要，可以改为某个装饰 */
+}
+
+/* 产品信息头部 */
+.product-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  padding: 8px 4px;
+}
+
+.header-item {
+  display: flex;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+.header-label {
+  color: #5f6c80;
+  font-weight: 450;
+  margin-right: 6px;
+}
+
+.header-value {
+  color: #1e2a3a;
+  font-weight: 500;
+}
+
+/* 表格样式 */
+.detail-table :deep(.ant-table-thead > tr > th) {
+  background-color: #1e3a5f !important;
+  color: #ffffff;
+  font-weight: 500;
+  padding: 10px 8px;
+}
+
+.detail-table :deep(.ant-table-tbody > tr > td) {
+  padding: 10px 8px;
+}
+
+.table-number {
+  font-family: 'SF Mono', 'Fira Code', 'Roboto Mono', monospace;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+/* 状态标签 */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 3px 12px;
+  border-radius: 40px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.status-badge.status-full {
+  background: linear-gradient(145deg, #e6f7e6, #d4f0d4);
+  color: #1f7b1f;
+  border: 1px solid #a5d6a5;
+}
+
+.status-badge.status-partial {
+  background: linear-gradient(145deg, #fff4e2, #ffebd2);
+  color: #aa5f0e;
+  border: 1px solid #ffcb91;
+}
+
+.status-badge.status-none {
+  background: linear-gradient(145deg, #ffe9e9, #ffe0e0);
+  color: #a13b3b;
+  border: 1px solid #fbb5b5;
 }
 </style>

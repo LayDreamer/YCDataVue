@@ -245,6 +245,7 @@
                         <a-col :span="12">
                           <a-form-item label="项目类型">
                             <a-select v-model:value="wizardForm.basic.type" placeholder="请选择">
+                              { id: 2, icon: '✅', avatarBg: '#52c41a', title: '审批通过', content: '您提交的采购申请已审批通过', time: '1小时前', read: false },
                               <a-select-option value="web">Web应用</a-select-option>
                               <a-select-option value="mobile">移动端</a-select-option>
                               <a-select-option value="desktop">桌面应用</a-select-option>
@@ -719,7 +720,6 @@ const notifySettings = ref({ email: true, message: true, popup: true });
 
 const notifications = ref([
   { id: 1, icon: '📢', avatarBg: '#1890ff', title: '系统维护通知', content: '计划于今晚23:00进行系统维护升级', time: '5分钟前', read: false },
-  { id: 2, icon: '✅', avatarBg: '#52c41a', title: '审批通过', content: '您提交的采购申请已审批通过', time: '1小时前', read: false },
   { id: 3, icon: '💬', avatarBg: '#faad14', title: '新消息', content: '李四给您发了一条私信', time: '2小时前', read: true }
 ]);
 
@@ -750,7 +750,6 @@ function generateSparklinePoints(data) {
   const range = max - min || 1;
   return data.map((v, i) => `${i * 3},${20 - ((v - min) / range) * 18}`).join(' ');
 }
-
 function handleStatClick(stat) {
   message.info(`查看 ${stat.label} 详情`);
 }

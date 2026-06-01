@@ -45,6 +45,9 @@
       </a-menu>
     </a-layout-sider>
 
+      <!-- 移动端遮罩层：点击关闭侧边栏 -->
+    <div v-if="isNarrowLayout && !collapsed" class="mobile-mask" @click="collapsed = true" />
+
     <!-- 右侧内容区 -->
     <a-layout class="right-layout" :class="{ 'sider-collapsed': collapsed, 'layout-narrow': isNarrowLayout }">
       <!-- 头部 Header -->
@@ -345,7 +348,10 @@ watch(() => route.fullPath, () => {
   if (route.name) selectedKeys.value = [route.name as string]
 }, { immediate: true })
 
-const handleMenuClick = ({ key }: any) => router.push({ name: key }).catch(() => {})
+const handleMenuClick = ({ key }: any) => {
+  if (isNarrowLayout.value) collapsed.value = true
+  router.push({ name: key }).catch(() => {})
+}
 const handleSendSuccess = (res: any) => console.log('Send Success', res)
 </script>
 
@@ -440,6 +446,14 @@ const handleSendSuccess = (res: any) => console.log('Send Success', res)
 .layout-narrow.right-layout,
 .layout-narrow .right-layout { margin-left: 0 !important; }
 .layout-narrow .sider { box-shadow: 2px 0 12px rgba(0,0,0,0.12); }
+
+/* 移动端遮罩层 */
+.mobile-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 99;
+}
 
 /* 头部样式 */
 .header { 
