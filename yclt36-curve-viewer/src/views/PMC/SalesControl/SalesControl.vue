@@ -22,6 +22,13 @@
             </div>
           </div>
         </div>
+
+        <div class="tab-bar">
+          <a-tabs v-model:activeKey="activeTab" size="small" @change="handleTabChange">
+            <a-tab-pane key="salesControl" tab="成品销控表" />
+            <a-tab-pane key="workOrderTracking" tab="工单销控表" />
+          </a-tabs>
+        </div>
       </div>
 
       <div class="filter-row second-row">
@@ -48,22 +55,15 @@
           </div>
         </div>
 
-        <!-- 右侧区域：商品类型切换按钮 + 提示文字（垂直排列，切换按钮在上） -->
+        <!-- 右侧区域：提示文字 -->
         <div class="right-group">
-          <div class="product-type-switch">
-            <span class="switch-label">商品类型：</span>
-            <a-radio-group v-model:value="productType" size="small">
-              <a-radio-button value="成品">成品</a-radio-button>
-              <a-radio-button value="半成品">半成品</a-radio-button>
-            </a-radio-group>
-          </div>
           <div class="hint-text">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="16" x2="12" y2="12" />
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
-            <span>点击任意数据弹出详情</span>
+            <span>点击缺量负数可查看排产详情</span>
           </div>
         </div>
       </div>
@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import { message } from 'ant-design-vue'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
@@ -144,8 +144,7 @@ import { useRouter } from 'vue-router'
 import DeliveryDetailsModal from './DeliveryDetailsModal.vue'
 import { salesControlService } from '@/services/salesControlService'
 import { statusLegendItems, generateDateRange } from './data.ts'
-import { DeliveryPlan, DeliveryStatus, PMCSalesControl, RequestDto } from '../types.ts'
-import { compile } from 'vue'
+import { DeliveryPlan, DeliveryStatus, PMCSalesControl } from '../types.ts'
 
 interface TableRowData extends PMCSalesControl {
   id: number
@@ -178,6 +177,9 @@ const STATUS_STYLES: Record<string, { backgroundColor: string; borderColor: stri
   full: { backgroundColor: '#f6ffed', borderColor: '#b7eb8f', color: '#52c41a' },
   partial: { backgroundColor: '#fffbe6', borderColor: '#ffe58f', color: '#faad14' },
   none: { backgroundColor: '#fff2f0', borderColor: '#ffccc7', color: '#ff4d4f' },
+  '满足': { backgroundColor: '#f6ffed', borderColor: '#b7eb8f', color: '#52c41a' },
+  '部分满足': { backgroundColor: '#fffbe6', borderColor: '#ffe58f', color: '#faad14' },
+  '不满足': { backgroundColor: '#fff2f0', borderColor: '#ffccc7', color: '#ff4d4f' },
 }
 
 const PRODUCT_LINK_KEYS = new Set(['货号', '中文品名', '中文规格'])
@@ -223,11 +225,6 @@ function collectPlanDatesInRange(products: PMCSalesControl[], rangeDates: string
   return rangeDates.filter(d => withPlan.has(d))
 }
 
-function getProductTypeAttribute(item: PMCSalesControl): string {
-  const row = item as PMCSalesControl & { 物料类型?: string }
-  return row.商品属性 || row.物料类型 || ''
-}
-
 // ==================== 工具函数 ====================
 function getCurrentMonthRange(): [Dayjs, Dayjs] {
   const now = dayjs()
@@ -242,7 +239,7 @@ function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
     return plans.filter(p => p && typeof p === 'object').map(p => ({
       交货日期: p.交货日期 || '',
       交货数量: Number(p.交货数量) || 0,
-      状态: p.状态 || '',
+      状态: p.状态 || '不满足',
       排产用户: p.排产用户 || '',
     }))
   } catch {
@@ -252,12 +249,13 @@ function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
 }
 
 function getStatusConfig(status: string) {
-  const effectiveStatus = status || 'partial'
-  return STATUS_STYLES[effectiveStatus] || STATUS_STYLES.partial
+  const effectiveStatus = status || '部分满足'
+  return STATUS_STYLES[effectiveStatus] || STATUS_STYLES['部分满足']
 }
 
 // ==================== 响应式状态 ====================
 const router = useRouter()
+const activeTab = ref('salesControl')
 const validationBasis = ref<'warehouseOnly' | 'warehouseAndProduction'>('warehouseOnly')
 const dateRange = ref<[Dayjs, Dayjs] | null>(getCurrentMonthRange())
 const loading = ref(false)
@@ -267,7 +265,11 @@ const currentProduct = ref<PMCSalesControl | null>(null)
 const currentDelivery = ref<{ product: PMCSalesControl; plan: DeliveryPlan; cumulativeDelivered: number } | null>(null)
 const productList = ref<PMCSalesControl[]>([])
 
-const productType = ref<'成品' | '半成品'>('成品')
+function handleTabChange(key: string) {
+  if (key === 'workOrderTracking') {
+    router.push({ name: 'WorkOrderTracking' })
+  }
+}
 
 // ==================== 计算属性 ====================
 const displayDates = computed(() => {
@@ -276,17 +278,13 @@ const displayDates = computed(() => {
   return generateDateRange(start.format(dateFormat), end.format(dateFormat))
 })
 
-const filteredProductList = computed(() =>
-  productList.value.filter(item => getProductTypeAttribute(item) === productType.value)
-)
-
 /** 开启「筛选交付列」时，仅保留当前范围内、至少有一条交货计划的日期 */
 const filterDeliveryColumnsOnly = ref(false)
 
 const activeDisplayDates = computed(() => {
   const rangeDates = displayDates.value
   if (!filterDeliveryColumnsOnly.value) return rangeDates
-  return collectPlanDatesInRange(filteredProductList.value, rangeDates)
+  return collectPlanDatesInRange(displayProductList.value, rangeDates)
 })
 
 const tableScrollWidth = computed(() => {
@@ -303,6 +301,9 @@ const tableScrollWidth = computed(() => {
   const dateColumnWidth = COLUMN_WIDTHS.delivery * activeDisplayDates.value.length
   return Math.max(fixedWidth + dateColumnWidth, 1200)
 })
+
+/** 获取当前显示的产品列表（移除商品类型过滤，显示所有产品） */
+const displayProductList = computed(() => productList.value)
 
 const tableColumns = computed(() => {
   const baseColumns = [
@@ -330,7 +331,7 @@ const tableColumns = computed(() => {
 })
 
 const tableData = computed<TableRowData[]>(() => {
-  return filteredProductList.value.map((product, idx) => {
+  return displayProductList.value.map((product, idx) => {
     const warehouseQty = Number(product.仓库数) || 0
     const productionQty = Number(product.在产数) || 0
     const orderTotal = Number(product.订单总需求) || 0
@@ -394,7 +395,6 @@ async function fetchData() {
 function handleReset() {
   validationBasis.value = 'warehouseOnly'
   dateRange.value = getCurrentMonthRange()
-  productType.value = '成品'      // 重置时恢复为成品显示
   filterDeliveryColumnsOnly.value = false
   fetchData()
 }
@@ -421,7 +421,7 @@ function handleProductClick(record: TableRowData) {
 
 function handleNumberClick(record: TableRowData, column: { key: string }) {
   console.log(record);
-  if (column.key === '缺量' && Number(record.缺量) < 0) {
+  if (column.key === '缺量' && Number(record.缺量) <= 0) {
     router.push({
       name: 'PMCDetail',
       query: {
@@ -515,13 +515,13 @@ function computeDeliveryStatuses(
     let status: string
     if (cumulativeBefore >= initialAvailable) {
       // 之前累计已耗尽库存，当前批次无法交付
-      status = 'none'
+      status = '不满足'
     } else {
       const remaining = initialAvailable - cumulativeBefore // 剩余可用量
       if (remaining >= qty) {
-        status = 'full' // 当前批次可全部交付
+        status = '满足' // 当前批次可全部交付
       } else {
-        status = 'partial' // 当前批次只能部分交付
+        status = '部分满足' // 当前批次只能部分交付
       }
     }
     result.set(date, { quantity: qty, status, 排产用户: entry.排产用户 })
@@ -531,6 +531,10 @@ function computeDeliveryStatuses(
 
   return result
 }
+
+onActivated(() => {
+  activeTab.value = 'salesControl'
+})
 
 onMounted(() => {
   fetchData()
@@ -581,50 +585,6 @@ onMounted(() => {
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-}
-
-/* 商品类型切换按钮样式，与现有 radio 风格统一 */
-.product-type-switch {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: #f8f9fc;
-  padding: 6px 14px;
-  border-radius: 30px;
-}
-
-.switch-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #262626;
-}
-
-:deep(.product-type-switch .ant-radio-group) {
-  display: flex;
-  gap: 8px;
-}
-
-:deep(.product-type-switch .ant-radio-button-wrapper) {
-  height: 28px;
-  line-height: 26px;
-  padding: 0 16px;
-  border: 1px solid #e6e9f0;
-  border-radius: 20px !important;
-  background: #ffffff;
-  color: #595959;
-  font-size: 12px;
-  font-weight: 500;
-  margin: 0 !important;
-}
-
-:deep(.product-type-switch .ant-radio-button-wrapper:not(:first-child))::before {
-  display: none !important;
-}
-
-:deep(.product-type-switch .ant-radio-button-wrapper-checked) {
-  border-color: #1e3a5f !important;
-  background: #1e3a5f !important;
-  color: #ffffff !important;
 }
 
 /* 其余原有样式保持 */
@@ -795,6 +755,14 @@ onMounted(() => {
   background-color: #ffffff;
   border-radius: 12px;
   margin-top: 16px;
+}
+
+.tab-bar {
+  margin-left: auto;
+}
+
+.tab-bar .ant-tabs-nav {
+  margin-bottom: 0;
 }
 
 @media (max-width: 768px) {

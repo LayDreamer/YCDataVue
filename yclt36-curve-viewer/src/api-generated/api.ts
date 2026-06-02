@@ -792,6 +792,90 @@ export class Service {
     }
 
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateWorkOrderSalesControlList(body: WorkOrderSalesControl[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateWorkOrderSalesControlList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateWorkOrderSalesControlList(_response);
+        });
+    }
+
+    protected processAddOrUpdateWorkOrderSalesControlList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    getWorkOrderSalesControlList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetWorkOrderSalesControlList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetWorkOrderSalesControlList(_response);
+        });
+    }
+
+    protected processGetWorkOrderSalesControlList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
      * @param redirectUri (optional) 
      * @param state (optional) 
      * @return OK
@@ -1221,6 +1305,44 @@ export class Service {
         }
         return Promise.resolve<void>(null as any);
     }
+
+    /**
+     * @param url (optional) 
+     * @return OK
+     */
+    jssdkConfig(url: string | undefined): Promise<void> {
+        let url_ = this.baseUrl + "/api/WechatWork/jssdk-config?";
+        if (url === null)
+            throw new globalThis.Error("The parameter 'url' cannot be null.");
+        else if (url !== undefined)
+            url_ += "url=" + encodeURIComponent("" + url) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processJssdkConfig(_response);
+        });
+    }
+
+    protected processJssdkConfig(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
 }
 
 export class BLFParameter implements IBLFParameter {
@@ -1634,6 +1756,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
     打印?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
+    数量?: string | undefined;
     货号?: string | undefined;
     中文品名?: string | undefined;
     中文规格?: string | undefined;
@@ -1670,6 +1793,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
             this.打印 = _data["打印"];
             this.合同号 = _data["合同号"];
             this.排产编号 = _data["排产编号"];
+            this.数量 = _data["数量"];
             this.货号 = _data["货号"];
             this.中文品名 = _data["中文品名"];
             this.中文规格 = _data["中文规格"];
@@ -1706,6 +1830,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
         data["打印"] = this.打印;
         data["合同号"] = this.合同号;
         data["排产编号"] = this.排产编号;
+        data["数量"] = this.数量;
         data["货号"] = this.货号;
         data["中文品名"] = this.中文品名;
         data["中文规格"] = this.中文规格;
@@ -1735,6 +1860,7 @@ export interface IPMCDeliveryReview {
     打印?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
+    数量?: string | undefined;
     货号?: string | undefined;
     中文品名?: string | undefined;
     中文规格?: string | undefined;
@@ -1813,6 +1939,7 @@ export class PMCRequestDto implements IPMCRequestDto {
     分析单号?: string | undefined;
     货号?: string | undefined;
     线圈货号?: string | undefined;
+    补充数据?: string | undefined;
 
     constructor(data?: IPMCRequestDto) {
         if (data) {
@@ -1830,6 +1957,7 @@ export class PMCRequestDto implements IPMCRequestDto {
             this.分析单号 = _data["分析单号"];
             this.货号 = _data["货号"];
             this.线圈货号 = _data["线圈货号"];
+            this.补充数据 = _data["补充数据"];
         }
     }
 
@@ -1847,6 +1975,7 @@ export class PMCRequestDto implements IPMCRequestDto {
         data["分析单号"] = this.分析单号;
         data["货号"] = this.货号;
         data["线圈货号"] = this.线圈货号;
+        data["补充数据"] = this.补充数据;
         return data;
     }
 }
@@ -1857,6 +1986,7 @@ export interface IPMCRequestDto {
     分析单号?: string | undefined;
     货号?: string | undefined;
     线圈货号?: string | undefined;
+    补充数据?: string | undefined;
 }
 
 export class PMCWorkOrder implements IPMCWorkOrder {
@@ -2114,6 +2244,122 @@ export enum WechatWorkMessageType {
     _3 = 3,
     _4 = 4,
     _5 = 5,
+}
+
+export class WorkOrderSalesControl implements IWorkOrderSalesControl {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    车间名称?: string | undefined;
+    商品属性?: string | undefined;
+    货号?: string | undefined;
+    品名?: string | undefined;
+    规格?: string | undefined;
+    工单总数?: string | undefined;
+    已入库数?: string | undefined;
+    在产数量?: string | undefined;
+    齐套?: string | undefined;
+    配料?: string | undefined;
+    分析日期?: string | undefined;
+    生产完成率?: string | undefined;
+    交货计划?: string | undefined;
+
+    constructor(data?: IWorkOrderSalesControl) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.车间名称 = _data["车间名称"];
+            this.商品属性 = _data["商品属性"];
+            this.货号 = _data["货号"];
+            this.品名 = _data["品名"];
+            this.规格 = _data["规格"];
+            this.工单总数 = _data["工单总数"];
+            this.已入库数 = _data["已入库数"];
+            this.在产数量 = _data["在产数量"];
+            this.齐套 = _data["齐套"];
+            this.配料 = _data["配料"];
+            this.分析日期 = _data["分析日期"];
+            this.生产完成率 = _data["生产完成率"];
+            this.交货计划 = _data["交货计划"];
+        }
+    }
+
+    static fromJS(data: any): WorkOrderSalesControl {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkOrderSalesControl();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["车间名称"] = this.车间名称;
+        data["商品属性"] = this.商品属性;
+        data["货号"] = this.货号;
+        data["品名"] = this.品名;
+        data["规格"] = this.规格;
+        data["工单总数"] = this.工单总数;
+        data["已入库数"] = this.已入库数;
+        data["在产数量"] = this.在产数量;
+        data["齐套"] = this.齐套;
+        data["配料"] = this.配料;
+        data["分析日期"] = this.分析日期;
+        data["生产完成率"] = this.生产完成率;
+        data["交货计划"] = this.交货计划;
+        return data;
+    }
+}
+
+export interface IWorkOrderSalesControl {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    车间名称?: string | undefined;
+    商品属性?: string | undefined;
+    货号?: string | undefined;
+    品名?: string | undefined;
+    规格?: string | undefined;
+    工单总数?: string | undefined;
+    已入库数?: string | undefined;
+    在产数量?: string | undefined;
+    齐套?: string | undefined;
+    配料?: string | undefined;
+    分析日期?: string | undefined;
+    生产完成率?: string | undefined;
+    交货计划?: string | undefined;
 }
 
 export class ApiException extends Error {

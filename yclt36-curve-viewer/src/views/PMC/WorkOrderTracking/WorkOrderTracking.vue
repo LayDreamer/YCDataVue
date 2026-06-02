@@ -1,19 +1,16 @@
 <template>
   <div class="work-order-tracking-container">
     <!-- 顶部标题栏 -->
-    <div class="page-header">
+    <!-- <div class="page-header">
       <div class="header-left">
         <ContainerOutlined class="header-icon" />
         <span class="header-title">工单销控表 - 物料齐套与生产跟踪</span>
       </div>
-      <a-button type="link" class="header-link" @click="goToSalesControl">
-        成品销控表
-      </a-button>
-    </div>
+    </div> -->
 
     <!-- 筛选栏 -->
     <div class="filter-bar">
-      <!-- 第一行：快捷筛选 + 操作 -->
+      <!-- 第一行：快捷筛选 + tab -->
       <div class="filter-row">
         <div class="quick-filters">
           <a-checkbox-group v-model:value="quickFilters" :options="quickFilterOptions" />
@@ -25,6 +22,12 @@
           >
             齐套、配料分析
           </a-button>
+        </div>
+        <div class="tab-bar">
+          <a-tabs v-model:activeKey="activeTab" size="small" @change="handleTabChange">
+            <a-tab-pane key="salesControl" tab="成品销控表" />
+            <a-tab-pane key="workOrderTracking" tab="工单销控表" />
+          </a-tabs>
         </div>
       </div>
 
@@ -184,7 +187,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import { message } from 'ant-design-vue'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
@@ -201,9 +204,10 @@ import {
   feedingStatusOptions,
   workshopOptions,
   generateDateRange,
-  generateMockData,
   type WorkOrderTrackItem
 } from './data'
+import { workOrderSalesControlService } from '@/services/workOrderSalesControlService'
+import { WorkOrderSalesControl } from '@/api-generated/api'
 
 interface DeliveryPlan {
   交货日期: string
@@ -239,6 +243,9 @@ const STATUS_STYLES: Record<string, { backgroundColor: string; borderColor: stri
   full: { backgroundColor: '#f6ffed', borderColor: '#b7eb8f', color: '#52c41a' },
   partial: { backgroundColor: '#fffbe6', borderColor: '#ffe58f', color: '#faad14' },
   none: { backgroundColor: '#fff2f0', borderColor: '#ffccc7', color: '#ff4d4f' },
+  '满足': { backgroundColor: '#f6ffed', borderColor: '#b7eb8f', color: '#52c41a' },
+  '部分满足': { backgroundColor: '#fffbe6', borderColor: '#ffe58f', color: '#faad14' },
+  '不满足': { backgroundColor: '#fff2f0', borderColor: '#ffccc7', color: '#ff4d4f' },
 }
 
 const LINK_COLUMNS = new Set(['货号', '中文品名', '中文规格'])
@@ -267,6 +274,7 @@ function dateColumnKeyToIso(key: string) {
 
 // ==================== 响应式状态 ====================
 const router = useRouter()
+const activeTab = ref('workOrderTracking')
 const loading = ref(false)
 const dataSource = ref<WorkOrderTrackItem[]>([])
 
@@ -293,6 +301,12 @@ const productionDate = ref<Dayjs | null>(null)
 const workshop = ref<string | undefined>(undefined)
 const searchKeyword = ref('')
 const dateRange = ref<[Dayjs, Dayjs] | null>([dayjs('2026-01-01'), dayjs('2026-01-10')])
+
+function handleTabChange(key: string) {
+  if (key === 'salesControl') {
+    router.push({ name: 'SalesControl' })
+  }
+}
 
 // ==================== 计算属性 ====================
 const displayDates = computed(() => {
@@ -430,7 +444,7 @@ function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
     return plans.filter(p => p && typeof p === 'object').map(p => ({
       交货日期: p.交货日期 || '',
       交货数量: Number(p.交货数量) || 0,
-      状态: p.状态 || 'none',
+      状态: p.状态 || '不满足',
     }))
   } catch {
     return []
@@ -525,8 +539,73 @@ function handleDeliveryClick(record: TableRowData, dateKey: string) {
   message.info(`交货详情：${record.货号}，日期 ${targetDate}，数量 ${planInfo.quantity}`)
 }
 
+function mapApiItemToTableItem(item: any): WorkOrderTrackItem {
+  return {
+    id: Number(item['编号']) || 0,
+    车间名称: item['车间名称'] || '',
+    商品属性: item['商品属性'] || '',
+    货号: item['货号'] || '',
+    中文品名: item['品名'] || '',
+    中文规格: item['规格'] || '',
+    工单总数: Number(item['工单总数']) || 0,
+    已入库数: Number(item['已入库数']) || 0,
+    在产数量: Number(item['在产数量']) || 0,
+    齐套状态: item['齐套'] || '未分析',
+    配料状态: item['配料'] || '未配料',
+    分析日期: item['分析日期'] || '',
+    生产完成率: Number(item['生产完成率']) || 0,
+    交货计划: item['交货计划'] || '',
+  }
+}
+
+async function initTestData() {
+  try {
+    const existing = dataSource.value.find((item) => item.货号 === '18058-TEST')
+
+    const testItem = new WorkOrderSalesControl()
+    testItem.车间名称 = '装配车间A组'
+    testItem.商品属性 = '电磁阀系列'
+    testItem.货号 = '18058-TEST'
+    testItem.品名 = '燃油箱通气阀'
+    testItem.规格 = '6OE906517A TEST'
+    testItem.工单总数 = '2000'
+    testItem.已入库数 = '921'
+    testItem.在产数量 = '1079'
+    testItem.齐套 = '缺料'
+    testItem.配料 = '配料中'
+    testItem.分析日期 = '2026-05-18 13:50:27'
+    testItem.生产完成率 = '46'
+    testItem.交货计划 = JSON.stringify([
+      { 交货日期: '2026-01-01', 交货数量: 79, 状态: '满足' },
+      { 交货日期: '2026-01-03', 交货数量: 100, 状态: '不满足' },
+      { 交货日期: '2026-01-05', 交货数量: 500, 状态: '部分满足' },
+    ])
+
+    if (existing) {
+      testItem.编号 = String(existing.id)
+    }
+
+    await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlList([testItem])
+    message.success(existing ? '测试数据更新成功' : '测试数据新增成功')
+  } catch (error: any) {
+    message.error(error.message || '操作测试数据失败')
+  }
+}
+
+async function fetchData() {
+  loading.value = true
+  try {
+    const res = await workOrderSalesControlService.getWorkOrderSalesControlList()
+    dataSource.value = (res || []).map((item: any) => mapApiItemToTableItem(item))
+  } catch (error: any) {
+    message.error(error.message || '获取数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
 function handleSearch() {
-  message.success('筛选完成')
+  fetchData()
 }
 
 function handleReset() {
@@ -542,20 +621,14 @@ function handleReset() {
   message.success('重置完成')
 }
 
-function goToSalesControl() {
-  router.push({ name: 'SalesControl' })
-}
+onActivated(() => {
+  activeTab.value = 'workOrderTracking'
+})
 
-function fetchData() {
-  loading.value = true
-  setTimeout(() => {
-    dataSource.value = generateMockData()
-    loading.value = false
-  }, 500)
-}
-
-onMounted(() => {
-  fetchData()
+onMounted(async () => {
+  await fetchData()
+  await initTestData()
+  await fetchData()
 })
 </script>
 
@@ -769,6 +842,14 @@ onMounted(() => {
 
 .no-delivery {
   color: #d0d5dd;
+}
+
+.tab-bar {
+  margin-left: auto;
+}
+
+.tab-bar :deep(.ant-tabs-nav) {
+  margin-bottom: 0;
 }
 
 /* 响应式 */

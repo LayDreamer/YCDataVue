@@ -536,16 +536,7 @@ const loadData = async () => {
 // 保存分析
 const handleSave = async () => { 
   saveLoading.value = true;
-  try {    
-    // 构建工单数据
-    // const workOrderData = new PMCWorkOrder({   
-    //   工单单号: '100152771033',
-    //   生产单位:mainRecord.value.工序车间 || '',
-    //   成品编号:form.partNo ,
-    //   成品品名: form.productName,
-    //   规格: form.spec,
-    //   订单编号:mainRecord.value.合同号 || '',
-    // }); 
+  try {        
     const requestDto= new PMCRequestDto({
       货号: form.partNo,
     });

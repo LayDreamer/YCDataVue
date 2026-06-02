@@ -6,6 +6,7 @@ import Dashboard from '../views/Dashboard.vue'
 import Home from '../views/Home.vue'
 import SalesControl from '@/views/PMC/SalesControl/SalesControl.vue'
 import WorkOrderManagement from '@/views/PMC/WorkOrderManagement/WorkOrderManagement.vue'
+import WorkOrderTracking from '@/views/PMC/WorkOrderTracking/WorkOrderTracking.vue'
 import SchedulingAnalysis from '@/views/PMC/SchedulingAnalysis/SchedulingAnalysis.vue'
 import DeliveryReview from '@/views/PMC/DeliveryReview/DeliveryReview.vue' 
 import ReviewDetail from '@/views/PMC/DeliveryReview/ReviewDetail.vue'
@@ -75,6 +76,12 @@ const routes = [
             name: 'WorkOrderManagement',
             component: WorkOrderManagement,
             meta: { title: '工单管理', icon: ContainerOutlined }
+          },
+          {
+            path: 'workOrderTracking',
+            name: 'WorkOrderTracking',
+            component: WorkOrderTracking,
+            meta: { title: '工单销控表', icon: ContainerOutlined ,hidden: true}
           }
         ]
       },

@@ -2,21 +2,21 @@ import type { Product, StatusLegendItem } from '../types'
 // 状态图例配置
 export const statusLegendItems: StatusLegendItem[] = [
   {
-    status: 'full',
+    status: '满足',
     label: '满足',
     color: '#52c41a',
     backgroundColor: '#f6ffed',
     borderColor: '#b7eb8f'
   },
   {
-    status: 'partial',
+    status: '部分满足',
     label: '部分满足',
     color: '#faad14',
     backgroundColor: '#fffbe6',
     borderColor: '#ffe58f'
   },
   {
-    status: 'none',
+    status: '不满足',
     label: '不满足',
     color: '#ff4d4f',
     backgroundColor: '#fff2f0',

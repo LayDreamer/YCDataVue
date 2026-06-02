@@ -18,7 +18,7 @@ export interface ERPBase {
 }
 
 // 交货计划状态
-export type DeliveryStatus = 'full' | 'partial' | 'none'
+export type DeliveryStatus = '满足' | '部分满足' | '不满足'
 
 // 交货计划
 export interface DeliveryPlan {
@@ -53,7 +53,7 @@ export interface FilterParams {
 
 // 状态图例项
 export interface StatusLegendItem {
-  status: DeliveryStatus
+  status: string
   label: string
   color: string
   backgroundColor: string

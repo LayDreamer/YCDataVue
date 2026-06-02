@@ -111,13 +111,13 @@ const modalTitle = computed(() =>
 const statusText = computed(() => {
   if (props.detailType !== 'delivery' || !props.delivery) return ''
   const status = props.delivery.plan.状态
-  return status === 'full' ? '满足' : status === 'partial' ? '部分满足' : '不满足'
+  return status || '不满足'
 })
 
 const statusTextMap: Record<string, string> = {
-  full: '满足',
-  partial: '部分满足',
-  none: '不满足',
+  '满足': '满足',
+  '部分满足': '部分满足',
+  '不满足': '不满足',
 }
 
 // 解析产品交货计划
@@ -133,7 +133,7 @@ const productDeliveryPlans = computed(() => {
         排产用户: p.排产用户 || '',
         交货日期: p.交货日期 || '',
         交货数量: Number(p.交货数量) || 0,
-        状态: (p.状态 || '') as 'full' | 'partial' | 'none',
+        状态: (p.状态 || '不满足') as '满足' | '部分满足' | '不满足',
       }))
       .filter((p: any) => p.交货日期)
       .sort((a: any, b: any) => a.交货日期.localeCompare(b.交货日期))
