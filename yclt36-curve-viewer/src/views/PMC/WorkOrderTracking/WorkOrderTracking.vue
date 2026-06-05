@@ -89,7 +89,7 @@
           />
 
           <div class="filter-actions">
-            <a-button type="primary" @click="handleSearch">
+            <a-button :type="isFiltered ? 'primary' : 'default'" @click="handleSearch">
               <FilterOutlined />筛选
             </a-button>
             <a-button @click="handleReset">
@@ -108,18 +108,18 @@
         :pagination="tablePagination"
         :scroll="{ x: tableScrollWidth, y: 480 }"
         :loading="loading"
-        row-key="id"
+        row-key="编号"
         size="small"
       >
         <template #headerCell="{ column }">
           <span class="header-cell">{{ column.title }}</span>
         </template>
 
-        <template #bodyCell="{ column, record, text }">
+        <template #bodyCell="{ column, record, text, index }">
           <template v-if="column.key === 'index'">
-            <span class="index-cell">{{ record.id }}</span>
+            <span class="index-cell">{{ index + 1 }}</span>
           </template>
-          <template v-else-if="column.key === '齐套状态'">
+          <template v-else-if="column.key === '齐套'">
             <span
               class="status-tag"
               :style="getKittingStyle(text)"
@@ -127,7 +127,7 @@
               {{ text }}
             </span>
           </template>
-          <template v-else-if="column.key === '配料状态'">
+          <template v-else-if="column.key === '配料'">
             <span
               class="status-tag"
               :style="getFeedingStyle(text)"
@@ -153,7 +153,6 @@
               <span
                 class="delivery-cell"
                 :style="getDeliveryStyle(record.deliveryMap[column.key].status)"
-                @click="handleDeliveryClick(record, column.key)"
               >
                 {{ record.deliveryMap[column.key].quantity }}
               </span>
@@ -163,7 +162,7 @@
             </template>
           </template>
           <template v-else-if="isLinkColumn(column.key)">
-            <span class="link-cell" @click="handleProductClick(record)">{{ text }}</span>
+            <span class="link-cell">{{ text }}</span>
           </template>
           <template v-else-if="column.key === '工单总数'">
             <span class="number-cell link-number" @click="handleTotalClick(record)">{{ formatNumber(text) }}</span>
@@ -202,9 +201,7 @@ import {
   statusLegendItems,
   kittingStatusOptions,
   feedingStatusOptions,
-  workshopOptions,
-  generateDateRange,
-  type WorkOrderTrackItem
+  generateDateRange
 } from './data'
 import { workOrderSalesControlService } from '@/services/workOrderSalesControlService'
 import { WorkOrderSalesControl } from '@/api-generated/api'
@@ -215,7 +212,7 @@ interface DeliveryPlan {
   状态: string
 }
 
-interface TableRowData extends WorkOrderTrackItem {
+interface TableRowData extends WorkOrderSalesControl {
   deliveryMap: Record<string, { quantity: number; status: string } | null>
   _deliveryPlans: DeliveryPlan[]
 }
@@ -248,7 +245,7 @@ const STATUS_STYLES: Record<string, { backgroundColor: string; borderColor: stri
   '不满足': { backgroundColor: '#fff2f0', borderColor: '#ffccc7', color: '#ff4d4f' },
 }
 
-const LINK_COLUMNS = new Set(['货号', '中文品名', '中文规格'])
+const LINK_COLUMNS = new Set(['货号', '品名', '规格'])
 const NUMBER_COLUMNS = new Set(['工单总数', '已入库数', '在产数量'])
 
 function isLinkColumn(key: string) {
@@ -276,7 +273,7 @@ function dateColumnKeyToIso(key: string) {
 const router = useRouter()
 const activeTab = ref('workOrderTracking')
 const loading = ref(false)
-const dataSource = ref<WorkOrderTrackItem[]>([])
+const dataSource = ref<WorkOrderSalesControl[]>([])
 
 // 弹窗状态
 const detailModalVisible = ref(false)
@@ -309,6 +306,34 @@ function handleTabChange(key: string) {
 }
 
 // ==================== 计算属性 ====================
+const workshopOptions = computed(() => {
+  const set = new Set<string>()
+  dataSource.value.forEach(item => {
+    const name = item.车间名称?.trim()
+    if (name && name !== '' && name !== '-') {
+      set.add(name)
+    }
+  })
+  return Array.from(set).map(name => ({ label: name, value: name }))
+})
+
+const isFiltered = computed(() => {
+  const isDateRangeChanged = dateRange.value && (
+    dateRange.value[0].format(dateFormat) !== dayjs('2026-01-01').format(dateFormat) ||
+    dateRange.value[1].format(dateFormat) !== dayjs('2026-01-10').format(dateFormat)
+  )
+  return (
+    quickFilters.value.length > 0 ||
+    showKittingAnalysis.value ||
+    kittingStatus.value !== undefined ||
+    feedingStatus.value !== undefined ||
+    hasProductionDate.value ||
+    workshop.value !== undefined ||
+    searchKeyword.value !== '' ||
+    !!isDateRangeChanged
+  )
+})
+
 const displayDates = computed(() => {
   if (!dateRange.value) return []
   const [start, end] = dateRange.value
@@ -335,27 +360,28 @@ const tableScrollWidth = computed(() => {
 })
 
 const filteredData = computed(() => {
-  let result = [...dataSource.value]
+  // 只显示没有父级编号的顶层节点
+  let result = dataSource.value;
 
   // 快捷筛选
   if (quickFilters.value.length > 0) {
     result = result.filter(item => {
       const filters = quickFilters.value
-      const matchKitting = filters.includes('配齐/齐套') && item.齐套状态 === '齐套'
-      const matchFeeding = filters.includes('配料中/缺料') && (item.配料状态 === '配料中' || item.齐套状态 === '缺料')
-      const matchUnanalysis = filters.includes('未分析') && item.齐套状态 === '未分析'
+      const matchKitting = filters.includes('配齐/齐套') && item.齐套 === '齐套'
+      const matchFeeding = filters.includes('配料中/缺料') && (item.配料 === '配料中' || item.齐套 === '缺料')
+      const matchUnanalysis = filters.includes('未分析') && item.齐套 === '未分析'
       return matchKitting || matchFeeding || matchUnanalysis
     })
   }
 
   // 齐套状态筛选
   if (kittingStatus.value) {
-    result = result.filter(item => item.齐套状态 === kittingStatus.value)
+    result = result.filter(item => item.齐套 === kittingStatus.value)
   }
 
   // 配料状态筛选
   if (feedingStatus.value) {
-    result = result.filter(item => item.配料状态 === feedingStatus.value)
+    result = result.filter(item => item.配料 === feedingStatus.value)
   }
 
   // 车间筛选
@@ -369,8 +395,8 @@ const filteredData = computed(() => {
     result = result.filter(
       item =>
         item.货号?.toLowerCase().includes(kw) ||
-        item.中文品名?.toLowerCase().includes(kw) ||
-        item.中文规格?.toLowerCase().includes(kw)
+        item.品名?.toLowerCase().includes(kw) ||
+        item.规格?.toLowerCase().includes(kw)
     )
   }
 
@@ -379,17 +405,17 @@ const filteredData = computed(() => {
 
 const tableColumns = computed(() => {
   const baseColumns = [
-    { title: '序号', dataIndex: 'id', key: 'index', width: COLUMN_WIDTHS.index, fixed: 'left', align: 'center' },
+    { title: '序号', dataIndex: 'index', key: 'index', width: COLUMN_WIDTHS.index, fixed: 'left', align: 'center' },
     { title: '车间名称', dataIndex: '车间名称', key: '车间名称', width: COLUMN_WIDTHS.workshop, fixed: 'left' },
     { title: '商品属性', dataIndex: '商品属性', key: '商品属性', width: COLUMN_WIDTHS.attribute, fixed: 'left' },
     { title: '货号', dataIndex: '货号', key: '货号', width: COLUMN_WIDTHS.productNo, fixed: 'left' },
-    { title: '品名', dataIndex: '中文品名', key: '中文品名', width: COLUMN_WIDTHS.productName, fixed: 'left' },
-    { title: '规格', dataIndex: '中文规格', key: '中文规格', width: COLUMN_WIDTHS.spec, fixed: 'left' },
+    { title: '品名', dataIndex: '品名', key: '品名', width: COLUMN_WIDTHS.productName, fixed: 'left' },
+    { title: '规格', dataIndex: '规格', key: '规格', width: COLUMN_WIDTHS.spec, fixed: 'left' },
     { title: '工单总数', dataIndex: '工单总数', key: '工单总数', width: COLUMN_WIDTHS.total, fixed: 'left', align: 'center' },
     { title: '已入库数', dataIndex: '已入库数', key: '已入库数', width: COLUMN_WIDTHS.stored, fixed: 'left', align: 'center' },
     { title: '在产数量', dataIndex: '在产数量', key: '在产数量', width: COLUMN_WIDTHS.inProd, fixed: 'left', align: 'center' },
-    { title: '齐套', dataIndex: '齐套状态', key: '齐套状态', width: COLUMN_WIDTHS.kitting, fixed: 'left', align: 'center' },
-    { title: '配料', dataIndex: '配料状态', key: '配料状态', width: COLUMN_WIDTHS.feeding, fixed: 'left', align: 'center' },
+    { title: '齐套', dataIndex: '齐套', key: '齐套', width: COLUMN_WIDTHS.kitting, fixed: 'left', align: 'center' },
+    { title: '配料', dataIndex: '配料', key: '配料', width: COLUMN_WIDTHS.feeding, fixed: 'left', align: 'center' },
     { title: '分析日期', dataIndex: '分析日期', key: '分析日期', width: COLUMN_WIDTHS.analysisDate, fixed: 'left', align: 'center' },
     { title: '生产完成率', dataIndex: '生产完成率', key: '生产完成率', width: COLUMN_WIDTHS.progress, fixed: 'left', align: 'center' },
   ]
@@ -407,7 +433,7 @@ const tableColumns = computed(() => {
 })
 
 const tableData = computed<TableRowData[]>(() => {
-  return filteredData.value.map(item => {
+  return filteredData.value.map((item, index) => {
     const rawPlans = parseDeliveryPlans(item.交货计划)
     const deliveryMap: Record<string, { quantity: number; status: string } | null> = {}
 
@@ -436,7 +462,7 @@ const tablePagination = computed(() => ({
 }))
 
 // ==================== 方法 ====================
-function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
+function parseDeliveryPlans(deliveryPlanStr: string | undefined): DeliveryPlan[] {
   if (!deliveryPlanStr) return []
   try {
     const parsed = JSON.parse(deliveryPlanStr)
@@ -479,57 +505,77 @@ function getProgressColor(percent: number) {
 }
 
 function handleProductClick(record: TableRowData) {
-  message.info(`查看产品：${record.货号} ${record.中文品名}`)
+  message.info(`查看产品：${record.货号} ${record.品名}`)
 }
 
-function handleTotalClick(record: TableRowData) {
-  currentProductNo.value = record.货号
-  currentProductName.value = record.中文品名
-  currentProductSpec.value = record.中文规格
+async function handleTotalClick(record: TableRowData) {
+  currentProductNo.value = record.货号 || ''
+  currentProductName.value = record.品名 || ''
+  currentProductSpec.value = record.规格 || ''
   currentWorkOrderData.value = generateWorkOrderDetail(record)
-  currentMaterialData.value = generateMaterialDetail(record)
+  currentMaterialData.value = await generateMaterialDetail(record)
   detailModalVisible.value = true
 }
 
 function generateWorkOrderDetail(record: TableRowData) {
-  const total = record.工单总数
-  const stored = record.已入库数
-  const inProd = record.在产数量
-  const remain = total - stored
+  const stored = Number(record.已入库数) || 0
+  const total = Number(record.工单总数) || 0
+  const plans = record._deliveryPlans || []
 
-  return [
-    {
+  if (plans.length === 0) {
+    return [{
       id: 1,
-      工单单号: '100185503432',
-      完成日期: '2026-01-01',
-      生产数: 1000,
+      工单单号: '-',
+      完成日期: '-',
+      生产数: total,
       入库数量: stored,
-      待产数: remain > 0 ? remain : 0,
-    },
-    {
-      id: 2,
-      工单单号: '100184903258',
-      完成日期: '2026-04-14',
-      生产数: 1000,
-      入库数量: 0,
-      待产数: 1000,
-    },
-  ]
+      待产数: total - stored,
+    }]
+  }
+
+  return plans.map((plan: any, idx: number) => ({
+    id: idx + 1,
+    工单单号: `WO-${record.货号}-${idx + 1}`,
+    完成日期: plan.交货日期 || '-',
+    生产数: plan.交货数量 || 0,
+    入库数量: 0,
+    待产数: plan.交货数量 || 0,
+  }))
 }
 
-function generateMaterialDetail(record: TableRowData) {
-  const total = record.工单总数
-  return [
-    { id: 1, 货号: '18057.01.012', 品名: '阀体', 规格: 'PA66-GF30/黑色（加激光刻字粉）', 用量: 1, 需求数: total, 已出库数: total, 缺料数: 0, 仓库名称: '半成品库', 仓库数: 1833, 仓库缺料: 0 },
-    { id: 2, 货号: '18057.01.08', 品名: '密封座', 规格: 'PA66-GF30/黑色', 用量: 1, 需求数: total, 已出库数: total, 缺料数: 0, 仓库名称: '半成品库', 仓库数: 1371, 仓库缺料: 0 },
-    { id: 3, 货号: '18057.06.03', 品名: '线圈组件', 规格: '/', 用量: 1, 需求数: total, 已出库数: 0, 缺料数: 2000, 仓库名称: '质量部样品仓', 仓库数: 4, 仓库缺料: 1996 },
-    { id: 4, 货号: '18057.09.011', 品名: '导磁套', 规格: 'ST-14/镀锌', 用量: 1, 需求数: total, 已出库数: total, 缺料数: 0, 仓库名称: '半成品库', 仓库数: 1254, 仓库缺料: 0 },
-    { id: 5, 货号: '18057.09.06', 品名: '固定铁芯', 规格: '45#/镀镍', 用量: 1, 需求数: total, 已出库数: total, 缺料数: 0, 仓库名称: '半成品库', 仓库数: 990, 仓库缺料: 0 },
-    { id: 6, 货号: '18057.12.013', 品名: 'O型圈', 规格: 'FKM75*/内径8.5mm*线径1.8...', 用量: 1, 需求数: total, 已出库数: total, 缺料数: 0, 仓库名称: '半成品库', 仓库数: 148, 仓库缺料: 0 },
-    { id: 7, 货号: '18057.13.07', 品名: '复位弹簧', 规格: 'SUS304/本色/φ0.45*7.3*...', 用量: 1, 需求数: total, 已出库数: total, 缺料数: 0, 仓库名称: '半成品库', 仓库数: 5075, 仓库缺料: 0 },
-    { id: 8, 货号: '18057.17.02', 品名: '密封圈', 规格: 'FKM（60-70°）/黑色', 用量: 1, 需求数: total, 已出库数: total, 缺料数: 0, 仓库名称: '半成品库', 仓库数: 4071, 仓库缺料: 0 },
-    { id: 9, 货号: '18057.17.09', 品名: '密封盖', 规格: 'FKM（60-70°）', 用量: 1, 需求数: total, 已出库数: total, 缺料数: 0, 仓库名称: '半成品库', 仓库数: 2183, 仓库缺料: 0 },
-  ]
+async function generateMaterialDetail(record: TableRowData) {
+  try {
+
+    debugger;
+    // 从工单销控表明细接口查询父级编号等于当前编号的数据
+    const res = await workOrderSalesControlService.getWorkOrderSalesControlDetailList()
+    const allDetails = res || []
+    const children = allDetails.filter(
+      (item: any) => item.父级编号 != null && String(item.父级编号) === String(record.编号)
+    )
+
+    if (children.length === 0) {
+      return []
+    }
+
+    return children.map((child: any, idx: number) => ({
+      id: idx + 1,
+      货号: child.货号 || '-',
+      品名: child.品名 || '-',
+      规格: child.规格 || '-',
+      用量: Number(child.用量) || 0,
+      需求数: Number(child.需求数) || 0,
+      已出库数: Number(child.已出库数) || 0,
+      缺料数: Number(child.缺料数) || 0,
+      仓库名称: child.仓库名称 || '-',
+      仓库数: Number(child.仓库数) || 0,
+      仓库缺料: Number(child.仓库缺料) || 0,
+    }))
+  } catch (error) {
+    console.error('查询工单销控表明细失败:', error)
+    message.error('查询物料明细失败')
+    return []
+  }
 }
 
 function handleDeliveryClick(record: TableRowData, dateKey: string) {
@@ -539,57 +585,39 @@ function handleDeliveryClick(record: TableRowData, dateKey: string) {
   message.info(`交货详情：${record.货号}，日期 ${targetDate}，数量 ${planInfo.quantity}`)
 }
 
-function mapApiItemToTableItem(item: any): WorkOrderTrackItem {
-  return {
-    id: Number(item['编号']) || 0,
-    车间名称: item['车间名称'] || '',
-    商品属性: item['商品属性'] || '',
-    货号: item['货号'] || '',
-    中文品名: item['品名'] || '',
-    中文规格: item['规格'] || '',
-    工单总数: Number(item['工单总数']) || 0,
-    已入库数: Number(item['已入库数']) || 0,
-    在产数量: Number(item['在产数量']) || 0,
-    齐套状态: item['齐套'] || '未分析',
-    配料状态: item['配料'] || '未配料',
-    分析日期: item['分析日期'] || '',
-    生产完成率: Number(item['生产完成率']) || 0,
-    交货计划: item['交货计划'] || '',
-  }
+function mapApiItemToTableItem(item: any): WorkOrderSalesControl {
+  const record = new WorkOrderSalesControl()
+  record.编号 = item['编号'] || ''
+  record.车间名称 = item['车间名称'] || ''
+  record.商品属性 = item['商品属性'] || ''
+  record.货号 = item['货号'] || ''
+  record.品名 = item['品名'] || ''
+  record.规格 = item['规格'] || ''
+  record.工单总数 = item['工单总数'] || '0'
+  record.已入库数 = item['已入库数'] || '0'
+  record.在产数量 = item['在产数量'] || '0'
+  record.齐套 = item['齐套'] || '未分析'
+  record.配料 = item['配料'] || '未配料'
+  record.分析日期 = item['分析日期'] || ''
+  record.生产完成率 = item['生产完成率'] || '0'
+  record.交货计划 = item['交货计划'] || ''
+  record.父级编号 = item['父级编号'] || ''
+  return record
 }
 
-async function initTestData() {
-  try {
-    const existing = dataSource.value.find((item) => item.货号 === '18058-TEST')
-
-    const testItem = new WorkOrderSalesControl()
-    testItem.车间名称 = '装配车间A组'
-    testItem.商品属性 = '电磁阀系列'
-    testItem.货号 = '18058-TEST'
-    testItem.品名 = '燃油箱通气阀'
-    testItem.规格 = '6OE906517A TEST'
-    testItem.工单总数 = '2000'
-    testItem.已入库数 = '921'
-    testItem.在产数量 = '1079'
-    testItem.齐套 = '缺料'
-    testItem.配料 = '配料中'
-    testItem.分析日期 = '2026-05-18 13:50:27'
-    testItem.生产完成率 = '46'
-    testItem.交货计划 = JSON.stringify([
-      { 交货日期: '2026-01-01', 交货数量: 79, 状态: '满足' },
-      { 交货日期: '2026-01-03', 交货数量: 100, 状态: '不满足' },
-      { 交货日期: '2026-01-05', 交货数量: 500, 状态: '部分满足' },
-    ])
-
-    if (existing) {
-      testItem.编号 = String(existing.id)
-    }
-
-    await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlList([testItem])
-    message.success(existing ? '测试数据更新成功' : '测试数据新增成功')
-  } catch (error: any) {
-    message.error(error.message || '操作测试数据失败')
-  }
+function autoSetDateRangeFromData() {
+  const allDates: string[] = []
+  dataSource.value.forEach(item => {
+    const plans = parseDeliveryPlans(item.交货计划)
+    plans.forEach(p => {
+      if (p.交货日期) allDates.push(p.交货日期)
+    })
+  })
+  if (allDates.length === 0) return
+  allDates.sort()
+  const minDate = allDates[0]
+  const maxDate = allDates[allDates.length - 1]
+  dateRange.value = [dayjs(minDate), dayjs(maxDate)]
 }
 
 async function fetchData() {
@@ -597,6 +625,7 @@ async function fetchData() {
   try {
     const res = await workOrderSalesControlService.getWorkOrderSalesControlList()
     dataSource.value = (res || []).map((item: any) => mapApiItemToTableItem(item))
+    autoSetDateRangeFromData()
   } catch (error: any) {
     message.error(error.message || '获取数据失败')
   } finally {
@@ -626,8 +655,6 @@ onActivated(() => {
 })
 
 onMounted(async () => {
-  await fetchData()
-  await initTestData()
   await fetchData()
 })
 </script>
@@ -767,13 +794,7 @@ onMounted(async () => {
 
 .link-cell {
   color: #1e3a5f;
-  cursor: pointer;
   font-weight: 500;
-  border-bottom: 1px dashed transparent;
-}
-
-.link-cell:hover {
-  border-bottom-color: #2b4b78;
 }
 
 .number-cell {

@@ -41,7 +41,7 @@
     <div class="table-section">
       <div class="section-header">
         <span class="section-title">物料需求明细</span>
-        <span class="section-product-info">{{ productInfo }}</span>
+        <!-- <span class="section-product-info">{{ productInfo }}</span> -->
       </div>
       <a-table
         :columns="materialColumns"

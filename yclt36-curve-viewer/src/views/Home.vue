@@ -239,10 +239,11 @@ const addTab = () => {
   const { meta, fullPath, name, query } = route
   if (!name || ['Login', 'Redirect', '404'].includes(name as string)) return
 
-  const hasTab = tabList.value.some(tab => tab.fullPath === fullPath)
-  if (!hasTab) {
-    // 优先级：参数 tabTitle > 路由 title > 默认
-    const dynamicTitle = (query.tabTitle as string) || (meta.title as string) || '新标签页'
+  // 优先级：参数 tabTitle > 路由 title > 默认
+  const dynamicTitle = (query.tabTitle as string) || (meta.title as string) || '新标签页'
+
+  const existingTab = tabList.value.find(tab => tab.fullPath === fullPath)
+  if (!existingTab) {
     // 处理图标，确保是组件形式
     let tabIcon = meta.icon
     if (typeof tabIcon === 'string' && iconMap[tabIcon as keyof typeof iconMap]) {
@@ -255,6 +256,11 @@ const addTab = () => {
       icon: tabIcon,
       closable: name !== DASHBOARD_CONF.name // 仪表盘不让关
     })
+  } else {
+    // 已存在的标签页同步最新标题（排除动态 tabTitle 的页面）
+    if (!query.tabTitle) {
+      existingTab.title = dynamicTitle
+    }
   }
   activeTabKey.value = fullPath
 }

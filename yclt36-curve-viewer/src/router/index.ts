@@ -69,19 +69,19 @@ const routes = [
             path: 'salesControl',
             name: 'SalesControl',
             component: SalesControl,
-            meta: { title: '销控管理', icon: ScheduleOutlined }
+            meta: { title: '成品销控表', icon: ScheduleOutlined }
           },
           {
             path: 'workOrder',
             name: 'WorkOrderManagement',
             component: WorkOrderManagement,
-            meta: { title: '工单管理', icon: ContainerOutlined }
+            meta: { title: '工单管理', icon: ContainerOutlined, hidden: true }
           },
           {
             path: 'workOrderTracking',
             name: 'WorkOrderTracking',
             component: WorkOrderTracking,
-            meta: { title: '工单销控表', icon: ContainerOutlined ,hidden: true}
+            meta: { title: '工单销控表', icon: ContainerOutlined }
           }
         ]
       },

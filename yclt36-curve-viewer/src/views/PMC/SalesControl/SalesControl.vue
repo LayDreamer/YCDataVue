@@ -427,8 +427,11 @@ function handleNumberClick(record: TableRowData, column: { key: string }) {
       query: {
         id: record.货号,
         parentId: record.父级货号,
-        productNo:record.排产编号,
-        demand:record.订单总需求,
+        productNo: record.排产编号,
+        demand: record.订单总需求,
+        orderNo: record.合同号,
+        productName: record.中文品名,
+        spec: record.中文规格,
         index: column.key,
         tabTitle: `排产详情: ${record.货号}`,
       },

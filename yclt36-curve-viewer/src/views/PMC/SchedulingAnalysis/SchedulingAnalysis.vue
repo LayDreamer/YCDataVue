@@ -197,11 +197,14 @@ import { useRoute } from 'vue-router';
 // 模拟API调用（实际项目中应替换为真实接口）
 // import { getProductionAnalysis, updateProductionAnalysis, saveProductionAnalysis } from './api';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
-import { PMCWorkOrder, PMCRequestDto } from '@/api-generated/api';
+import { PMCWorkOrder, PMCRequestDto, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail } from '@/api-generated/api';
 import { salesControlService } from '@/services/salesControlService';
 import { workOrderService } from '@/services/workOrderService';
+import { workOrderSalesControlService } from '@/services/workOrderSalesControlService';
+import { externalProductionService } from '@/services/externalProductionService';
 import { columns as rawColumns } from './types';
 import FixedColumnControl from '@/components/FixedColumnControl.vue';
+import dayjs from 'dayjs';
 
 // ProductionItem 类型定义
 interface ProductionItem {
@@ -372,8 +375,7 @@ const handleLossChange = (record: ProductionItem, field: string, value: number |
     const updateItemAndChildren = (item: ProductionItem, loss: number) => {
       item.loss = loss;
       if (form.qty > 0 && (item.usage || 1)) {
-        const demandQty = calculateDemandQty(form.qty, item.usage || 1, loss);
-       
+        const demandQty = calculateDemandQty(form.qty, item.usage || 1, loss);       
         item.needQty = demandQty;
     if (item.source !== '自制') {
       item.purchaseQty = demandQty + (item.avail || 0);
@@ -431,11 +433,11 @@ const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): P
       process: record.工序名称 || '-',
       workshop: record.工序车间 || '-',
       warehouse: record.仓库名称 || '-',
-      stock: _stock || undefined,
-      transit: _transit || undefined,
-      wip: _wip || undefined,
-      max: record.库存上限 !== undefined && record.库存上限 !== '' ? Number(record.库存上限) : undefined,
-      min: _min || undefined,
+      stock: _stock,
+      transit: _transit,
+      wip: _wip,
+      max: record.库存上限 !== undefined && record.库存上限 !== '' ? Number(record.库存上限) : 0,
+      min: _min,
       avail: _avail,
       attr: record.产品属性 || '-',
       needQty: demandQty,
@@ -487,10 +489,10 @@ const loadData = async () => {
     mainRecord.value = bomData.find(item => Number(item.层) === 0) || bomData[0];
 
     form.analysisType = 'normal';
-    form.orderNo = mainRecord.value?.合同号 || route.query.orderNo || ''; // 优先从BOM数据获取，否则从路由参数
-    form.partNo = mainRecord.value?.货号 || partNo;
-    form.productName = mainRecord.value?.品名 || '';
-    form.spec = mainRecord.value?.规格 || '';
+    form.orderNo = (route.query.orderNo as string) || '';
+    form.partNo = partNo || '';
+    form.productName = mainRecord.value?.品名 || (route.query.productName as string) || '';
+    form.spec = mainRecord.value?.规格 || (route.query.spec as string) || '';
     form.qty = Number(route.query.demand) || 1;
  
     // 构建树形数据
@@ -533,18 +535,231 @@ const loadData = async () => {
   // }
 //};
 
+// 展平树形数据
+function flattenTree(items: ProductionItem[]): ProductionItem[] {
+  const result: ProductionItem[] = [];
+  const traverse = (item: ProductionItem) => {
+    result.push(item);
+    if (item.children && item.children.length > 0) {
+      item.children.forEach(traverse);
+    }
+  };
+  items.forEach(traverse);
+  return result;
+}
+
+interface DeliveryPlan {
+  交货日期: string;
+  交货数量: number;
+  状态: string;
+}
+
+function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
+  if (!deliveryPlanStr) return [];
+  try {
+    const parsed = JSON.parse(deliveryPlanStr);
+    const plans = Array.isArray(parsed) ? parsed : [parsed];
+    return plans.filter((p: any) => p && typeof p === 'object').map((p: any) => ({
+      交货日期: p.交货日期 || '',
+      交货数量: Number(p.交货数量) || 0,
+      状态: p.状态 || '不满足',
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// 将排产分析明细项转换为工单销控表数据
+function convertToWorkOrderSalesControl(item: ProductionItem, index: number): WorkOrderSalesControl {
+  const sc = new WorkOrderSalesControl();
+  sc.车间名称 = item.workshop || '未知车间';
+  sc.商品属性 = item.attr || '-';
+  sc.货号 = item.partNo || `TEMP-${index}`;
+  sc.品名 = item.name || '-';
+  sc.规格 = item.spec || '-';
+  const totalQty = item.produceQty > 0 ? item.produceQty : (item.needQty || 0);
+  sc.工单总数 = String(totalQty);
+  sc.已入库数 = '0';
+  sc.在产数量 = String(item.wip || 0);
+  sc.齐套 = '未分析';
+  sc.配料 = '未配料';
+  sc.分析日期 = dayjs().format('YYYY-MM-DD HH:mm:ss');
+  sc.生产完成率 = '0';
+  // 构造交货计划：以生产交期为交货日期，工单总数为交货数量
+  const deliveryDate = form.deliveryDate || dayjs().format('YYYY-MM-DD');
+  sc.交货计划 = JSON.stringify([
+    { 交货日期: deliveryDate, 交货数量: totalQty, 状态: '不满足' }
+  ]);
+  return sc;
+}
+
+// 合并交货计划：相同日期数量累加，不同日期追加
+function mergeDeliveryPlans(existingStr: string, newStr: string): string {
+  const existing = parseDeliveryPlans(existingStr);
+  const newPlans = parseDeliveryPlans(newStr);
+  const map = new Map<string, DeliveryPlan>();
+
+  existing.forEach(p => {
+    map.set(p.交货日期, { ...p });
+  });
+
+  newPlans.forEach(p => {
+    const prev = map.get(p.交货日期);
+    if (prev) {
+      prev.交货数量 += p.交货数量;
+      map.set(p.交货日期, prev);
+    } else {
+      map.set(p.交货日期, { ...p });
+    }
+  });
+
+  return JSON.stringify(Array.from(map.values()));
+}
+
 // 保存分析
-const handleSave = async () => { 
+const handleSave = async () => {
+  if (!form.deliveryDate) {
+    message.warning('请先选择交货日期');
+    return;
+  }
+  if (dataSource.value.length === 0) {
+    message.warning('没有可保存的详情数据');
+    return;
+  }
+
   saveLoading.value = true;
-  try {        
-    const requestDto= new PMCRequestDto({
-      货号: form.partNo,
+  try {
+    // 1. 先查询现有工单销控表数据
+    const existingList = await workOrderSalesControlService.getWorkOrderSalesControlList();
+    const existingMap = new Map<string, any>();
+    (existingList || []).forEach((item: any) => {
+      if (item.货号) {
+        existingMap.set(item.货号, item);
+      }
     });
 
-    // 调用添加工单方法
-    // await workOrderService.addPMCWorkOrder(workOrderData);
-    await workOrderService.addPMCWorkOrderByRequest(requestDto);    
-    message.success('分析数据已保存为工单');
+    // 2. 将排产分析详情中生产数>0的数据保存到工单销控表主表
+    const flatItems = flattenTree(dataSource.value);
+    const productionNodes = flatItems.filter(item => item.produceQty > 0);
+    if (productionNodes.length === 0) {
+      message.warning('没有生产数大于0的数据可保存');
+      return;
+    }
+
+    // 收集子级（仅收集非0层节点的子级，保存到明细表）
+    const collectAllChildren = (items: ProductionItem[]): ProductionItem[] => {
+      const result: ProductionItem[] = [];
+      for (const item of items) {
+        if (item.children && item.children.length > 0) {
+          for (const child of item.children) {
+            result.push(child);
+            result.push(...collectAllChildren([child]));
+          }
+        }
+      }
+      return result;
+    };
+
+    // 只对非0层的 productionNodes 收集子级
+    const nodesToCollectChildren = productionNodes.filter(node => node.level !== 0);
+    const allChildren = collectAllChildren(nodesToCollectChildren);
+    // 按 key 去重
+    const childMap = new Map<string, ProductionItem>();
+    allChildren.forEach(child => childMap.set(child.key, child));
+    const uniqueChildren = Array.from(childMap.values());
+
+    // 保存主表（排除0层节点）
+    const salesControlList = productionNodes.filter(item => item.level !== 0).map((item, idx) => {
+      const newSc = convertToWorkOrderSalesControl(item, idx);
+      const existing = existingMap.get(newSc.货号 || '');
+
+      if (existing) {
+        // 合并更新
+        newSc.编号 = existing.编号 || existing.id;
+        const oldTotal = Number(existing.工单总数) || 0;
+        const addTotal = Number(newSc.工单总数) || 0;
+        newSc.工单总数 = String(oldTotal + addTotal);
+
+        const oldWip = Number(existing.在产数量) || 0;
+        const addWip = Number(newSc.在产数量) || 0;
+        newSc.在产数量 = String(oldWip + addWip);
+
+        // 合并交货计划
+        newSc.交货计划 = mergeDeliveryPlans(existing.交货计划 || '', newSc.交货计划 || '');
+      }
+
+      return newSc;
+    });
+
+    await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlList(salesControlList);
+
+    // 3. 重新查询主表，获取最新的编号（用于给明细表赋值父级编号）
+    const updatedMainList = await workOrderSalesControlService.getWorkOrderSalesControlList();
+    const mainNoMap = new Map<string, string>();
+    (updatedMainList || []).forEach((item: any) => {
+      if (item.货号 && (item.编号 || item.id)) {
+        mainNoMap.set(item.货号, item.编号 || item.id);
+      }
+    });
+
+    // 4. 保存子级到工单销控表明细表，父级编号赋值为主表的编号
+    // 预先构建 childKey -> parentPartNo 映射
+    const childParentMap = new Map<string, string>();
+    const buildChildParentMap = (nodes: ProductionItem[]) => {
+      for (const node of nodes) {
+        if (node.children && node.children.length > 0) {
+          for (const child of node.children) {
+            childParentMap.set(child.key, node.partNo || '');
+            buildChildParentMap([child]);
+          }
+        }
+      }
+    };
+    buildChildParentMap(nodesToCollectChildren);
+
+    const detailList = uniqueChildren.map(item => {
+      const detail = new WorkOrderSalesControlDetail();
+      detail.货号 = item.partNo || '';
+      detail.品名 = item.name || '-';
+      detail.规格 = item.spec || '-';
+      detail.用量 = String(item.usage || 0);
+      detail.需求数 = String(item.needQty || 0);
+      detail.已出库数 = '0';
+      detail.缺料数 = '0';
+      detail.仓库名称 = item.warehouse || '-';
+      detail.仓库数 = String(item.stock || 0);
+      detail.仓库缺料 = '0';
+      // 父级编号 = 直接父节点在主表中的编号
+      const parentPartNo = childParentMap.get(item.key);
+      if (parentPartNo) {
+        const parentNo = mainNoMap.get(parentPartNo);
+        if (parentNo) {
+          detail.父级编号 = parentNo;
+        }
+      }
+      return detail;
+    });
+
+    if (detailList.length > 0) {
+      await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlDetailList(detailList);
+    }
+
+    // 4. 批量保存到外产_生产（仅保存生产数>0的节点）
+    const productNo = route.query.productNo as string;
+    const externalProductionList = productionNodes.map(item => {
+      const ep = new ExternalProduction();
+      ep.合同号 = form.orderNo || '';
+      ep.货号 = item.partNo || '';
+      ep.排产编号 = productNo || '';
+      ep.需求量 = String(item.needQty || 0);
+      ep.生产数量 = String(item.produceQty || 0);
+      return ep;
+    });
+
+    await externalProductionService.addOrUpdateExternalProductionList(externalProductionList);
+    const savedMainCount = salesControlList.length;
+    const savedDetailCount = detailList.length;
+    message.success(`已保存 ${savedMainCount} 条数据到工单销控表主表，${savedDetailCount} 条数据到明细表，${productionNodes.length} 条数据到外产生产`);
   } catch (error) {
     console.error('保存分析失败:', error);
     message.error('保存分析失败，请稍后重试');

@@ -876,6 +876,636 @@ export class Service {
     }
 
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateWorkOrderSalesControlDetailList(body: WorkOrderSalesControlDetail[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateWorkOrderSalesControlDetailList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateWorkOrderSalesControlDetailList(_response);
+        });
+    }
+
+    protected processAddOrUpdateWorkOrderSalesControlDetailList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    getWorkOrderSalesControlDetailList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetWorkOrderSalesControlDetailList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetWorkOrderSalesControlDetailList(_response);
+        });
+    }
+
+    protected processGetWorkOrderSalesControlDetailList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteWorkOrderSalesControlDetailList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteWorkOrderSalesControlDetailList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteWorkOrderSalesControlDetailList(_response);
+        });
+    }
+
+    protected processDeleteWorkOrderSalesControlDetailList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateExternalProductionShipmentList(body: ExternalProductionShipment[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionShipmentList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateExternalProductionShipmentList(_response);
+        });
+    }
+
+    protected processAddOrUpdateExternalProductionShipmentList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateExternalProductionPickMaterialList(body: ExternalProductionPickMaterial[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionPickMaterialList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateExternalProductionPickMaterialList(_response);
+        });
+    }
+
+    protected processAddOrUpdateExternalProductionPickMaterialList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateExternalProductionList(body: ExternalProduction[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateExternalProductionList(_response);
+        });
+    }
+
+    protected processAddOrUpdateExternalProductionList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateExternalProductionWarehousingList(body: ExternalProductionWarehousing[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionWarehousingList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateExternalProductionWarehousingList(_response);
+        });
+    }
+
+    protected processAddOrUpdateExternalProductionWarehousingList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionShipmentList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionShipmentList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionShipmentList(_response);
+        });
+    }
+
+    protected processGetExternalProductionShipmentList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteExternalProductionShipmentList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionShipmentList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteExternalProductionShipmentList(_response);
+        });
+    }
+
+    protected processDeleteExternalProductionShipmentList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionPickMaterialList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionPickMaterialList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionPickMaterialList(_response);
+        });
+    }
+
+    protected processGetExternalProductionPickMaterialList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteExternalProductionPickMaterialList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionPickMaterialList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteExternalProductionPickMaterialList(_response);
+        });
+    }
+
+    protected processDeleteExternalProductionPickMaterialList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionList(_response);
+        });
+    }
+
+    protected processGetExternalProductionList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteExternalProductionList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteExternalProductionList(_response);
+        });
+    }
+
+    protected processDeleteExternalProductionList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionWarehousingList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionWarehousingList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionWarehousingList(_response);
+        });
+    }
+
+    protected processGetExternalProductionWarehousingList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteExternalProductionWarehousingList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionWarehousingList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteExternalProductionWarehousingList(_response);
+        });
+    }
+
+    protected processDeleteExternalProductionWarehousingList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
      * @param redirectUri (optional) 
      * @param state (optional) 
      * @return OK
@@ -1661,6 +2291,358 @@ export interface IDepartmentRequestDto {
     departmentId?: number;
 }
 
+export class ExternalProduction implements IExternalProduction {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    货号?: string | undefined;
+    排产编号?: string | undefined;
+    需求量?: string | undefined;
+    生产数量?: string | undefined;
+    关联编号?: string | undefined;
+
+    constructor(data?: IExternalProduction) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.合同号 = _data["合同号"];
+            this.货号 = _data["货号"];
+            this.排产编号 = _data["排产编号"];
+            this.需求量 = _data["需求量"];
+            this.生产数量 = _data["生产数量"];
+            this.关联编号 = _data["关联编号"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProduction {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProduction();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["合同号"] = this.合同号;
+        data["货号"] = this.货号;
+        data["排产编号"] = this.排产编号;
+        data["需求量"] = this.需求量;
+        data["生产数量"] = this.生产数量;
+        data["关联编号"] = this.关联编号;
+        return data;
+    }
+}
+
+export interface IExternalProduction {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    货号?: string | undefined;
+    排产编号?: string | undefined;
+    需求量?: string | undefined;
+    生产数量?: string | undefined;
+    关联编号?: string | undefined;
+}
+
+export class ExternalProductionPickMaterial implements IExternalProductionPickMaterial {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    货号?: string | undefined;
+    排产编号?: string | undefined;
+    需求量?: string | undefined;
+    出库数量?: string | undefined;
+    关联编号?: string | undefined;
+
+    constructor(data?: IExternalProductionPickMaterial) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.合同号 = _data["合同号"];
+            this.货号 = _data["货号"];
+            this.排产编号 = _data["排产编号"];
+            this.需求量 = _data["需求量"];
+            this.出库数量 = _data["出库数量"];
+            this.关联编号 = _data["关联编号"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionPickMaterial {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionPickMaterial();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["合同号"] = this.合同号;
+        data["货号"] = this.货号;
+        data["排产编号"] = this.排产编号;
+        data["需求量"] = this.需求量;
+        data["出库数量"] = this.出库数量;
+        data["关联编号"] = this.关联编号;
+        return data;
+    }
+}
+
+export interface IExternalProductionPickMaterial {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    货号?: string | undefined;
+    排产编号?: string | undefined;
+    需求量?: string | undefined;
+    出库数量?: string | undefined;
+    关联编号?: string | undefined;
+}
+
+export class ExternalProductionShipment implements IExternalProductionShipment {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    货号?: string | undefined;
+    排产编号?: string | undefined;
+    需求量?: string | undefined;
+    发运数量?: string | undefined;
+    关联编号?: string | undefined;
+
+    constructor(data?: IExternalProductionShipment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.合同号 = _data["合同号"];
+            this.货号 = _data["货号"];
+            this.排产编号 = _data["排产编号"];
+            this.需求量 = _data["需求量"];
+            this.发运数量 = _data["发运数量"];
+            this.关联编号 = _data["关联编号"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionShipment {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionShipment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["合同号"] = this.合同号;
+        data["货号"] = this.货号;
+        data["排产编号"] = this.排产编号;
+        data["需求量"] = this.需求量;
+        data["发运数量"] = this.发运数量;
+        data["关联编号"] = this.关联编号;
+        return data;
+    }
+}
+
+export interface IExternalProductionShipment {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    货号?: string | undefined;
+    排产编号?: string | undefined;
+    需求量?: string | undefined;
+    发运数量?: string | undefined;
+    关联编号?: string | undefined;
+}
+
+export class ExternalProductionWarehousing implements IExternalProductionWarehousing {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    货号?: string | undefined;
+    排产编号?: string | undefined;
+    需求量?: string | undefined;
+    入库数量?: string | undefined;
+    关联编号?: string | undefined;
+
+    constructor(data?: IExternalProductionWarehousing) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.合同号 = _data["合同号"];
+            this.货号 = _data["货号"];
+            this.排产编号 = _data["排产编号"];
+            this.需求量 = _data["需求量"];
+            this.入库数量 = _data["入库数量"];
+            this.关联编号 = _data["关联编号"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionWarehousing {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionWarehousing();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["合同号"] = this.合同号;
+        data["货号"] = this.货号;
+        data["排产编号"] = this.排产编号;
+        data["需求量"] = this.需求量;
+        data["入库数量"] = this.入库数量;
+        data["关联编号"] = this.关联编号;
+        return data;
+    }
+}
+
+export interface IExternalProductionWarehousing {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    货号?: string | undefined;
+    排产编号?: string | undefined;
+    需求量?: string | undefined;
+    入库数量?: string | undefined;
+    关联编号?: string | undefined;
+}
+
 export class GetBLFParameterRequest implements IGetBLFParameterRequest {
     number!: string | undefined;
 
@@ -2268,6 +3250,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
     分析日期?: string | undefined;
     生产完成率?: string | undefined;
     交货计划?: string | undefined;
+    层?: string | undefined;
 
     constructor(data?: IWorkOrderSalesControl) {
         if (data) {
@@ -2301,6 +3284,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
             this.分析日期 = _data["分析日期"];
             this.生产完成率 = _data["生产完成率"];
             this.交货计划 = _data["交货计划"];
+            this.层 = _data["层"];
         }
     }
 
@@ -2334,6 +3318,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
         data["分析日期"] = this.分析日期;
         data["生产完成率"] = this.生产完成率;
         data["交货计划"] = this.交货计划;
+        data["层"] = this.层;
         return data;
     }
 }
@@ -2360,6 +3345,115 @@ export interface IWorkOrderSalesControl {
     分析日期?: string | undefined;
     生产完成率?: string | undefined;
     交货计划?: string | undefined;
+    层?: string | undefined;
+}
+
+export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    货号?: string | undefined;
+    品名?: string | undefined;
+    规格?: string | undefined;
+    用量?: string | undefined;
+    需求数?: string | undefined;
+    已出库数?: string | undefined;
+    缺料数?: string | undefined;
+    仓库名称?: string | undefined;
+    仓库数?: string | undefined;
+    仓库缺料?: string | undefined;
+    父级编号?: string | undefined;
+
+    constructor(data?: IWorkOrderSalesControlDetail) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.货号 = _data["货号"];
+            this.品名 = _data["品名"];
+            this.规格 = _data["规格"];
+            this.用量 = _data["用量"];
+            this.需求数 = _data["需求数"];
+            this.已出库数 = _data["已出库数"];
+            this.缺料数 = _data["缺料数"];
+            this.仓库名称 = _data["仓库名称"];
+            this.仓库数 = _data["仓库数"];
+            this.仓库缺料 = _data["仓库缺料"];
+            this.父级编号 = _data["父级编号"];
+        }
+    }
+
+    static fromJS(data: any): WorkOrderSalesControlDetail {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkOrderSalesControlDetail();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["货号"] = this.货号;
+        data["品名"] = this.品名;
+        data["规格"] = this.规格;
+        data["用量"] = this.用量;
+        data["需求数"] = this.需求数;
+        data["已出库数"] = this.已出库数;
+        data["缺料数"] = this.缺料数;
+        data["仓库名称"] = this.仓库名称;
+        data["仓库数"] = this.仓库数;
+        data["仓库缺料"] = this.仓库缺料;
+        data["父级编号"] = this.父级编号;
+        return data;
+    }
+}
+
+export interface IWorkOrderSalesControlDetail {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    货号?: string | undefined;
+    品名?: string | undefined;
+    规格?: string | undefined;
+    用量?: string | undefined;
+    需求数?: string | undefined;
+    已出库数?: string | undefined;
+    缺料数?: string | undefined;
+    仓库名称?: string | undefined;
+    仓库数?: string | undefined;
+    仓库缺料?: string | undefined;
+    父级编号?: string | undefined;
 }
 
 export class ApiException extends Error {
