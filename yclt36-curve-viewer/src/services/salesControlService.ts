@@ -10,7 +10,7 @@ export const salesControlService = {
   async addPMCSalesControlList(): Promise<PMCSalesControl[]> {
     try {
       const response = await service.addPMCSalesControlList();
-         
+         console.log(response.data);
       // 返回数据（空列表也正常返回）
       return response.data;
     } catch (error: any) {

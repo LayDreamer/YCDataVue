@@ -545,8 +545,6 @@ function generateWorkOrderDetail(record: TableRowData) {
 
 async function generateMaterialDetail(record: TableRowData) {
   try {
-
-    debugger;
     // 从工单销控表明细接口查询父级编号等于当前编号的数据
     const res = await workOrderSalesControlService.getWorkOrderSalesControlDetailList()
     const allDetails = res || []
@@ -601,7 +599,7 @@ function mapApiItemToTableItem(item: any): WorkOrderSalesControl {
   record.分析日期 = item['分析日期'] || ''
   record.生产完成率 = item['生产完成率'] || '0'
   record.交货计划 = item['交货计划'] || ''
-  record.父级编号 = item['父级编号'] || ''
+  // record.父级编号 = item['父级编号'] || ''
   return record
 }
 

@@ -156,8 +156,8 @@ const productTableData = computed(() => {
   if (!props.product) return []
   const base = {
     合同号: props.product.合同号,
-    已发数量: props.product.仓库数,
-    待发数量: props.product.在产数,
+    已发数量: 0,
+    待发数量: 0,
   }
   const plans = productDeliveryPlans.value
   if (plans.length === 0) {

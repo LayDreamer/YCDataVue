@@ -44,7 +44,7 @@
             </div>
           </div>
 
-          <div class="action-buttons">
+          <!-- <div class="action-buttons">
             <a-button
               :type="filterDeliveryColumnsOnly ? 'primary' : 'default'"
               @click="handleFilterColumns"
@@ -52,6 +52,30 @@
               筛选交付列
             </a-button>
             <a-button @click="handleReset">重置</a-button>
+          </div> -->
+          <div class="sort-buttons">
+            <span class="sort-label">行排序：</span>
+            <!-- <a-button
+              :type="rowSortOrder === 'none' ? 'primary' : 'default'"
+              size="small"
+              @click="rowSortOrder = 'none'"
+            >
+              默认
+            </a-button> -->
+            <a-button
+              :type="rowSortOrder === 'asc' ? 'primary' : 'default'"
+              size="small"
+              @click="rowSortOrder = 'asc'"
+            >
+              交期升序
+            </a-button>
+            <!-- <a-button
+              :type="rowSortOrder === 'desc' ? 'primary' : 'default'"
+              size="small"
+              @click="rowSortOrder = 'desc'"
+            >
+              交期降序 (晚→早)
+            </a-button> -->
           </div>
         </div>
 
@@ -73,8 +97,8 @@
       <a-table
         :columns="tableColumns"
         :data-source="tableData"
-        :pagination="false"
-        :scroll="{ x: tableScrollWidth, y: 400 }"
+        :pagination="tablePagination"
+        :scroll="{ x: tableScrollWidth, y: 'calc(100vh - 340px)' }"
         :loading="loading"
         row-key="id"
       >
@@ -162,7 +186,7 @@ interface ComputedDeliveryInfo {
 const dateFormat = 'YYYY-MM-DD'
 const COLUMN_WIDTHS = {
   index: 60,
-  productNo: 150,
+  productNo: 220,
   productName: 150,
   spec: 150,
   orderTotal: 100,
@@ -219,7 +243,10 @@ function collectPlanDatesInRange(products: PMCSalesControl[], rangeDates: string
   const withPlan = new Set<string>()
   for (const product of products) {
     for (const p of parseDeliveryPlans(product.交货计划)) {
-      if (p.交货日期) withPlan.add(p.交货日期)
+      // 只有当交货日期存在且交付数量 > 0 时，才显示该日期列
+      if (p.交货日期 && Number(p.交货数量) > 0) {
+        withPlan.add(p.交货日期)
+      }
     }
   }
   return rangeDates.filter(d => withPlan.has(d))
@@ -229,6 +256,36 @@ function collectPlanDatesInRange(products: PMCSalesControl[], rangeDates: string
 function getCurrentMonthRange(): [Dayjs, Dayjs] {
   const now = dayjs()
   return [now.startOf('month'), now.endOf('month')]
+}
+
+/**
+ * 从产品列表中获取所有交货计划的最早和最晚日期
+ * @param products 产品列表
+ * @returns [最早日期, 最晚日期]，如果没有交期则返回当前月份范围
+ */
+function getDeliveryDateRange(products: PMCSalesControl[]): [Dayjs, Dayjs] {
+  let earliestDate: string | null = null
+  let latestDate: string | null = null
+
+  for (const product of products) {
+    const plans = parseDeliveryPlans(product.交货计划)
+    for (const plan of plans) {
+      if (plan.交货日期) {
+        if (!earliestDate || plan.交货日期 < earliestDate) {
+          earliestDate = plan.交货日期
+        }
+        if (!latestDate || plan.交货日期 > latestDate) {
+          latestDate = plan.交货日期
+        }
+      }
+    }
+  }
+
+  if (earliestDate && latestDate) {
+    return [dayjs(earliestDate), dayjs(latestDate)]
+  }
+
+  return getCurrentMonthRange()
 }
 
 function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
@@ -265,6 +322,13 @@ const currentProduct = ref<PMCSalesControl | null>(null)
 const currentDelivery = ref<{ product: PMCSalesControl; plan: DeliveryPlan; cumulativeDelivered: number } | null>(null)
 const productList = ref<PMCSalesControl[]>([])
 
+const tablePagination = {
+  pageSize: 10,
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50', '100'],
+  showTotal: (total: number) => `共 ${total} 条`,
+}
+
 function handleTabChange(key: string) {
   if (key === 'workOrderTracking') {
     router.push({ name: 'WorkOrderTracking' })
@@ -279,12 +343,32 @@ const displayDates = computed(() => {
 })
 
 /** 开启「筛选交付列」时，仅保留当前范围内、至少有一条交货计划的日期 */
-const filterDeliveryColumnsOnly = ref(false)
+const filterDeliveryColumnsOnly = ref(true)
+
+/** 行排序方式: 'none' 不排序 | 'asc' 按交期升序(早→晚) | 'desc' 按交期降序(晚→早) */
+const rowSortOrder = ref<'none' | 'asc' | 'desc'>('asc')
+
+/** 获取某产品在当前日期范围内的最早交期 */
+function getEarliestDeliveryDate(product: PMCSalesControl): string | null {
+  const plans = parseDeliveryPlans(product.交货计划)
+  // 使用原始日期范围（displayDates）而非筛选后的日期，确保排序不受筛选影响
+  const rangeDates = new Set(displayDates.value)
+  let earliest: string | null = null
+  for (const p of plans) {
+    if (p.交货日期 && rangeDates.has(p.交货日期)) {
+      if (!earliest || p.交货日期 < earliest) {
+        earliest = p.交货日期
+      }
+    }
+  }
+  return earliest
+}
 
 const activeDisplayDates = computed(() => {
   const rangeDates = displayDates.value
-  if (!filterDeliveryColumnsOnly.value) return rangeDates
-  return collectPlanDatesInRange(displayProductList.value, rangeDates)
+  return filterDeliveryColumnsOnly.value
+    ? collectPlanDatesInRange(displayProductList.value, rangeDates)
+    : rangeDates
 })
 
 const tableScrollWidth = computed(() => {
@@ -331,7 +415,8 @@ const tableColumns = computed(() => {
 })
 
 const tableData = computed<TableRowData[]>(() => {
-  return displayProductList.value.map((product, idx) => {
+  // 1. 先映射生成所有行数据（使用原始索引作为临时 id）
+  const rows = displayProductList.value.map((product, idx) => {
     const warehouseQty = Number(product.仓库数) || 0
     const productionQty = Number(product.在产数) || 0
     const orderTotal = Number(product.订单总需求) || 0
@@ -343,12 +428,11 @@ const tableData = computed<TableRowData[]>(() => {
     const shortageRaw = initialAvailable - orderTotal
     const displayShortage = shortageRaw > 0 ? 0 : shortageRaw
 
-    // 1. 解析所有交货计划（原始数据）
+    // 解析交货计划
     const rawPlans = parseDeliveryPlans(product.交货计划)
-
-    // 2. 基于初始可用量 + 全部计划，按日期顺序计算每个日期的状态和数量
     const statusMap = computeDeliveryStatuses(rawPlans, initialAvailable)
-    // 3. 构建交付列映射（仅针对当前日期范围）
+
+    // 构建交付列映射
     const deliveryMap: Record<string, { quantity: number; status: string; 排产用户: string } | null> = {}
     for (const date of activeDisplayDates.value) {
       const dateKey = toDateColumnKey(date)
@@ -360,7 +444,7 @@ const tableData = computed<TableRowData[]>(() => {
 
     return {
       ...product,
-      id: idx + 1,
+      _originalIdx: idx,
       订单总需求: orderTotal,
       仓库数: warehouseQty,
       在产数: productionQty,
@@ -369,20 +453,37 @@ const tableData = computed<TableRowData[]>(() => {
       deliveryMap,
       _deliveryPlans: rawPlans,
       _plansByDate: groupPlansByDate(rawPlans),
-    } as unknown as TableRowData
+      _earliestDate: getEarliestDeliveryDate(product),
+    } as unknown as TableRowData & { _originalIdx: number; _earliestDate: string | null }
   })
+
+  // 2. 按行排序设置排序
+  if (rowSortOrder.value !== 'none') {
+    rows.sort((a, b) => {
+      const dateA = a._earliestDate ?? '9999-99-99'
+      const dateB = b._earliestDate ?? '9999-99-99'
+      return rowSortOrder.value === 'asc'
+        ? dateA.localeCompare(dateB)
+        : dateB.localeCompare(dateA)
+    })
+  }
+
+  // 3. 分配最终序号
+  return rows.map((row, sortIdx) => ({
+    ...row,
+    id: sortIdx + 1,
+  }))
 })
 
 // ==================== 方法 ====================
 async function fetchData() {
-  if (!dateRange.value) {
-    message.warning('请选择日期范围')
-    return
-  }
   loading.value = true
   try {
     const data = await salesControlService.addPMCSalesControlList()
     productList.value = data || []
+    
+    // 设置日期范围为最早和最晚交期
+    dateRange.value = getDeliveryDateRange(productList.value)
   } catch (error) {
     console.error('获取数据失败:', error)
     message.error('加载数据失败，请稍后重试')
@@ -399,19 +500,6 @@ function handleReset() {
   fetchData()
 }
 
-function handleFilterColumns() {
-  filterDeliveryColumnsOnly.value = !filterDeliveryColumnsOnly.value
-  if (filterDeliveryColumnsOnly.value) {
-    const n = activeDisplayDates.value.length
-    if (n === 0) {
-      message.warning('当前日期范围内暂无交货计划')
-    } else {
-      message.success(`已仅显示有交付信息的日期列（共 ${n} 天）`)
-    }
-  } else {
-    message.info('已恢复显示全部日期列')
-  }
-}
 
 function handleProductClick(record: TableRowData) {
   detailType.value = 'product'
@@ -668,6 +756,32 @@ onMounted(() => {
 .action-buttons {
   display: flex;
   gap: 12px;
+}
+
+.sort-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #262626;
+}
+
+:deep(.ant-radio-group-solid .ant-radio-button-wrapper) {
+  height: 30px;
+  line-height: 28px;
+  padding: 0 12px;
+  border-radius: 16px !important;
+  font-size: 13px;
+}
+
+.row-sort-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 :deep(.ant-btn) {

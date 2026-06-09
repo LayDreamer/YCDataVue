@@ -30,8 +30,8 @@
           <a-form-item label="合同号">
             <a-input v-model:value="searchForm.contractNo" placeholder="请输入" allow-clear class="search-field" />
           </a-form-item>
-          <a-form-item label="分析单号">
-            <a-input v-model:value="searchForm.analysisNo" placeholder="请输入" allow-clear class="search-field" />
+          <a-form-item label="货号">
+            <a-input v-model:value="searchForm.itemNo" placeholder="请输入" allow-clear class="search-field" />
           </a-form-item>
           <a-form-item label="排产用户">
             <a-select
@@ -184,9 +184,9 @@ const filteredData = computed(() => {
       item.合同号 && item.合同号.includes(searchForm.contractNo)
     );
   }
-  if (searchForm.analysisNo) {
+  if (searchForm.itemNo) {
     result = result.filter(item => 
-      item.分析单号 && item.分析单号.includes(searchForm.analysisNo)
+      item.货号 && item.货号.includes(searchForm.itemNo)
     );
   }
   
@@ -211,7 +211,7 @@ const  fetchProductData = async () => {
   try {
     const requestDto = new PMCRequestDto({
       合同号: searchForm.contractNo,
-      分析单号: searchForm.analysisNo
+      货号: searchForm.itemNo
     });
     const response = await deliveryReviewService.convertToPMCDeliveryReviewList(requestDto);
 // 
@@ -245,7 +245,7 @@ const fetchReviewedData = async () => {
   try {
     const response = await deliveryReviewService.getPMCDeliveryReviewList(new PMCRequestDto({
       合同号: searchForm.contractNo,
-      分析单号: searchForm.analysisNo
+      货号: searchForm.itemNo
     }));
     
     if (!response || response.length === 0) {
@@ -285,7 +285,7 @@ watch(viewMode, (newMode, oldMode) => {
   if (newMode === oldMode) return;
   // 切换时清空所有筛选条件
   searchForm.contractNo = '';
-  searchForm.analysisNo = '';
+  searchForm.itemNo = '';
   selectedProductionUser.value = null;
   
   if (newMode === 'unreviewed') {
@@ -320,7 +320,6 @@ const resetSearch = () => {
   searchForm.productionNo = '';
   searchForm.itemNo = '';
   searchForm.coilItemNo = '';
-  searchForm.analysisNo = '';
   selectedProductionUser.value = null;
   
   if (viewMode.value === 'reviewed') {
