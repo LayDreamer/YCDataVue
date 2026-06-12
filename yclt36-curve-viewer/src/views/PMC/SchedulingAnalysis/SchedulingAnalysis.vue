@@ -12,10 +12,10 @@
               </template>
               <span class="back-text">返回</span>
             </a-button>
-            <FileTextOutlined class="icon-orange" />
+            <!-- <FileTextOutlined class="icon-orange" /> -->
             <span>排产分析单</span>
           </div>
-          <div class="top-tip">点击货号/品名/规格可替换</div>
+          <!-- <div class="top-tip">点击货号/品名/规格可替换</div> -->
         </div>
 
         <div class="search-bar">
@@ -81,6 +81,11 @@
                 <template #icon>
                   <SaveOutlined />
                 </template>保存分析
+              </a-button>
+              <a-button type="primary" class="btn-save-bom" @click="handleSaveBOM" :loading="saveBomLoading">
+                <template #icon>
+                  <ClusterOutlined />
+                </template>保存BOM
               </a-button>
               <a-button type="primary" class="btn-expand-all" @click="handleExpandAll">
               <template #icon>
@@ -177,7 +182,7 @@
           <SettingOutlined />
           <span>需求量 = 成品数量 × 累计用量 × (1+损耗)</span>
         </div>
-        <div class="save-info">点击货号/品名/规格替换物料</div>
+        <!-- <div class="save-info">点击货号/品名/规格替换物料</div> -->
       </div>
     </a-spin>
   </div>
@@ -189,7 +194,7 @@ import { message } from 'ant-design-vue';
 import {
   LeftOutlined, FileTextOutlined, ReloadOutlined, SaveOutlined,
   BarChartOutlined, LineChartOutlined, SettingOutlined,
-  FolderOpenOutlined, FolderOutlined
+  FolderOpenOutlined, FolderOutlined, ClusterOutlined
 } from '@ant-design/icons-vue';
 import router from '@/router';
 import { useRoute } from 'vue-router';
@@ -197,7 +202,7 @@ import { useRoute } from 'vue-router';
 // 模拟API调用（实际项目中应替换为真实接口）
 // import { getProductionAnalysis, updateProductionAnalysis, saveProductionAnalysis } from './api';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
-import { PMCWorkOrder, PMCRequestDto, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail } from '@/api-generated/api';
+import { PMCRequestDto, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail } from '@/api-generated/api';
 import { salesControlService } from '@/services/salesControlService';
 import { workOrderService } from '@/services/workOrderService';
 import { workOrderSalesControlService } from '@/services/workOrderSalesControlService';
@@ -254,6 +259,7 @@ const closeTab = inject('closeTab') as (path?: string) => void;
 const loading = ref(false);
 const updateLoading = ref(false);
 const saveLoading = ref(false);
+const saveBomLoading = ref(false);
 
 // 表单数据
 const form = reactive({
@@ -456,11 +462,46 @@ const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): P
     return item;
   };
 
+  // 排序规则：level === 1 时，产品属性为"线圈"的排在最底部
+  const sortLevel1Items = (items: ProductionItem[]) => {
+    if (!items || items.length <= 1) return items;
+    const nonCoil: ProductionItem[] = [];
+    const coilItems: ProductionItem[] = [];
+    items.forEach(item => {
+      if (item.level === 1 && item.attr === '线圈') {
+        coilItems.push(item);
+      } else {
+        nonCoil.push(item);
+      }
+    });
+    return [...nonCoil, ...coilItems];
+  };
+
   // 处理顶层BOM数据
   bomData.forEach((record) => {
     const item = processBOMItem(record, 0);
     treeData.push(item);
   });
+
+  // 对顶层节点的子节点（即 level=1 的节点）进行排序
+  treeData.forEach(item => {
+    if (item.children && item.children.length > 0) {
+      item.children = sortLevel1Items(item.children);
+    }
+  });
+
+  // 排序完成后，重新按显示顺序分配 rowNum
+  let reRowCounter = 0;
+  const reassignRowNum = (items: ProductionItem[]) => {
+    items.forEach(item => {
+      reRowCounter++;
+      item.rowNum = reRowCounter;
+      if (item.children && item.children.length > 0) {
+        reassignRowNum(item.children);
+      }
+    });
+  };
+  reassignRowNum(treeData);
 
   return treeData;
 };
@@ -479,7 +520,7 @@ const loadData = async () => {
     const requestDto = new PMCRequestDto({ 货号: partNo, 排产编号: productNo});
     // 直接获取BOM数据
     const bomData = await salesControlService.getSchedulingAnalysisList(requestDto);
-  
+
     if (!bomData || !bomData.length) {
       message.warning('未获取到物料数据');
       return;
@@ -768,6 +809,25 @@ const handleSave = async () => {
   }
 };
 
+// 保存BOM
+const handleSaveBOM = async () => {
+  if (!form.partNo) {
+    message.warning('货号不能为空');
+    return;
+  }
+  saveBomLoading.value = true;
+  try {
+    await externalProductionService.saveExternalProductionBOMByPartNo(form.partNo);
+    
+    message.success(`货号【${form.partNo}】BOM保存成功`);
+  } catch (error) {
+    console.error('保存BOM失败:', error);
+    message.error((error as Error).message || '保存BOM失败，请稍后重试');
+  } finally {
+    saveBomLoading.value = false;
+  }
+};
+
 // 展开/收起处理
 const handleExpand = (expanded: boolean, record: any) => {
   if (expanded) {
@@ -1009,6 +1069,11 @@ onMounted(() => {
 .btn-save {
   background-color: #004d4f;
   border-color: #004d4f;
+}
+
+.btn-save-bom {
+  background-color: #8c3b00;
+  border-color: #8c3b00;
 }
 
 .btn-expand-all, .btn-collapse-all {

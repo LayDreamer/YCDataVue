@@ -7,11 +7,9 @@ const service = new Service(baseUrl);
 
 export const salesControlService = {
   // 获取销售控制列表
-  async addPMCSalesControlList(): Promise<PMCSalesControl[]> {
+  async addPMCSalesControlList(requestDto?: PMCRequestDto): Promise<PMCSalesControl[]> {
     try {
       const response = await service.addPMCSalesControlList();
-         console.log(response.data);
-      // 返回数据（空列表也正常返回）
       return response.data;
     } catch (error: any) {
       let errorMessage = '';
@@ -24,10 +22,25 @@ export const salesControlService = {
     }
   },
 
+  // 获取成品销控表明细列表
+  async getProductSalesControlDetailList(requestDto?: PMCRequestDto): Promise<any[]> {
+    try {
+      const response = await service.getProductSalesControlDetailList(requestDto);    
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      } 
+      throw new Error("获取成品销控表明细失败:"+errorMessage);
+    }
+  },
+
   async getSchedulingAnalysisList(requestDto: PMCRequestDto): Promise<any[]> {
     try {
       const response = await service.schedulingAnalysisList(requestDto);
-      console.log(response.data);
       // 返回数据
       return response.data ;
     } catch (error: any) {

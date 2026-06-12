@@ -155,6 +155,7 @@
       :detail-type="detailType"
       :product="currentProduct"
       :delivery="currentDelivery"
+      :details="detailList"
     />
   </div>
 </template>
@@ -169,6 +170,7 @@ import DeliveryDetailsModal from './DeliveryDetailsModal.vue'
 import { salesControlService } from '@/services/salesControlService'
 import { statusLegendItems, generateDateRange } from './data.ts'
 import { DeliveryPlan, DeliveryStatus, PMCSalesControl } from '../types.ts'
+import { PMCRequestDto } from '@/api-generated/api'
 
 interface TableRowData extends PMCSalesControl {
   id: number
@@ -181,6 +183,21 @@ interface ComputedDeliveryInfo {
   quantity: number
   status: string
   排产用户: string
+}
+
+interface SalesControlDetail {
+  编号: string
+  父级编号: string
+  合同号: string
+  业务员: string
+  交货日期: string
+  订单数量: string
+  已发数量: string
+  待发数量: string
+  状态: string
+  货号: string
+  品名: string
+  规格: string
 }
 // ==================== 常量配置 ====================
 const dateFormat = 'YYYY-MM-DD'
@@ -242,7 +259,7 @@ function groupPlansByDate(plans: DeliveryPlan[]): Map<string, DeliveryPlan[]> {
 function collectPlanDatesInRange(products: PMCSalesControl[], rangeDates: string[]): string[] {
   const withPlan = new Set<string>()
   for (const product of products) {
-    for (const p of parseDeliveryPlans(product.交货计划)) {
+    for (const p of getDeliveryPlansFromDetail(product)) {
       // 只有当交货日期存在且交付数量 > 0 时，才显示该日期列
       if (p.交货日期 && Number(p.交货数量) > 0) {
         withPlan.add(p.交货日期)
@@ -268,7 +285,7 @@ function getDeliveryDateRange(products: PMCSalesControl[]): [Dayjs, Dayjs] {
   let latestDate: string | null = null
 
   for (const product of products) {
-    const plans = parseDeliveryPlans(product.交货计划)
+    const plans = getDeliveryPlansFromDetail(product)
     for (const plan of plans) {
       if (plan.交货日期) {
         if (!earliestDate || plan.交货日期 < earliestDate) {
@@ -321,6 +338,7 @@ const detailType = ref<'product' | 'delivery'>('product')
 const currentProduct = ref<PMCSalesControl | null>(null)
 const currentDelivery = ref<{ product: PMCSalesControl; plan: DeliveryPlan; cumulativeDelivered: number } | null>(null)
 const productList = ref<PMCSalesControl[]>([])
+const detailList = ref<SalesControlDetail[]>([])
 
 const tablePagination = {
   pageSize: 10,
@@ -350,7 +368,7 @@ const rowSortOrder = ref<'none' | 'asc' | 'desc'>('asc')
 
 /** 获取某产品在当前日期范围内的最早交期 */
 function getEarliestDeliveryDate(product: PMCSalesControl): string | null {
-  const plans = parseDeliveryPlans(product.交货计划)
+  const plans = getDeliveryPlansFromDetail(product)
   // 使用原始日期范围（displayDates）而非筛选后的日期，确保排序不受筛选影响
   const rangeDates = new Set(displayDates.value)
   let earliest: string | null = null
@@ -362,6 +380,43 @@ function getEarliestDeliveryDate(product: PMCSalesControl): string | null {
     }
   }
   return earliest
+}
+
+/** 从明细表中获取指定产品的交货计划 */
+function getDeliveryPlansFromDetail(product: PMCSalesControl): DeliveryPlan[] {
+  const productId = product.编号 || product.货号
+  if (!productId) return []
+  
+  // 过滤属于当前产品的明细记录
+  const productDetails = detailList.value.filter(
+    detail => String(detail.父级编号) === String(productId) || 
+              String(detail.货号) === String(product.货号)
+  )
+  
+  // 按交货日期分组并汇总数量
+  const grouped = new Map<string, { quantity: number; status: string }>()
+  for (const detail of productDetails) {
+    const date = detail.交货日期
+    if (!date) continue
+    
+    const qty = Number(detail.订单数量) || 0
+    const status = detail.状态 || '不满足'
+    
+    const existing = grouped.get(date)
+    if (existing) {
+      existing.quantity += qty
+    } else {
+      grouped.set(date, { quantity: qty, status })
+    }
+  }
+  
+  // 转换为交货计划数组
+  return Array.from(grouped.entries()).map(([date, info]) => ({
+    交货日期: date,
+    交货数量: info.quantity,
+    状态: info.status as DeliveryStatus,
+    排产用户: '',
+  }))
 }
 
 const activeDisplayDates = computed(() => {
@@ -428,8 +483,8 @@ const tableData = computed<TableRowData[]>(() => {
     const shortageRaw = initialAvailable - orderTotal
     const displayShortage = shortageRaw > 0 ? 0 : shortageRaw
 
-    // 解析交货计划
-    const rawPlans = parseDeliveryPlans(product.交货计划)
+    // 从明细表获取交货计划
+    const rawPlans = getDeliveryPlansFromDetail(product)
     const statusMap = computeDeliveryStatuses(rawPlans, initialAvailable)
 
     // 构建交付列映射
@@ -479,8 +534,16 @@ const tableData = computed<TableRowData[]>(() => {
 async function fetchData() {
   loading.value = true
   try {
-    const data = await salesControlService.addPMCSalesControlList()
-    productList.value = data || []
+    // 同时获取主表和明细表数据
+    // 创建 PMCRequestDto 对象，传递空货号表示获取所有数据
+    const requestDto = new PMCRequestDto();
+    requestDto.货号 = '';
+    const [mainData, detailData] = await Promise.all([
+      salesControlService.addPMCSalesControlList(),
+      salesControlService.getProductSalesControlDetailList(requestDto)
+    ])
+    productList.value = mainData || []
+    detailList.value = detailData || []
     
     // 设置日期范围为最早和最晚交期
     dateRange.value = getDeliveryDateRange(productList.value)
@@ -488,6 +551,7 @@ async function fetchData() {
     console.error('获取数据失败:', error)
     message.error('加载数据失败，请稍后重试')
     productList.value = []
+    detailList.value = []
   } finally {
     loading.value = false
   }

@@ -53,6 +53,42 @@ export const externalProductionService = {
     }
   },
 
+  // ==================== 外产_BOM 保存 ====================
+  async saveExternalProductionBOM(bom: any[]): Promise<any> {
+    try {
+      const req = new PMCRequestDto();
+      (req as any).BOM = bom;
+      const response = await service.saveExternalProductionBOM(req);
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('保存外产BOM失败:' + errorMessage);
+    }
+  },
+
+  // 按货号保存BOM
+  async saveExternalProductionBOMByPartNo(partNo: string): Promise<any> {
+    try {
+      if (!partNo) {
+        throw new Error('货号不能为空');
+      }
+      const req = new PMCRequestDto({ 货号: partNo });
+      const response = await service.saveExternalProductionBOM(req);
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('保存外产BOM失败:' + errorMessage);
+    }
+  },
+
   // ==================== 外产_领料 ====================
   async getExternalProductionPickMaterialList(requestDto?: PMCRequestDto): Promise<any[]> {
     try {

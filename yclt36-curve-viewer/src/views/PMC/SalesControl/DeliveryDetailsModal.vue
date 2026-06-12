@@ -85,11 +85,27 @@
 import { computed } from 'vue'
 import type { Product, DeliveryPlan } from '../types'
 
+interface SalesControlDetail {
+  编号: string
+  父级编号: string
+  合同号: string
+  业务员: string
+  交货日期: string
+  订单数量: string
+  已发数量: string
+  待发数量: string
+  状态: string
+  货号: string
+  品名: string
+  规格: string
+}
+
 const props = defineProps<{
   visible: boolean
   detailType: 'product' | 'delivery'
   product: Product | null
   delivery: { product: Product; plan: DeliveryPlan ; cumulativeDelivered: number} | null
+  details: SalesControlDetail[]
 }>()
 
 const emit = defineEmits<{
@@ -120,26 +136,54 @@ const statusTextMap: Record<string, string> = {
   '不满足': '不满足',
 }
 
-// 解析产品交货计划
+// 从明细表获取产品交货计划
 const productDeliveryPlans = computed(() => {
   if (!props.product) return []
-  try {
-    const parsed = JSON.parse(props.product.交货计划 || '[]')
-    const plans = Array.isArray(parsed) ? parsed : [parsed]
-    console.log('Parsed delivery plans:', plans)
-    return plans
-      .filter((p: any) => p && typeof p === 'object')
-      .map((p: any) => ({
-        排产用户: p.排产用户 || '',
-        交货日期: p.交货日期 || '',
-        交货数量: Number(p.交货数量) || 0,
-        状态: (p.状态 || '不满足') as '满足' | '部分满足' | '不满足',
-      }))
-      .filter((p: any) => p.交货日期)
-      .sort((a: any, b: any) => a.交货日期.localeCompare(b.交货日期))
-  } catch {
-    return []
+  
+  const productId = props.product.编号 || props.product.货号
+  if (!productId) return []
+  
+  // 过滤属于当前产品的明细记录
+  const productDetails = props.details.filter(
+    detail => String(detail.父级编号) === String(productId) || 
+              String(detail.货号) === String(props.product!.货号)
+  )
+  
+  // 按交货日期分组并汇总数量
+  const grouped = new Map<string, { quantity: number; status: string; 业务员: string; 合同号: string; 已发数量: number; 待发数量: number }>()
+  for (const detail of productDetails) {
+    const date = detail.交货日期
+    if (!date) continue
+    
+    const qty = Number(detail.订单数量) || 0
+    const status = detail.状态 || '不满足'
+    const salesman = detail.业务员 || ''
+    const contractNo = detail.合同号 || ''
+    const sentQty = Number(detail.已发数量) || 0
+    const pendingQty = Number(detail.待发数量) || 0
+    
+    const existing = grouped.get(date)
+    if (existing) {
+      existing.quantity += qty
+      existing.已发数量 += sentQty
+      existing.待发数量 += pendingQty
+    } else {
+      grouped.set(date, { quantity: qty, status, 业务员: salesman, 合同号: contractNo, 已发数量: sentQty, 待发数量: pendingQty })
+    }
   }
+  
+  // 转换为交货计划数组并排序
+  return Array.from(grouped.entries())
+    .map(([date, info]) => ({
+      交货日期: date,
+      交货数量: info.quantity,
+      状态: info.status as '满足' | '部分满足' | '不满足',
+      排产用户: info.业务员,
+      合同号: info.合同号,
+      已发数量: info.已发数量,
+      待发数量: info.待发数量,
+    }))
+    .sort((a, b) => a.交货日期.localeCompare(b.交货日期))
 })
 
 const productTableColumns = [
@@ -149,19 +193,23 @@ const productTableColumns = [
   { title: '订单数', dataIndex: '订单数', key: '订单数', align: 'center', width: 90, dataType: 'number' },
   { title: '已发数量', dataIndex: '已发数量', key: '已发数量', align: 'center', width: 100, dataType: 'number' },
   { title: '待发数量', dataIndex: '待发数量', key: '待发数量', align: 'center', width: 100, dataType: 'number' },
-  { title: '状态', dataIndex: '状态', key: '状态', align: 'center', width: 100 },
+  // { title: '状态', dataIndex: '状态', key: '状态', align: 'center', width: 100 },
 ]
 
 const productTableData = computed(() => {
   if (!props.product) return []
-  const base = {
-    合同号: props.product.合同号,
-    已发数量: 0,
-    待发数量: 0,
-  }
   const plans = productDeliveryPlans.value
   if (plans.length === 0) {
-    return [{ key: '0', 交货日期: '-', 状态: '', 业务员: '-', 订单数: '-', ...base }]
+    return [{ 
+      key: '0', 
+      交货日期: '-', 
+      状态: '', 
+      业务员: '-', 
+      订单数: '-',
+      合同号: props.product.合同号 || '-',
+      已发数量: 0,
+      待发数量: 0,
+    }]
   }
   return plans.map((plan, idx) => ({
     key: String(idx),
@@ -169,7 +217,9 @@ const productTableData = computed(() => {
     状态: plan.状态,
     业务员: plan.排产用户 || '-',
     订单数: plan.交货数量,
-    ...base,
+    合同号: plan.合同号 || props.product.合同号 || '-',
+    已发数量: plan.已发数量,
+    待发数量: plan.待发数量,
   }))
 })
 
