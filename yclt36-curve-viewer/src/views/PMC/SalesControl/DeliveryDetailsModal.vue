@@ -206,7 +206,7 @@ const productTableData = computed(() => {
       状态: '', 
       业务员: '-', 
       订单数: '-',
-      合同号: props.product.合同号 || '-',
+      合同号: props.product?.合同号 || '-',
       已发数量: 0,
       待发数量: 0,
     }]
@@ -217,7 +217,7 @@ const productTableData = computed(() => {
     状态: plan.状态,
     业务员: plan.排产用户 || '-',
     订单数: plan.交货数量,
-    合同号: plan.合同号 || props.product.合同号 || '-',
+    合同号: plan.合同号 || props.product?.合同号 || '-',
     已发数量: plan.已发数量,
     待发数量: plan.待发数量,
   }))

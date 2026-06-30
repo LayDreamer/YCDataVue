@@ -140,7 +140,6 @@ import { message } from 'ant-design-vue'
 import type { TableProps } from 'ant-design-vue'
 import type { WorkOrderTrackRow } from './types'
 import { Grid } from 'ant-design-vue'
-import { workOrderService } from '@/services/workOrderService'
 
 // 响应式数据
 const dataSource = ref<WorkOrderTrackRow[]>([])
@@ -330,8 +329,8 @@ const handleRefresh = () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const response = await workOrderService.getPMCWorkOrderList()
-    dataSource.value = response || []
+    // const response = await workOrderService.getPMCWorkOrderList()
+    // dataSource.value = response || []
   } catch (error) {
     console.error('获取工单数据失败:', error)
     message.error('获取工单数据失败，请稍后重试')

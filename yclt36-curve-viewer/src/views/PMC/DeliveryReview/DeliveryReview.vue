@@ -33,7 +33,7 @@
           <a-form-item label="货号">
             <a-input v-model:value="searchForm.itemNo" placeholder="请输入" allow-clear class="search-field" />
           </a-form-item>
-          <a-form-item label="排产用户">
+          <a-form-item label="排产用户" v-if="viewMode === 'reviewed'">
             <a-select
               v-model:value="selectedProductionUser"
               placeholder="全部"
@@ -120,6 +120,7 @@ const columns = [
   { title: '交货日期', dataIndex: '交货日期', key: '交货日期' },
   { title: '排产用户', dataIndex: '排产用户', key: '排产用户' },
   { title: '电压', dataIndex: '电压', key: '电压', width: 100 },
+  { title: '创建时间', dataIndex: '创建时间', key: '创建时间', width: 180 },
   { title: '状态', dataIndex: '状态', key: '状态', width: 100, fixed: 'right' },
   { title: '操作', key: 'action', width: 120, fixed: 'right' },
 ];

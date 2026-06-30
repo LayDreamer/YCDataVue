@@ -1720,7 +1720,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    users(body: DepartmentRequestDto | undefined): Promise<void> {
+    users(body: DepartmentRequestDto | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/users";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1731,6 +1731,7 @@ export class Service {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             }
         };
 
@@ -1739,31 +1740,35 @@ export class Service {
         });
     }
 
-    protected processUsers(response: Response): Promise<void> {
+    protected processUsers(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<ObjectApiResponse>(null as any);
     }
 
     /**
      * @return OK
      */
-    departments(): Promise<void> {
+    departments(): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/departments";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "GET",
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -1772,26 +1777,29 @@ export class Service {
         });
     }
 
-    protected processDepartments(response: Response): Promise<void> {
+    protected processDepartments(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<ObjectApiResponse>(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    send(body: SendMessageDto | undefined): Promise<void> {
+    send(body: SendMessageDto | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/send";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1802,6 +1810,7 @@ export class Service {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             }
         };
 
@@ -1810,26 +1819,29 @@ export class Service {
         });
     }
 
-    protected processSend(response: Response): Promise<void> {
+    protected processSend(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<ObjectApiResponse>(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    sendCardMessage(body: SendMessageDto | undefined): Promise<void> {
+    sendCardMessage(body: SendMessageDto | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/sendCardMessage";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1840,6 +1852,7 @@ export class Service {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             }
         };
 
@@ -1848,26 +1861,29 @@ export class Service {
         });
     }
 
-    protected processSendCardMessage(response: Response): Promise<void> {
+    protected processSendCardMessage(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<ObjectApiResponse>(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    createSmartSheet(body: CreateSmartSheetDto | undefined): Promise<void> {
+    createSmartSheet(body: CreateSmartSheetDto | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/createSmartSheet";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1878,6 +1894,7 @@ export class Service {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             }
         };
 
@@ -1886,19 +1903,22 @@ export class Service {
         });
     }
 
-    protected processCreateSmartSheet(response: Response): Promise<void> {
+    protected processCreateSmartSheet(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<ObjectApiResponse>(null as any);
     }
 
     /**
@@ -1906,7 +1926,7 @@ export class Service {
      * @param sheetId (optional) 
      * @return OK
      */
-    addSmartSheetRecord(docId: string | undefined, sheetId: string | undefined): Promise<void> {
+    addSmartSheetRecord(docId: string | undefined, sheetId: string | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/addSmartSheetRecord?";
         if (docId === null)
             throw new globalThis.Error("The parameter 'docId' cannot be null.");
@@ -1921,6 +1941,7 @@ export class Service {
         let options_: RequestInit = {
             method: "POST",
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -1929,19 +1950,22 @@ export class Service {
         });
     }
 
-    protected processAddSmartSheetRecord(response: Response): Promise<void> {
+    protected processAddSmartSheetRecord(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<ObjectApiResponse>(null as any);
     }
 
     /**
@@ -1949,7 +1973,7 @@ export class Service {
      * @param sheetId (optional) 
      * @return OK
      */
-    getSmartSheetRecord(docId: string | undefined, sheetId: string | undefined): Promise<void> {
+    getSmartSheetRecord(docId: string | undefined, sheetId: string | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/getSmartSheetRecord?";
         if (docId === null)
             throw new globalThis.Error("The parameter 'docId' cannot be null.");
@@ -1964,6 +1988,7 @@ export class Service {
         let options_: RequestInit = {
             method: "POST",
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -1972,26 +1997,29 @@ export class Service {
         });
     }
 
-    protected processGetSmartSheetRecord(response: Response): Promise<void> {
+    protected processGetSmartSheetRecord(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<ObjectApiResponse>(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    createSmartSheetAndNotify(body: CreateAndNotifyDto | undefined): Promise<void> {
+    createSmartSheetAndNotify(body: CreateAndNotifyDto | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/createSmartSheetAndNotify";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2002,6 +2030,7 @@ export class Service {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             }
         };
 
@@ -2010,19 +2039,22 @@ export class Service {
         });
     }
 
-    protected processCreateSmartSheetAndNotify(response: Response): Promise<void> {
+    protected processCreateSmartSheetAndNotify(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<ObjectApiResponse>(null as any);
     }
 
     /**
@@ -2842,6 +2874,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
     状态?: string | undefined;
     物料货号?: string | undefined;
     备注?: string | undefined;
+    特殊要求?: string | undefined;
 
     constructor(data?: IPMCDeliveryReview) {
         if (data) {
@@ -2879,6 +2912,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
             this.状态 = _data["状态"];
             this.物料货号 = _data["物料货号"];
             this.备注 = _data["备注"];
+            this.特殊要求 = _data["特殊要求"];
         }
     }
 
@@ -2916,6 +2950,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
         data["状态"] = this.状态;
         data["物料货号"] = this.物料货号;
         data["备注"] = this.备注;
+        data["特殊要求"] = this.特殊要求;
         return data;
     }
 }
@@ -2946,6 +2981,7 @@ export interface IPMCDeliveryReview {
     状态?: string | undefined;
     物料货号?: string | undefined;
     备注?: string | undefined;
+    特殊要求?: string | undefined;
 }
 
 export class PMCDeliveryReviewListApiResponse implements IPMCDeliveryReviewListApiResponse {

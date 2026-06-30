@@ -204,7 +204,6 @@ import { useRoute } from 'vue-router';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { PMCRequestDto, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail } from '@/api-generated/api';
 import { salesControlService } from '@/services/salesControlService';
-import { workOrderService } from '@/services/workOrderService';
 import { workOrderSalesControlService } from '@/services/workOrderSalesControlService';
 import { externalProductionService } from '@/services/externalProductionService';
 import { columns as rawColumns } from './types';
@@ -520,7 +519,7 @@ const loadData = async () => {
     const requestDto = new PMCRequestDto({ 货号: partNo, 排产编号: productNo});
     // 直接获取BOM数据
     const bomData = await salesControlService.getSchedulingAnalysisList(requestDto);
-
+    console.log(bomData);
     if (!bomData || !bomData.length) {
       message.warning('未获取到物料数据');
       return;

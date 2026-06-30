@@ -28,100 +28,118 @@
       </a-form-item>
 
       <!-- 收件人选择 -->
-   
-<a-form-item
-  :label="wechatForm.sendType === 'user' ? '选择接收人' : '选择群聊'"
-  name="targets"
->
-  <!-- 群聊模式：保持下拉选择器 -->
-  <a-select
-    v-if="wechatForm.sendType === 'chat'"
-    v-model:value="wechatForm.targets"
-    placeholder="请选择群聊"
-    :loading="loadingRecipients"
-    show-search
-    allow-clear
-    :filter-option="false"
-    style="width: 100%"
-    @search="handleRecipientSearch"
-  >
-    <!-- <a-select-option
-      v-for="item in filteredRecipients"
-      :key="item.chatid"
-      :value="item.chatid"
-    >
-      <span>{{ item.name }}</span>
-      <span style="color: #ccc; font-size: 12px; margin-left: 8px">({{ item.chatid }})</span>
-    </a-select-option> -->
-  </a-select>
 
-  <!-- 个人模式：左侧部门树 + 右侧人员列表 -->
-  <div v-else class="user-selector-container">
-    <div class="dept-tree">
-      <a-tree
-        v-model:selectedKeys="selectedDeptKeys"
-        :tree-data="departments"
-        :fieldNames="{ key: 'id', title: 'name', parentid: 'parentid' }"
-        :loading="loadingDepts"
-        @select="handleDeptSelect"
-      />
-    </div>
-    <div class="user-list">
-        <!-- 个人模式：已选用户标签 -->
-       <div v-if="selectedUserInfos.length" class="selected-users" style="margin-bottom: 12px; display: flex; align-items: center; flex-wrap: wrap;">
-  <span style="margin-right: 8px; color: rgba(0,0,0,0.45);">已选：</span>
-  <a-button type="link" size="small" @click="clearAllSelected" style="margin-right: 8px; padding: 0;">
-    清空
-  </a-button>
-  <a-tag
-    v-for="user in selectedUserInfos"
-    :key="user.userid"
-    :closable="true"
-    @close="removeSelectedUser(user.userid)"
-  >
-    <a-avatar v-if="user.avatar" :size="16" :src="user.avatar" style="margin-right: 4px;" />
-    <span v-else style="margin-right: 4px;"></span> <!-- 留空占位，保持对齐 -->
-    {{ user.name }}
-  </a-tag>
-</div>
-      <a-input
-        v-model:value="userSearchText"
-        placeholder="搜索姓名、账号id"
-        allow-clear
-        style="margin-bottom: 12px"
-        @change="handleUserSearch"
-      />
-      <a-table
-        :row-selection="{
-          selectedRowKeys: selectedUserIds,
-          onChange: handleUserSelectionChange,
-          preserveSelectedRowKeys: true, // 切换部门时保留已选
-        }"
-        :columns="userColumns"
-        :data-source="filteredDeptUsers"
-        :loading="loadingUsers"
-         :pagination="{
-                pageSize: 10,
-                showSizeChanger: true,
-                pageSizeOptions: ['10'],
-                showTotal: (total:number) => `共 ${total} 条`,
-              }"
-        size="small"
-        row-key="userid"
-        :scroll="{ y: 'calc(100vh - 320px)' }"
+      <!-- 群聊模式：Form.Item 中只有 a-select 一个字段元素，符合 Form.Item 的收集规则 -->
+      <a-form-item
+        v-if="wechatForm.sendType === 'chat'"
+        label="选择群聊"
+        name="targets"
       >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'name'">
-            <a-avatar :size="20" :src="record.avatar" style="margin-right: 8px">
-              {{ record.name?.charAt(0) }}
-            </a-avatar>
-            {{ record.name }}
-          </template>
-        </template>
-      </a-table>
-    </div>
-  </div>
-</a-form-item>
+        <a-select
+          v-model:value="wechatForm.targets"
+          placeholder="请选择群聊"
+          :loading="loadingRecipients"
+          show-search
+          allow-clear
+          :filter-option="false"
+          style="width: 100%"
+          @search="handleRecipientSearch"
+        />
+      </a-form-item>
+
+      <!-- 个人模式：使用两个区域。
+           1) 一个纯隐藏的 Form.Item（只含一个隐藏的 a-select，绑定 targets），用于保留表单验证能力
+           2) 一个自定义的部门树 + 搜索框 + 人员表格 UI（放在 Form.Item 外面，避免 Form.Item 把内部的 checkbox/a-input 当成多个字段元素收集） -->
+      <template v-else>
+        <!-- 隐藏的 Form.Item：只有一个字段元素，保持表单验证能力 -->
+        <a-form-item name="targets" class="hidden-form-item">
+          <a-select
+            v-model:value="wechatForm.targets"
+            mode="multiple"
+            :open="false"
+            style="width: 100%"
+          >
+            <template #suffixIcon></template>
+          </a-select>
+        </a-form-item>
+
+        <!-- 自定义人员选择 UI：放在 Form.Item 外面，避免 Form.Item 误把内部的 checkbox/input 当成表单字段 -->
+        <a-form-item label="选择接收人">
+          <div class="user-selector-container">
+            <div class="dept-tree">
+              <a-tree
+                v-model:selectedKeys="selectedDeptKeys"
+                :tree-data="departments"
+                :fieldNames="{ key: 'id', title: 'name', parentid: 'parentid' }"
+                :loading="loadingDepts"
+                @select="handleDeptSelect"
+              />
+            </div>
+            <div class="user-list">
+              <!-- 已选用户标签 -->
+              <div v-if="selectedUserInfos.length" class="selected-users" style="margin-bottom: 12px; display: flex; align-items: center; flex-wrap: wrap;">
+                <span style="margin-right: 8px; color: rgba(0,0,0,0.45);">已选：</span>
+                <a-button type="link" size="small" @click="clearAllSelected" style="margin-right: 8px; padding: 0;">
+                  清空
+                </a-button>
+                <a-tag
+                  v-for="user in selectedUserInfos"
+                  :key="user.userid"
+                  :closable="true"
+                  @close="removeSelectedUser(user.userid)"
+                >
+                  <a-avatar v-if="user.avatar" :size="16" :src="user.avatar" style="margin-right: 4px;" />
+                  <span v-else style="margin-right: 4px;"></span>
+                  {{ user.name }}
+                </a-tag>
+              </div>
+              <a-input
+                v-model:value="userSearchText"
+                placeholder="搜索姓名、账号id"
+                allow-clear
+                style="margin-bottom: 12px"
+                @change="handleUserSearch"
+              />
+              <a-table
+                :row-selection="{
+                  selectedRowKeys: selectedUserIds,
+                  onChange: handleUserSelectionChange,
+                  preserveSelectedRowKeys: true,
+                }"
+                :columns="userColumns"
+                :data-source="filteredDeptUsers"
+                :loading="loadingUsers"
+                :pagination="{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['10'],
+                  showTotal: (total:number) => `共 ${total} 条`,
+                }"
+                size="small"
+                row-key="userid"
+                :scroll="{ y: 'calc(100vh - 320px)' }"
+              >
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <a-avatar :size="20" :src="record.avatar" style="margin-right: 8px">
+                      {{ record.name?.charAt(0) }}
+                    </a-avatar>
+                    {{ record.name }}
+                  </template>
+                </template>
+              </a-table>
+            </div>
+          </div>
+        </a-form-item>
+      </template>
+
+      <!-- 消息类型 -->
+      <!-- <a-form-item label="消息类型" name="msgType">
+        <a-radio-group v-model:value="wechatForm.msgType" button-style="solid">
+          <a-radio-button :value="1">文本消息</a-radio-button>
+          <a-radio-button :value="5">卡片消息</a-radio-button>
+        </a-radio-group>
+      </a-form-item> -->
 
       <!-- 消息内容 -->
       <a-form-item label="消息内容" name="content">
@@ -173,6 +191,8 @@ import { message, } from 'ant-design-vue'
 import type{  FormInstance, Rule  } from 'ant-design-vue/es/form'
 import { UserOutlined, TeamOutlined, WechatOutlined } from '@ant-design/icons-vue'
 import { weChatWorkService, type WeChatUser, type WeChatChat, WeChatMessage } from '@/services/wechatWorkService'
+import { send } from 'node:process'
+import { SendMessageDto, WechatWorkMessageType } from '@/api-generated/api'
 
 const props = defineProps<{
   visible: boolean
@@ -209,7 +229,8 @@ const userColumns = [
 const wechatForm = reactive({
   sendType: 'user' as 'user' | 'chat',
   targets: [] as any, // 这里如果是群聊通常是字符串，个人是数组，逻辑在 handleSend 统一处理
-  content: props.defaultContent || ''
+  content: props.defaultContent || '',
+  msgType: 1 as number
 })
 
 const wechatRules: Record<string, Rule[]>  = {
@@ -361,7 +382,8 @@ const applyTemplate = (content: string) => {
 const initialFormState = {
   sendType: 'user' as 'user' | 'chat',
   targets: [] as any,
-  content: ''
+  content: '',
+  msgType: 1 as number
 }
 
 const handleCancel = () => {
@@ -369,6 +391,7 @@ const handleCancel = () => {
   wechatForm.sendType = initialFormState.sendType
   wechatForm.targets = initialFormState.targets
   wechatForm.content = initialFormState.content
+  wechatForm.msgType = initialFormState.msgType
     userSearchText.value = ''
     selectedDeptKeys.value = []
  deptUsers.value = []
@@ -383,6 +406,7 @@ const handleCancel = () => {
 
 // 发送逻辑
 const handleSendWeChat = async () => {
+  debugger;
   try {
     await wechatFormRef.value?.validate()
     sendingWechat.value = true
@@ -397,7 +421,8 @@ const handleSendWeChat = async () => {
     }
 
     console.log('Sending:', message);
-    await weChatWorkService.sendMessage(message);    
+    const sendMessageDto = new SendMessageDto({users:targets,content:message.content,msgType:wechatForm.msgType as WechatWorkMessageType});
+    await weChatWorkService.sendMessage(sendMessageDto);      
     handleCancel()
   } catch (error) {
     console.error(error)
@@ -430,6 +455,10 @@ watch(() => props.visible, (val) => {
 </script>
 
 <style scoped>
+.hidden-form-item {
+  display: none;
+}
+
 .wecom-modal :deep(.ant-modal-header) {
   background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
   border-bottom: none;
