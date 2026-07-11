@@ -1469,11 +1469,21 @@ export class Service {
     }
 
     /**
+     * @param username (optional) 
+     * @param schedulingNo (optional) 
      * @param body (optional) 
      * @return OK
      */
-    saveExternalProductionBOM(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/SaveExternalProductionBOM";
+    saveExternalProductionBOM(username: string | undefined, schedulingNo: string | undefined, body: ExternalProductionBOM[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/SaveExternalProductionBOM?";
+        if (username === null)
+            throw new globalThis.Error("The parameter 'username' cannot be null.");
+        else if (username !== undefined)
+            url_ += "username=" + encodeURIComponent("" + username) + "&";
+        if (schedulingNo === null)
+            throw new globalThis.Error("The parameter 'schedulingNo' cannot be null.");
+        else if (schedulingNo !== undefined)
+            url_ += "schedulingNo=" + encodeURIComponent("" + schedulingNo) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(body);
@@ -1577,6 +1587,43 @@ export class Service {
     }
 
     protected processDeleteExternalProductionBOMList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getBOMStructureProcessList(): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetBOMStructureProcessList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetBOMStructureProcessList(_response);
+        });
+    }
+
+    protected processGetBOMStructureProcessList(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -1998,6 +2045,127 @@ export class Service {
     }
 
     protected processGetSmartSheetRecord(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    createChatAndSend(body: GroupChatMessageDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/WechatWork/createChatAndSend";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateChatAndSend(_response);
+        });
+    }
+
+    protected processCreateChatAndSend(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    sendToGroupChat(body: GroupChatMessageDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/WechatWork/sendToGroupChat";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSendToGroupChat(_response);
+        });
+    }
+
+    protected processSendToGroupChat(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    groupChats(): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/WechatWork/groupChats";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGroupChats(_response);
+        });
+    }
+
+    protected processGroupChats(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -2500,6 +2668,118 @@ export interface IExternalProduction {
     关联编号?: string | undefined;
 }
 
+export class ExternalProductionBOM implements IExternalProductionBOM {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    货号?: string | undefined;
+    层?: string | undefined;
+    品名?: string | undefined;
+    规格?: string | undefined;
+    关联编号?: string | undefined;
+    父级编号?: string | undefined;
+    用量?: string | undefined;
+    仓库名称?: string | undefined;
+    仓库数?: string | undefined;
+    生产数?: string | undefined;
+    分析单号?: string | undefined;
+    交货日期?: string | undefined;
+
+    constructor(data?: IExternalProductionBOM) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.货号 = _data["货号"];
+            this.层 = _data["层"];
+            this.品名 = _data["品名"];
+            this.规格 = _data["规格"];
+            this.关联编号 = _data["关联编号"];
+            this.父级编号 = _data["父级编号"];
+            this.用量 = _data["用量"];
+            this.仓库名称 = _data["仓库名称"];
+            this.仓库数 = _data["仓库数"];
+            this.生产数 = _data["生产数"];
+            this.分析单号 = _data["分析单号"];
+            this.交货日期 = _data["交货日期"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionBOM {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionBOM();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["货号"] = this.货号;
+        data["层"] = this.层;
+        data["品名"] = this.品名;
+        data["规格"] = this.规格;
+        data["关联编号"] = this.关联编号;
+        data["父级编号"] = this.父级编号;
+        data["用量"] = this.用量;
+        data["仓库名称"] = this.仓库名称;
+        data["仓库数"] = this.仓库数;
+        data["生产数"] = this.生产数;
+        data["分析单号"] = this.分析单号;
+        data["交货日期"] = this.交货日期;
+        return data;
+    }
+}
+
+export interface IExternalProductionBOM {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    货号?: string | undefined;
+    层?: string | undefined;
+    品名?: string | undefined;
+    规格?: string | undefined;
+    关联编号?: string | undefined;
+    父级编号?: string | undefined;
+    用量?: string | undefined;
+    仓库名称?: string | undefined;
+    仓库数?: string | undefined;
+    生产数?: string | undefined;
+    分析单号?: string | undefined;
+    交货日期?: string | undefined;
+}
+
 export class ExternalProductionPickMaterial implements IExternalProductionPickMaterial {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2509,12 +2789,9 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
-    合同号?: string | undefined;
     货号?: string | undefined;
-    排产编号?: string | undefined;
     需求量?: string | undefined;
     出库数量?: string | undefined;
-    关联编号?: string | undefined;
 
     constructor(data?: IExternalProductionPickMaterial) {
         if (data) {
@@ -2535,12 +2812,9 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
-            this.合同号 = _data["合同号"];
             this.货号 = _data["货号"];
-            this.排产编号 = _data["排产编号"];
             this.需求量 = _data["需求量"];
             this.出库数量 = _data["出库数量"];
-            this.关联编号 = _data["关联编号"];
         }
     }
 
@@ -2561,12 +2835,9 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
-        data["合同号"] = this.合同号;
         data["货号"] = this.货号;
-        data["排产编号"] = this.排产编号;
         data["需求量"] = this.需求量;
         data["出库数量"] = this.出库数量;
-        data["关联编号"] = this.关联编号;
         return data;
     }
 }
@@ -2580,12 +2851,9 @@ export interface IExternalProductionPickMaterial {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
-    合同号?: string | undefined;
     货号?: string | undefined;
-    排产编号?: string | undefined;
     需求量?: string | undefined;
     出库数量?: string | undefined;
-    关联编号?: string | undefined;
 }
 
 export class ExternalProductionShipment implements IExternalProductionShipment {
@@ -2685,12 +2953,9 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
-    合同号?: string | undefined;
     货号?: string | undefined;
-    排产编号?: string | undefined;
     需求量?: string | undefined;
     入库数量?: string | undefined;
-    关联编号?: string | undefined;
 
     constructor(data?: IExternalProductionWarehousing) {
         if (data) {
@@ -2711,12 +2976,9 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
-            this.合同号 = _data["合同号"];
             this.货号 = _data["货号"];
-            this.排产编号 = _data["排产编号"];
             this.需求量 = _data["需求量"];
             this.入库数量 = _data["入库数量"];
-            this.关联编号 = _data["关联编号"];
         }
     }
 
@@ -2737,12 +2999,9 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
-        data["合同号"] = this.合同号;
         data["货号"] = this.货号;
-        data["排产编号"] = this.排产编号;
         data["需求量"] = this.需求量;
         data["入库数量"] = this.入库数量;
-        data["关联编号"] = this.关联编号;
         return data;
     }
 }
@@ -2756,12 +3015,9 @@ export interface IExternalProductionWarehousing {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
-    合同号?: string | undefined;
     货号?: string | undefined;
-    排产编号?: string | undefined;
     需求量?: string | undefined;
     入库数量?: string | undefined;
-    关联编号?: string | undefined;
 }
 
 export class GetBLFParameterRequest implements IGetBLFParameterRequest {
@@ -2798,6 +3054,86 @@ export class GetBLFParameterRequest implements IGetBLFParameterRequest {
 
 export interface IGetBLFParameterRequest {
     number: string | undefined;
+}
+
+export class GroupChatMessageDto implements IGroupChatMessageDto {
+    userIds?: string[] | undefined;
+    chatName?: string | undefined;
+    ownerUserId?: string | undefined;
+    chatId?: string | undefined;
+    content?: string | undefined;
+    msgType?: WechatWorkMessageType;
+    title?: string | undefined;
+    description?: string | undefined;
+    url?: string | undefined;
+    buttonText?: string | undefined;
+
+    constructor(data?: IGroupChatMessageDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["UserIds"])) {
+                this.userIds = [] as any;
+                for (let item of _data["UserIds"])
+                    this.userIds!.push(item);
+            }
+            this.chatName = _data["ChatName"];
+            this.ownerUserId = _data["OwnerUserId"];
+            this.chatId = _data["ChatId"];
+            this.content = _data["Content"];
+            this.msgType = _data["MsgType"];
+            this.title = _data["Title"];
+            this.description = _data["Description"];
+            this.url = _data["Url"];
+            this.buttonText = _data["ButtonText"];
+        }
+    }
+
+    static fromJS(data: any): GroupChatMessageDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GroupChatMessageDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.userIds)) {
+            data["UserIds"] = [];
+            for (let item of this.userIds)
+                data["UserIds"].push(item);
+        }
+        data["ChatName"] = this.chatName;
+        data["OwnerUserId"] = this.ownerUserId;
+        data["ChatId"] = this.chatId;
+        data["Content"] = this.content;
+        data["MsgType"] = this.msgType;
+        data["Title"] = this.title;
+        data["Description"] = this.description;
+        data["Url"] = this.url;
+        data["ButtonText"] = this.buttonText;
+        return data;
+    }
+}
+
+export interface IGroupChatMessageDto {
+    userIds?: string[] | undefined;
+    chatName?: string | undefined;
+    ownerUserId?: string | undefined;
+    chatId?: string | undefined;
+    content?: string | undefined;
+    msgType?: WechatWorkMessageType;
+    title?: string | undefined;
+    description?: string | undefined;
+    url?: string | undefined;
+    buttonText?: string | undefined;
 }
 
 export class ObjectApiResponse implements IObjectApiResponse {
@@ -3331,6 +3667,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
     审核过程?: string | undefined;
     打印?: string | undefined;
     车间名称?: string | undefined;
+    工单单号?: string | undefined;
     商品属性?: string | undefined;
     货号?: string | undefined;
     品名?: string | undefined;
@@ -3340,9 +3677,9 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
     在产数量?: string | undefined;
     齐套?: string | undefined;
     配料?: string | undefined;
+    交货日期?: string | undefined;
     分析日期?: string | undefined;
     生产完成率?: string | undefined;
-    交货计划?: string | undefined;
     层?: string | undefined;
 
     constructor(data?: IWorkOrderSalesControl) {
@@ -3365,6 +3702,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
             this.车间名称 = _data["车间名称"];
+            this.工单单号 = _data["工单单号"];
             this.商品属性 = _data["商品属性"];
             this.货号 = _data["货号"];
             this.品名 = _data["品名"];
@@ -3374,9 +3712,9 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
             this.在产数量 = _data["在产数量"];
             this.齐套 = _data["齐套"];
             this.配料 = _data["配料"];
+            this.交货日期 = _data["交货日期"];
             this.分析日期 = _data["分析日期"];
             this.生产完成率 = _data["生产完成率"];
-            this.交货计划 = _data["交货计划"];
             this.层 = _data["层"];
         }
     }
@@ -3399,6 +3737,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
         data["车间名称"] = this.车间名称;
+        data["工单单号"] = this.工单单号;
         data["商品属性"] = this.商品属性;
         data["货号"] = this.货号;
         data["品名"] = this.品名;
@@ -3408,9 +3747,9 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
         data["在产数量"] = this.在产数量;
         data["齐套"] = this.齐套;
         data["配料"] = this.配料;
+        data["交货日期"] = this.交货日期;
         data["分析日期"] = this.分析日期;
         data["生产完成率"] = this.生产完成率;
-        data["交货计划"] = this.交货计划;
         data["层"] = this.层;
         return data;
     }
@@ -3426,6 +3765,7 @@ export interface IWorkOrderSalesControl {
     审核过程?: string | undefined;
     打印?: string | undefined;
     车间名称?: string | undefined;
+    工单单号?: string | undefined;
     商品属性?: string | undefined;
     货号?: string | undefined;
     品名?: string | undefined;
@@ -3435,9 +3775,9 @@ export interface IWorkOrderSalesControl {
     在产数量?: string | undefined;
     齐套?: string | undefined;
     配料?: string | undefined;
+    交货日期?: string | undefined;
     分析日期?: string | undefined;
     生产完成率?: string | undefined;
-    交货计划?: string | undefined;
     层?: string | undefined;
 }
 
@@ -3453,14 +3793,13 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
     货号?: string | undefined;
     品名?: string | undefined;
     规格?: string | undefined;
-    用量?: string | undefined;
-    需求数?: string | undefined;
-    已出库数?: string | undefined;
-    缺料数?: string | undefined;
-    仓库名称?: string | undefined;
-    仓库数?: string | undefined;
-    仓库缺料?: string | undefined;
+    工单单号?: string | undefined;
+    交货日期?: string | undefined;
+    生产数?: string | undefined;
+    入库数?: string | undefined;
+    待产数?: string | undefined;
     父级编号?: string | undefined;
+    分析单号?: string | undefined;
 
     constructor(data?: IWorkOrderSalesControlDetail) {
         if (data) {
@@ -3484,14 +3823,13 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
             this.货号 = _data["货号"];
             this.品名 = _data["品名"];
             this.规格 = _data["规格"];
-            this.用量 = _data["用量"];
-            this.需求数 = _data["需求数"];
-            this.已出库数 = _data["已出库数"];
-            this.缺料数 = _data["缺料数"];
-            this.仓库名称 = _data["仓库名称"];
-            this.仓库数 = _data["仓库数"];
-            this.仓库缺料 = _data["仓库缺料"];
+            this.工单单号 = _data["工单单号"];
+            this.交货日期 = _data["交货日期"];
+            this.生产数 = _data["生产数"];
+            this.入库数 = _data["入库数"];
+            this.待产数 = _data["待产数"];
             this.父级编号 = _data["父级编号"];
+            this.分析单号 = _data["分析单号"];
         }
     }
 
@@ -3515,14 +3853,13 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
         data["货号"] = this.货号;
         data["品名"] = this.品名;
         data["规格"] = this.规格;
-        data["用量"] = this.用量;
-        data["需求数"] = this.需求数;
-        data["已出库数"] = this.已出库数;
-        data["缺料数"] = this.缺料数;
-        data["仓库名称"] = this.仓库名称;
-        data["仓库数"] = this.仓库数;
-        data["仓库缺料"] = this.仓库缺料;
+        data["工单单号"] = this.工单单号;
+        data["交货日期"] = this.交货日期;
+        data["生产数"] = this.生产数;
+        data["入库数"] = this.入库数;
+        data["待产数"] = this.待产数;
         data["父级编号"] = this.父级编号;
+        data["分析单号"] = this.分析单号;
         return data;
     }
 }
@@ -3539,14 +3876,13 @@ export interface IWorkOrderSalesControlDetail {
     货号?: string | undefined;
     品名?: string | undefined;
     规格?: string | undefined;
-    用量?: string | undefined;
-    需求数?: string | undefined;
-    已出库数?: string | undefined;
-    缺料数?: string | undefined;
-    仓库名称?: string | undefined;
-    仓库数?: string | undefined;
-    仓库缺料?: string | undefined;
+    工单单号?: string | undefined;
+    交货日期?: string | undefined;
+    生产数?: string | undefined;
+    入库数?: string | undefined;
+    待产数?: string | undefined;
     父级编号?: string | undefined;
+    分析单号?: string | undefined;
 }
 
 export class ApiException extends Error {

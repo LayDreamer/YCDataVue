@@ -4,6 +4,7 @@ import {
   ExternalProduction,
   ExternalProductionPickMaterial,
   ExternalProductionWarehousing,
+  ExternalProductionBOM,
 } from '@/api-generated/api';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -54,11 +55,9 @@ export const externalProductionService = {
   },
 
   // ==================== 外产_BOM 保存 ====================
-  async saveExternalProductionBOM(bom: any[]): Promise<any> {
+  async saveExternalProductionBOM(username: string | undefined, schedulingNo: string | undefined, bomList: ExternalProductionBOM[]): Promise<any> {
     try {
-      const req = new PMCRequestDto();
-      (req as any).BOM = bom;
-      const response = await service.saveExternalProductionBOM(req);
+      const response = await service.saveExternalProductionBOM(username, schedulingNo, bomList);
       return response.data;
     } catch (error: any) {
       let errorMessage = '';
@@ -71,13 +70,13 @@ export const externalProductionService = {
   },
 
   // 按货号保存BOM
-  async saveExternalProductionBOMByPartNo(partNo: string): Promise<any> {
+  async saveExternalProductionBOMByPartNo(username: string | undefined, schedulingNo: string | undefined, partNo: string): Promise<any> {
     try {
       if (!partNo) {
         throw new Error('货号不能为空');
       }
-      const req = new PMCRequestDto({ 货号: partNo });
-      const response = await service.saveExternalProductionBOM(req);
+      const bomList = [new ExternalProductionBOM({ 货号: partNo })];
+      const response = await service.saveExternalProductionBOM(username, schedulingNo, bomList);
       return response.data;
     } catch (error: any) {
       let errorMessage = '';
@@ -86,6 +85,36 @@ export const externalProductionService = {
         errorMessage = responseData;
       }
       throw new Error('保存外产BOM失败:' + errorMessage);
+    }
+  },
+
+  // 删除外产BOM
+  async deleteExternalProductionBOMList(ids: string[]): Promise<any> {
+    try {
+      const response = await service.deleteExternalProductionBOMList(ids);
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('删除外产BOM失败:' + errorMessage);
+    }
+  },
+
+  // ==================== 外产_BOM 查询 ====================
+  async getExternalProductionBOMList(requestDto?: PMCRequestDto): Promise<any[]> {
+    try {
+      const response = await service.getExternalProductionBOMList(requestDto || new PMCRequestDto());
+      return response.data || [];
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('查询外产BOM列表失败:' + errorMessage);
     }
   },
 

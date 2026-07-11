@@ -3,7 +3,7 @@
  * 用于发送消息到企业微信的个人或群聊
  */
 import { toCamelCase, ApiResponse } from "@/services/index.ts"
-import { Service, SendMessageDto, DepartmentRequestDto } from '@/api-generated/api';
+import { Service, SendMessageDto, GroupChatMessageDto, DepartmentRequestDto } from '@/api-generated/api';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 const service = new Service(baseUrl);
@@ -28,20 +28,14 @@ export interface WeChatUser {
 // 群聊类型
 export interface WeChatChat {
   chatid: string
+  chatId?: string
   name: string
-  owner: string
-  memberList: Array<{
+  owner?: string
+  memberList?: Array<{
     userid: string
     name: string
   }>
 }
-
-
-const mockChats: WeChatChat[] = [
-  { chatid: 'chat001', name: '技术部群', owner: 'zhangsan', memberList: [{ userid: 'zhangsan', name: '张三' }, { userid: 'lisi', name: '李四' }] },
-  { chatid: 'chat002', name: '产品群', owner: 'lisi', memberList: [{ userid: 'lisi', name: '李四' }, { userid: 'wangwu', name: '王五' }] },
-  { chatid: 'chat003', name: '测试群', owner: 'zhaoliu', memberList: [{ userid: 'zhaoliu', name: '赵六' }, { userid: 'zhangsan', name: '张三' }] }
-]
 
 class WeChatWorkService {
   // 获取组织结构
@@ -54,10 +48,10 @@ class WeChatWorkService {
       const data = toCamelCase(response.data);
       return data;
     } catch (error: any) {
-      let errorMessage = '';
-      if (error.response) {
-        const responseData = error.response.data || error.response;
-        errorMessage = responseData;
+      let errorMessage = error.message || '';
+      if (error.response?.data) {
+        const responseData = error.response.data;
+        errorMessage = responseData.errorMessage || responseData.ErrorMessage || responseData.message || responseData.Message || errorMessage;
       }
       throw new Error("获取部门列表失败:" + errorMessage);
     }
@@ -79,20 +73,27 @@ class WeChatWorkService {
     }
   }
 
-  // 获取群聊列表
+  // 获取群聊列表（从数据库查询所有已创建的群聊）
   async getChatList(): Promise<WeChatChat[]> {
     try {
-      // 实际项目中应该调用企业微信API获取群聊列表
-      // const response = await api.get('/wecom/chats')
-      // return response.data
-
-      // 模拟API调用
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(mockChats), 300)
-      })
-    } catch (error) {
-      console.error('获取群聊列表失败:', error)
-      throw error
+      const response = await service.groupChats();
+      if (!response.success) {
+        throw new Error(response.message || '请求失败')
+      }
+      const list = toCamelCase(response.data) as any[];
+      const data = (list || []).map(item => ({
+        ...item,
+        chatid: item.chatid || item.chatId || item.id,
+        name: item.name || item.chatName || item.groupName || ''
+      })) as WeChatChat[];
+      return data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error("获取群聊列表失败:" + errorMessage);
     }
   }
 
@@ -112,6 +113,63 @@ class WeChatWorkService {
         errorMessage = responseData;
       }
       throw new Error("发送失败:" + errorMessage);
+    }
+  }
+
+
+  // 发送卡片消息到企业微信
+  async sendCardMessage(sendMessageDto: SendMessageDto) {
+    try {
+      const response = await service.sendCardMessage(sendMessageDto);
+      if (!response.success) {
+        throw new Error(response.message || '发送卡片失败')
+      }
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error("发送卡片失败:" + errorMessage);
+    }
+  }
+
+// 创建群聊并发送消息
+  async createChatAndSend(dto: GroupChatMessageDto) {
+    try {
+      const response = await service.createChatAndSend(dto);
+      if (!response.success) {
+        throw new Error(response.message || '创建群聊并发送失败')
+      }
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error("创建群聊并发送失败:" + errorMessage);
+    }
+  }
+
+  // 发送消息到已有群聊
+  async sendToGroupChat(dto: GroupChatMessageDto) {
+    try {
+      debugger;
+      const response = await service.sendToGroupChat(dto);
+      if (!response.success) {
+        throw new Error(response.message || '发送群聊消息失败')
+      }
+      console.log(response.data) ;
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error("发送群聊消息失败:" + errorMessage);
     }
   }
 

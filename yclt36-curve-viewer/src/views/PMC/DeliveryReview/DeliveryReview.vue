@@ -106,7 +106,7 @@ import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { RequestDto } from '../types';
 import { PMCRequestDto,PMCDeliveryReview  } from '@/api-generated/api';
 
-const columns = [
+const baseColumns = [
   { title: '合同号', dataIndex: '合同号', key: '合同号' },
   { title: '排产编号', dataIndex: '排产编号', key: '排产编号' },
   // { title: '分析单号', dataIndex: '分析单号', key: '分析单号' },
@@ -118,12 +118,21 @@ const columns = [
   { title: '来源', dataIndex: '来源', key: '来源' },
   { title: '工单单号', dataIndex: '工单单号', key: '工单单号' },
   { title: '交货日期', dataIndex: '交货日期', key: '交货日期' },
-  { title: '排产用户', dataIndex: '排产用户', key: '排产用户' },
   { title: '电压', dataIndex: '电压', key: '电压', width: 100 },
   { title: '创建时间', dataIndex: '创建时间', key: '创建时间', width: 180 },
+  { title: '特殊要求', dataIndex: '特殊要求', key: '特殊要求', width: 150 },
   { title: '状态', dataIndex: '状态', key: '状态', width: 100, fixed: 'right' },
   { title: '操作', key: 'action', width: 120, fixed: 'right' },
 ];
+
+const columns = computed(() => {
+  if (viewMode.value === 'reviewed') {
+    const result = [...baseColumns];
+    result.splice(10, 0, { title: '排产用户', dataIndex: '排产用户', key: '排产用户' });
+    return result;
+  }
+  return baseColumns;
+});
 
 const searchForm = reactive({ contractNo: "", productionNo: '', itemNo: '', coilItemNo: '', analysisNo: '' });
 const dataSource = ref<PMCDeliveryReview[]>([]);

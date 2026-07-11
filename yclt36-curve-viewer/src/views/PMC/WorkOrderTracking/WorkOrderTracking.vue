@@ -89,12 +89,8 @@
           />
 
           <div class="filter-actions">
-            <a-button :type="isFiltered ? 'primary' : 'default'" @click="handleSearch">
-              <FilterOutlined />筛选
-            </a-button>
-            <a-button @click="handleReset">
-              <ReloadOutlined />重置
-            </a-button>
+            <span class="sort-label">行排序：</span>
+            <a-button size="small" type="primary">交期升序</a-button>
           </div>
         </div>
       </div>
@@ -106,7 +102,7 @@
         :columns="tableColumns"
         :data-source="tableData"
         :pagination="tablePagination"
-        :scroll="{ x: tableScrollWidth, y: 480 }"
+        :scroll="{ x: tableScrollWidth, y: tableScrollY }"
         :loading="loading"
         row-key="编号"
         size="small"
@@ -181,20 +177,19 @@
       :product-spec="currentProductSpec"
       :work-order-data="currentWorkOrderData"
       :material-data="currentMaterialData"
+      :loading="materialLoading"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onActivated } from 'vue'
+import { ref, computed, onMounted, onActivated, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import { useRouter } from 'vue-router'
 import {
-  ContainerOutlined,
-  FilterOutlined,
-  ReloadOutlined
+  ContainerOutlined
 } from '@ant-design/icons-vue'
 import WorkOrderDetailModal from './WorkOrderDetailModal.vue'
 import {
@@ -204,17 +199,12 @@ import {
   generateDateRange
 } from './data'
 import { workOrderSalesControlService } from '@/services/workOrderSalesControlService'
-import { WorkOrderSalesControl } from '@/api-generated/api'
-
-interface DeliveryPlan {
-  交货日期: string
-  交货数量: number
-  状态: string
-}
+import { salesControlService } from '@/services/salesControlService'
+import { externalProductionService } from '@/services/externalProductionService'
+import { WorkOrderSalesControl, PMCRequestDto } from '@/api-generated/api'
 
 interface TableRowData extends WorkOrderSalesControl {
   deliveryMap: Record<string, { quantity: number; status: string } | null>
-  _deliveryPlans: DeliveryPlan[]
 }
 
 // ==================== 常量配置 ====================
@@ -225,7 +215,7 @@ const COLUMN_WIDTHS = {
   attribute: 100,
   productNo: 110,
   productName: 140,
-  spec: 200,
+  spec: 150,
   total: 90,
   stored: 90,
   inProd: 90,
@@ -271,9 +261,23 @@ function dateColumnKeyToIso(key: string) {
 
 // ==================== 响应式状态 ====================
 const router = useRouter()
+
+// 表格高度：至少保证能显示 10 行（约 920px），并随窗口自适应
+const tableScrollY = ref(920)
+function updateTableHeight() {
+  // 预留：页面 padding、筛选栏、分页、余量
+  const reserved = 320
+  const h = window.innerHeight - reserved
+  tableScrollY.value = Math.max(920, h)
+}
 const activeTab = ref('workOrderTracking')
 const loading = ref(false)
 const dataSource = ref<WorkOrderSalesControl[]>([])
+
+// 工单明细列表（用于交货日期列按明细交货日期分组展示，参考成品销控表）
+const workOrderDetailList = ref<any[]>([])
+
+// 行排序固定为交期升序
 
 // 弹窗状态
 const detailModalVisible = ref(false)
@@ -282,6 +286,7 @@ const currentProductName = ref('')
 const currentProductSpec = ref('')
 const currentWorkOrderData = ref<any[]>([])
 const currentMaterialData = ref<any[]>([])
+const materialLoading = ref(false)
 
 // 筛选条件
 const quickFilters = ref<string[]>([])
@@ -317,22 +322,23 @@ const workshopOptions = computed(() => {
   return Array.from(set).map(name => ({ label: name, value: name }))
 })
 
-const isFiltered = computed(() => {
-  const isDateRangeChanged = dateRange.value && (
-    dateRange.value[0].format(dateFormat) !== dayjs('2026-01-01').format(dateFormat) ||
-    dateRange.value[1].format(dateFormat) !== dayjs('2026-01-10').format(dateFormat)
+/** 获取某行在当前日期范围内最早的交货日期 */
+function getEarliestDeliveryDate(item: WorkOrderSalesControl): string | null {
+  const partNo = item.货号 || ''
+  if (!partNo) return null
+  const itemDetails = workOrderDetailList.value.filter(
+    (d) => String(d.货号 || '') === String(partNo)
   )
-  return (
-    quickFilters.value.length > 0 ||
-    showKittingAnalysis.value ||
-    kittingStatus.value !== undefined ||
-    feedingStatus.value !== undefined ||
-    hasProductionDate.value ||
-    workshop.value !== undefined ||
-    searchKeyword.value !== '' ||
-    !!isDateRangeChanged
-  )
-})
+  const rangeDates = new Set(displayDates.value)
+  let earliest: string | null = null
+  for (const d of itemDetails) {
+    const date = (d.交货日期 || '').substring(0, 10)
+    if (date && rangeDates.has(date)) {
+      if (!earliest || date < earliest) earliest = date
+    }
+  }
+  return earliest
+}
 
 const displayDates = computed(() => {
   if (!dateRange.value) return []
@@ -432,25 +438,66 @@ const tableColumns = computed(() => {
   return [...baseColumns, ...dateColumns]
 })
 
+/** 从工单明细表中获取指定货号的交货计划（参考成品销控表 getDeliveryPlansFromDetail） */
+function getWorkOrderPlansFromDetail(item: WorkOrderSalesControl): Map<string, { quantity: number; status: string }> {
+  const partNo = item.货号 || ''
+  if (!partNo) return new Map()
+
+  // 匹配属于当前货号的工单明细记录
+  const itemDetails = workOrderDetailList.value.filter(
+    (d) => String(d.货号 || '') === String(partNo)
+  )
+
+  // 按交货日期分组汇总待产数
+  const grouped = new Map<string, { quantity: number; status: string }>()
+  for (const detail of itemDetails) {
+    const date = (detail.交货日期 || '').substring(0, 10)
+    if (!date) continue
+
+    const pendingQty = Number(detail.待产数) || 0
+    const existing = grouped.get(date)
+    if (existing) {
+      existing.quantity += pendingQty
+      // 任一有未完成则状态为不满足
+      if (pendingQty > 0) existing.status = '不满足'
+    } else {
+      grouped.set(date, {
+        quantity: pendingQty,
+        status: pendingQty > 0 ? '不满足' : '满足',
+      })
+    }
+  }
+  return grouped
+}
+
 const tableData = computed<TableRowData[]>(() => {
-  return filteredData.value.map((item, index) => {
-    const rawPlans = parseDeliveryPlans(item.交货计划)
+  const rows = filteredData.value.map((item) => {
+    const planMap = getWorkOrderPlansFromDetail(item)
     const deliveryMap: Record<string, { quantity: number; status: string } | null> = {}
 
     for (const date of displayDates.value) {
       const dateKey = toDateColumnKey(date)
-      const plan = rawPlans.find(p => p.交货日期 === date)
-      deliveryMap[dateKey] = plan
-        ? { quantity: plan.交货数量, status: plan.状态 }
+      const planInfo = planMap.get(date)
+      deliveryMap[dateKey] = planInfo
+        ? { quantity: planInfo.quantity, status: planInfo.status }
         : null
     }
 
     return {
       ...item,
       deliveryMap,
-      _deliveryPlans: rawPlans,
-    } as unknown as TableRowData
+      _earliestDate: getEarliestDeliveryDate(item),
+    } as TableRowData & { _earliestDate: string | null }
   })
+
+  // 固定按交期升序排序
+  rows.sort((a, b) => {
+    const dateA = a._earliestDate ?? '9999-99-99'
+    const dateB = b._earliestDate ?? '9999-99-99'
+    return dateA.localeCompare(dateB)
+  })
+
+  return rows as TableRowData[]
 })
 
 const tablePagination = computed(() => ({
@@ -462,21 +509,6 @@ const tablePagination = computed(() => ({
 }))
 
 // ==================== 方法 ====================
-function parseDeliveryPlans(deliveryPlanStr: string | undefined): DeliveryPlan[] {
-  if (!deliveryPlanStr) return []
-  try {
-    const parsed = JSON.parse(deliveryPlanStr)
-    const plans = Array.isArray(parsed) ? parsed : [parsed]
-    return plans.filter(p => p && typeof p === 'object').map(p => ({
-      交货日期: p.交货日期 || '',
-      交货数量: Number(p.交货数量) || 0,
-      状态: p.状态 || '不满足',
-    }))
-  } catch {
-    return []
-  }
-}
-
 function getKittingStyle(status: string) {
   if (status === '齐套') return STATUS_STYLES.full
   if (status === '缺料') return STATUS_STYLES.partial
@@ -513,64 +545,183 @@ async function handleTotalClick(record: TableRowData) {
   currentProductName.value = record.品名 || ''
   currentProductSpec.value = record.规格 || ''
   currentWorkOrderData.value = generateWorkOrderDetail(record)
-  currentMaterialData.value = await generateMaterialDetail(record)
-  detailModalVisible.value = true
+  currentMaterialData.value = []   // 先清空，避免显示上一次的数据
+  detailModalVisible.value = true  // 先弹窗
+  materialLoading.value = true
+  try {
+    currentMaterialData.value = await generateMaterialDetail(record)  // 再异步加载
+  } finally {
+    materialLoading.value = false
+  }
 }
 
+// 工单总需求直接从已加载的工单明细列表中匹配（fetchData 时已并行加载全部明细）
 function generateWorkOrderDetail(record: TableRowData) {
-  const stored = Number(record.已入库数) || 0
-  const total = Number(record.工单总数) || 0
-  const plans = record._deliveryPlans || []
+  const matched = workOrderDetailList.value.filter(
+    (d) => String(d.货号 || '') === String(record.货号 || '')
+  )
+  if (matched.length === 0) return []
+  return matched.map((d, idx) => ({
+    id: idx + 1,
+    工单单号: d.工单单号 || '-',
+    交货日期: d.交货日期 || '-',
+    生产数: Number(d.生产数) || 0,
+    入库数: Number(d.入库数) || 0,
+    待产数: Number(d.待产数) || 0,
+  }))
+}
 
-  if (plans.length === 0) {
-    return [{
-      id: 1,
-      工单单号: '-',
-      完成日期: '-',
-      生产数: total,
-      入库数量: stored,
-      待产数: total - stored,
-    }]
+// ========== 构建 BOM 树（与排产分析一致，用于实时计算物料需求） ==========
+interface BomItem {
+  key: string
+  level: number
+  name: string
+  source: string
+  produceQty: number
+  purchaseQty: number
+  loss: number
+  spec?: string
+  partNo?: string
+  usage?: number
+  unit?: string
+  process?: string
+  workshop?: string
+  warehouse?: string
+  stock?: number
+  transit?: number
+  wip?: number
+  max?: number
+  min?: number
+  avail?: number
+  attr?: string
+  needQty?: number
+  remark?: string
+  children?: BomItem[]
+}
+
+let bomKeyCounter = 0
+function bomGenerateKey(prefix: string): string {
+  return `${prefix}-${++bomKeyCounter}`
+}
+
+function calculateDemandQty(qty: number, usage: number, loss: number): number {
+  let demand = qty * usage * (1 + loss)
+  demand = Math.max(0, demand)
+  return Math.ceil(demand)
+}
+
+function buildBomTree(bomData: any[], qty: number): BomItem[] {
+  const treeData: BomItem[] = []
+  bomKeyCounter = 0
+
+  const processBOMItem = (record: any, parentLevel: number = 0, parentUsage: number = 1): BomItem => {
+    const level = Number(record.层) || parentLevel
+    const key = bomGenerateKey('bom')
+    const usage = Number(record.用量) || 1
+    const cumulativeUsage = parentUsage * usage
+    const loss = Number(record.损耗) || 0
+    const demandQty = calculateDemandQty(qty, cumulativeUsage, loss)
+
+    const _stock = record.仓库数 !== undefined && record.仓库数 !== '' ? Number(record.仓库数) : 0
+    const _transit = record.在途数 !== undefined && record.在途数 !== '' ? Number(record.在途数) : 0
+    const _wip = record.在产需求 !== undefined && record.在产需求 !== '' ? Number(record.在产需求) : 0
+    const _min = record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : 0
+    // 与排产分析默认 analysisType='normal' 保持一致
+    const _avail = _stock + _transit - _wip - _min
+
+    const item: BomItem = {
+      key,
+      level,
+      name: record.品名 || '-',
+      source: record.来源 || '-',
+      produceQty: record.来源 === '自制' ? demandQty + _avail : 0,
+      purchaseQty: record.来源 !== '自制' ? demandQty + _avail : 0,
+      loss,
+      spec: record.规格 || '-',
+      partNo: record.货号 || '-',
+      usage: cumulativeUsage,
+      unit: record.单位 || '-',
+      process: record.工序名称 || '-',
+      workshop: record.工序车间 || '-',
+      warehouse: record.仓库名称 || '-',
+      stock: _stock,
+      transit: _transit,
+      wip: _wip,
+      max: record.库存上限 !== undefined && record.库存上限 !== '' ? Number(record.库存上限) : 0,
+      min: _min,
+      avail: _avail,
+      attr: record.产品属性 || '-',
+      needQty: demandQty,
+      remark: record.备注 || '-',
+      children: [],
+    }
+
+    if (record.子集 && Array.isArray(record.子集) && record.子集.length > 0) {
+      record.子集.forEach((childRecord: any) => {
+        const childItem = processBOMItem(childRecord, level + 1, cumulativeUsage)
+        item.children!.push(childItem)
+      })
+    }
+
+    return item
   }
 
-  return plans.map((plan: any, idx: number) => ({
-    id: idx + 1,
-    工单单号: `WO-${record.货号}-${idx + 1}`,
-    完成日期: plan.交货日期 || '-',
-    生产数: plan.交货数量 || 0,
-    入库数量: 0,
-    待产数: plan.交货数量 || 0,
-  }))
+  bomData.forEach((record) => {
+    treeData.push(processBOMItem(record, 0))
+  })
+
+  return treeData
+}
+
+function findBomNodeByPartNo(items: BomItem[], partNo: string | undefined): BomItem | null {
+  for (const item of items) {
+    if (item.partNo && String(item.partNo) === String(partNo)) {
+      return item
+    }
+    if (item.children && item.children.length > 0) {
+      const found = findBomNodeByPartNo(item.children, partNo)
+      if (found) return found
+    }
+  }
+  return null
 }
 
 async function generateMaterialDetail(record: TableRowData) {
   try {
-    // 从工单销控表明细接口查询父级编号等于当前编号的数据
-    const res = await workOrderSalesControlService.getWorkOrderSalesControlDetailList()
-    const allDetails = res || []
-    const children = allDetails.filter(
-      (item: any) => item.父级编号 != null && String(item.父级编号) === String(record.编号)
+    // 通过外产BOM列表获取，传入当前货号，返回该货号的子节点数据
+    const bomList = await externalProductionService.getExternalProductionBOMList(
+      new PMCRequestDto({ 货号: record.货号 } as any)
     )
+    if (!bomList || bomList.length === 0) return []
 
-    if (children.length === 0) {
-      return []
-    }
+    // 所有物料的需求数统一取工单总数
+    const totalQty = Number(record.工单总数) || 0
 
-    return children.map((child: any, idx: number) => ({
-      id: idx + 1,
-      货号: child.货号 || '-',
-      品名: child.品名 || '-',
-      规格: child.规格 || '-',
-      用量: Number(child.用量) || 0,
-      需求数: Number(child.需求数) || 0,
-      已出库数: Number(child.已出库数) || 0,
-      缺料数: Number(child.缺料数) || 0,
-      仓库名称: child.仓库名称 || '-',
-      仓库数: Number(child.仓库数) || 0,
-      仓库缺料: Number(child.仓库缺料) || 0,
-    }))
+    return bomList.map((item, idx) => {
+      const 用量 = Number(item.用量) || 0
+      const 已出库数 = Number(item.已出库数) || 0
+      const 仓库数 = Number(item.仓库数) || 0
+      // 需求数 = 工单总数 × 该物料用量
+      const 需求数 = totalQty * 用量
+      const 缺料数 = Math.max(0, 需求数 - 已出库数)
+      // 仓库缺料：缺料数>0 且 缺料数-仓库数>0 时 = 缺料数-仓库数，否则为 0
+      const 仓库缺料 = (缺料数 > 0 && 缺料数 - 仓库数 > 0) ? 缺料数 - 仓库数 : 0
+      return {
+        id: idx + 1,
+        货号: item.货号 || '-',
+        品名: item.品名 || '-',
+        规格: item.规格 || '-',
+        用量,
+        需求数,
+        已出库数,
+        缺料数,
+        仓库名称: item.仓库名称 || '',
+        仓库数,
+        仓库缺料,
+      }
+    })
   } catch (error) {
-    console.error('查询工单销控表明细失败:', error)
+    console.error('加载物料明细失败:', error)
     message.error('查询物料明细失败')
     return []
   }
@@ -588,6 +739,7 @@ function mapApiItemToTableItem(item: any): WorkOrderSalesControl {
   record.编号 = item['编号'] || ''
   record.车间名称 = item['车间名称'] || ''
   record.商品属性 = item['商品属性'] || ''
+  record.工单单号 = item['工单单号'] || ''
   record.货号 = item['货号'] || ''
   record.品名 = item['品名'] || ''
   record.规格 = item['规格'] || ''
@@ -596,21 +748,26 @@ function mapApiItemToTableItem(item: any): WorkOrderSalesControl {
   record.在产数量 = item['在产数量'] || '0'
   record.齐套 = item['齐套'] || '未分析'
   record.配料 = item['配料'] || '未配料'
+  record.交货日期 = item['交货日期'] || ''
   record.分析日期 = item['分析日期'] || ''
   record.生产完成率 = item['生产完成率'] || '0'
-  record.交货计划 = item['交货计划'] || ''
-  // record.父级编号 = item['父级编号'] || ''
   return record
 }
 
 function autoSetDateRangeFromData() {
   const allDates: string[] = []
-  dataSource.value.forEach(item => {
-    const plans = parseDeliveryPlans(item.交货计划)
-    plans.forEach(p => {
-      if (p.交货日期) allDates.push(p.交货日期)
+  // 从工单明细的交货日期中收集所有日期（参考成品销控表 getDeliveryDateRange）
+  for (const detail of workOrderDetailList.value) {
+    const date = (detail.交货日期 || '').substring(0, 10)
+    if (date) allDates.push(date)
+  }
+  // 如果明细没有日期，回退到主记录的分析日期
+  if (allDates.length === 0) {
+    dataSource.value.forEach(item => {
+      const analysisDate = (item.分析日期 || '').substring(0, 10)
+      if (analysisDate) allDates.push(analysisDate)
     })
-  })
+  }
   if (allDates.length === 0) return
   allDates.sort()
   const minDate = allDates[0]
@@ -621,8 +778,13 @@ function autoSetDateRangeFromData() {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await workOrderSalesControlService.getWorkOrderSalesControlList()
-    dataSource.value = (res || []).map((item: any) => mapApiItemToTableItem(item))
+    // 同时加载主表和工单明细表（参考成品销控表并行加载模式）
+    const [mainData, detailData] = await Promise.all([
+      workOrderSalesControlService.getWorkOrderSalesControlList(),
+      workOrderSalesControlService.getWorkOrderSalesControlDetailList(new PMCRequestDto({ 货号: '' })),
+    ])
+    dataSource.value = (mainData || []).map((item: any) => mapApiItemToTableItem(item))
+    workOrderDetailList.value = detailData || []
     autoSetDateRangeFromData()
   } catch (error: any) {
     message.error(error.message || '获取数据失败')
@@ -631,29 +793,18 @@ async function fetchData() {
   }
 }
 
-function handleSearch() {
-  fetchData()
-}
-
-function handleReset() {
-  quickFilters.value = []
-  showKittingAnalysis.value = false
-  kittingStatus.value = undefined
-  feedingStatus.value = undefined
-  hasProductionDate.value = false
-  productionDate.value = null
-  workshop.value = undefined
-  searchKeyword.value = ''
-  dateRange.value = [dayjs('2026-01-01'), dayjs('2026-01-10')]
-  message.success('重置完成')
-}
-
 onActivated(() => {
   activeTab.value = 'workOrderTracking'
 })
 
 onMounted(async () => {
+  updateTableHeight()
+  window.addEventListener('resize', updateTableHeight)
   await fetchData()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateTableHeight)
 })
 </script>
 
@@ -745,6 +896,13 @@ onMounted(async () => {
   display: flex;
   gap: 8px;
   margin-left: auto;
+  align-items: center;
+}
+
+.sort-label {
+  font-size: 13px;
+  color: #595959;
+  white-space: nowrap;
 }
 
 :deep(.ant-btn) {

@@ -12,9 +12,12 @@ import DeliveryReview from '@/views/PMC/DeliveryReview/DeliveryReview.vue'
 import ReviewDetail from '@/views/PMC/DeliveryReview/ReviewDetail.vue'
 import Users from '@/views/System/UserManagement.vue'
 import Config from '@/views/System/Config.vue'
+import OrganizationManagement from '@/views/System/OrganizationManagement.vue'
 import TestPage from '@/views/Test/TestPage.vue'
 import Workflow from '@/views/Test/Workflow.vue'
 import ProfitAnalysis from '@/views/Test/ProfitAnalysis.vue'
+import WeChatSend from '@/views/Test/WeChatSend.vue'
+import ExternalProductionTest from '@/views/Test/ExternalProductionTest.vue'
 import { 
   DashboardOutlined, 
   ShoppingOutlined, 
@@ -28,7 +31,10 @@ import {
   FunnelPlotOutlined,
   ExperimentOutlined,
   ProjectOutlined,
-  DollarCircleOutlined
+  DollarCircleOutlined,
+  WechatOutlined,
+  CommentOutlined,
+  ApartmentOutlined
 } from '@ant-design/icons-vue'
 
 const routes = [
@@ -109,10 +115,22 @@ const routes = [
             meta: { title: '工作流', icon: ProjectOutlined }
           },
           {
+            path: 'wechatSend',
+            name: 'wechatSend',
+            component: WeChatSend,
+            meta: { title: '企业微信发送', icon: CommentOutlined }
+          },
+          {
             path: 'profitAnalysis',
             name: 'profitAnalysis',
             component: ProfitAnalysis,
             meta: { title: '利润分红分析', icon: DollarCircleOutlined ,hidden: true}  
+          },
+          {
+            path: 'externalProduction',
+            name: 'externalProduction',
+            component: ExternalProductionTest,
+            meta: { title: '外产领料入库测试', icon: ContainerOutlined }
           }
         ]
       },
@@ -126,6 +144,12 @@ const routes = [
             name: 'users',
             component: Users,
             meta: { title: '用户管理', icon: TeamOutlined }
+          },
+          {
+            path: 'organization',
+            name: 'OrganizationManagement',
+            component: OrganizationManagement,
+            meta: { title: '组织管理', icon: ApartmentOutlined }
           },
           {
             path: 'config',

@@ -45,7 +45,7 @@ export const columns: TableColumnsType = [
   { title: '单位', dataIndex: 'unit', width: 60, align: 'center' },
   { title: '备注', dataIndex: 'remark', width: 100 ,},
   { title: '工序名称', dataIndex: 'process', width: 100 },
-  { title: '工序车间', dataIndex: 'workshop', width: 100 },
+  { title: '工序车间', dataIndex: 'workshop', key: 'workshop', width: 150 },
   { title: '仓库名称', dataIndex: 'warehouse', width: 110 },
   { title: '仓库数', dataIndex: 'stock', width: 80, align: 'center' },
   { title: '在途数', dataIndex: 'transit', width: 80, align: 'center' },

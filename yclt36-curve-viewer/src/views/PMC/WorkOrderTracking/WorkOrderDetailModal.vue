@@ -2,7 +2,7 @@
   <a-modal
     v-model:open="localVisible"
     :footer="null"
-    width="1150px"
+    width="1400px"
     class="work-order-detail-modal"
     @cancel="handleClose"
   >
@@ -50,11 +50,12 @@
         size="small"
         bordered
         class="detail-table"
-        :scroll="{ x: 950 }"
+        :loading="loading"
+        :scroll="{ x: 1200 }"
       >
         <template #bodyCell="{ column, text }">
           <template v-if="column.key === '缺料数' || column.key === '仓库缺料'">
-            <span :class="getShortageClass(text)">{{ text }}</span>
+            <span :class="{ 'highlight-yellow': Number(text) > 0 }">{{ text }}</span>
           </template>
           <template v-else>{{ text }}</template>
         </template>
@@ -69,9 +70,9 @@ import { computed } from 'vue'
 interface WorkOrderItem {
   id: number
   工单单号: string
-  完成日期: string
+  交货日期: string
   生产数: number
-  入库数量: number
+  入库数: number
   待产数: number
 }
 
@@ -96,6 +97,7 @@ const props = defineProps<{
   productSpec: string
   workOrderData: WorkOrderItem[]
   materialData: MaterialItem[]
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -112,9 +114,9 @@ const productInfo = computed(() => `${props.productNo},${props.productName},${pr
 const workOrderColumns = [
   { title: '序号', dataIndex: 'id', key: 'id', width: 60, align: 'center' },
   { title: '工单单号', dataIndex: '工单单号', key: '工单单号', width: 160 },
-  { title: '完成日期', dataIndex: '完成日期', key: '完成日期', width: 120, align: 'center' },
+  { title: '交货日期', dataIndex: '交货日期', key: '交货日期', width: 120, align: 'center' },
   { title: '生产数', dataIndex: '生产数', key: '生产数', width: 100, align: 'center' },
-  { title: '入库数量', dataIndex: '入库数量', key: '入库数量', width: 100, align: 'center' },
+  { title: '入库数', dataIndex: '入库数', key: '入库数', width: 100, align: 'center' },
   { title: '待产数', dataIndex: '待产数', key: '待产数', width: 100, align: 'center' },
 ]
 
@@ -122,21 +124,15 @@ const materialColumns = [
   { title: '序号', dataIndex: 'id', key: 'id', width: 50, align: 'center' },
   { title: '货号', dataIndex: '货号', key: '货号', width: 110 },
   { title: '品名', dataIndex: '品名', key: '品名', width: 100 },
-  { title: '规格', dataIndex: '规格', key: '规格', width: 260 },
-  { title: '用量', dataIndex: '用量', key: '用量', width: 60, align: 'center' },
+  { title: '规格', dataIndex: '规格', key: '规格', width: 200 },
+  { title: '用量', dataIndex: '用量', key: '用量', width: 80, align: 'center' },
   { title: '需求数', dataIndex: '需求数', key: '需求数', width: 80, align: 'center' },
   { title: '已出库数', dataIndex: '已出库数', key: '已出库数', width: 90, align: 'center' },
   { title: '缺料数', dataIndex: '缺料数', key: '缺料数', width: 80, align: 'center' },
-  { title: '仓库名称', dataIndex: '仓库名称', key: '仓库名称', width: 110, align: 'center' },
+  { title: '仓库名称', dataIndex: '仓库名称', key: '仓库名称', width: 100, align: 'center' },
   { title: '仓库数', dataIndex: '仓库数', key: '仓库数', width: 80, align: 'center' },
   { title: '仓库缺料', dataIndex: '仓库缺料', key: '仓库缺料', width: 90, align: 'center' },
 ]
-
-function getShortageClass(value: number) {
-  if (Number(value) > 1000) return 'highlight-red'
-  if (Number(value) > 0) return 'highlight-yellow'
-  return ''
-}
 
 function handleClose() {
   localVisible.value = false

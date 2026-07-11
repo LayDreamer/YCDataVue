@@ -41,7 +41,7 @@
               />
             </div>
             <div class="info-item">
-              <span class="label">生产交期</span>
+              <span class="label">交货日期</span>
               <a-date-picker
                 v-model:value="form.deliveryDate"
                 placeholder="选择交期"
@@ -80,10 +80,19 @@
                 <template #icon><FolderOpenOutlined /></template>
                 全部展开
               </a-button>
-              <a-button type="primary" @click="handleCollapseAll">
-                <template #icon><FolderOutlined /></template>
-                全部收缩
-              </a-button>
+  <a-button type="primary" @click="handleCollapseAll">
+    <template #icon><FolderOutlined /></template>
+    全部收缩
+  </a-button>
+  <a-select
+    v-model:value="selectedLevel"
+    style="width: 100px; margin-left: 8px;"
+    placeholder="选择层数"
+  >
+    <a-select-option v-for="level in availableLevels" :key="level" :value="level">
+      层 {{ level }}
+    </a-select-option>
+  </a-select>
             </div>
             <FixedColumnControl
               v-model="fixedColumnKeys"
@@ -97,7 +106,7 @@
         <div class="table-wrapper">
           <a-table
             :columns="displayColumns"
-            :data-source="dataSource"
+            :data-source="filteredDataSource"
             :pagination="false"
             :scroll="{ x: 2200, y: 'calc(100vh - 440px)' }"
             bordered
@@ -239,6 +248,65 @@ const loading = ref(false);
 const dataSource = ref<ProductionItem[]>([]);
 const expandedKeys = ref<string[]>([]);
 
+// 层数选择
+const selectedLevel = ref(1);
+
+// 计算数据中包含的层数（排除0）
+const availableLevels = computed(() => {
+  const levels = new Set<number>();
+  const traverse = (items: ProductionItem[]) => {
+    items.forEach(item => {
+      if (item.level > 0) levels.add(item.level);
+      if (item.children) traverse(item.children);
+    });
+  };
+  traverse(dataSource.value);
+  return Array.from(levels).sort((a, b) => a - b);
+});
+
+// 根据层数过滤树
+function filterTreeByLevel(items: ProductionItem[], maxLevel: number): ProductionItem[] {
+  return items
+    .filter(item => item.level <= maxLevel)
+    .map(item => {
+      const newItem = { ...item };
+      if (item.children && item.children.length > 0) {
+        const filteredChildren = filterTreeByLevel(item.children, maxLevel);
+        if (filteredChildren.length > 0) {
+          newItem.children = filteredChildren;
+        } else {
+          newItem.children = undefined;
+        }
+      }
+      return newItem;
+    });
+}
+
+// 过滤后的表格数据
+const filteredDataSource = computed(() => {
+  return filterTreeByLevel(dataSource.value, selectedLevel.value);
+});
+
+// 获取过滤后需要展开的节点
+function getExpandedKeysForFiltered(items: ProductionItem[]): string[] {
+  const keys: string[] = [];
+  const traverse = (node: ProductionItem) => {
+    if (node.children && node.children.length > 0) {
+      keys.push(node.key);
+      node.children.forEach(traverse);
+    }
+  };
+  items.forEach(traverse);
+  return keys;
+}
+
+// 监听层数变化，自动展开对应节点
+watch(selectedLevel, () => {
+  if (filteredDataSource.value.length > 0) {
+    expandedKeys.value = getExpandedKeysForFiltered(filteredDataSource.value);
+  }
+});
+
 // ========== 保存状态 ==========
 const saveLoading = ref(false);
 const saveBomLoading = ref(false);
@@ -285,12 +353,6 @@ interface ProductionItem {
   remark?: string;
 }
 
-interface DeliveryPlan {
-  交货日期: string;
-  交货数量: number;
-  状态: string;
-}
-
 // ========== 来源颜色 ==========
 function getSourceColor(src: string) {
   if (src === '外购') return 'green';
@@ -320,7 +382,7 @@ function getAllParentKeys(items: ProductionItem[]): string[] {
 }
 
 function handleExpandAll() {
-  const allKeys = getAllParentKeys(dataSource.value);
+  const allKeys = getAllParentKeys(filteredDataSource.value);
   if (allKeys.length === expandedKeys.value.length && allKeys.every(k => expandedKeys.value.includes(k))) {
     message.info('当前已是全部展开状态');
     return;
@@ -531,38 +593,6 @@ function flattenTree(items: ProductionItem[]): ProductionItem[] {
   return result;
 }
 
-// ========== 交货计划工具 ==========
-function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
-  if (!deliveryPlanStr) return [];
-  try {
-    const parsed = JSON.parse(deliveryPlanStr);
-    const plans = Array.isArray(parsed) ? parsed : [parsed];
-    return plans.filter((p: any) => p && typeof p === 'object').map((p: any) => ({
-      交货日期: p.交货日期 || '',
-      交货数量: Number(p.交货数量) || 0,
-      状态: p.状态 || '不满足',
-    }));
-  } catch {
-    return [];
-  }
-}
-
-function mergeDeliveryPlans(existingStr: string, newStr: string): string {
-  const existing = parseDeliveryPlans(existingStr);
-  const newPlans = parseDeliveryPlans(newStr);
-  const map = new Map<string, DeliveryPlan>();
-  existing.forEach(p => map.set(p.交货日期, { ...p }));
-  newPlans.forEach(p => {
-    const prev = map.get(p.交货日期);
-    if (prev) {
-      prev.交货数量 += p.交货数量;
-    } else {
-      map.set(p.交货日期, { ...p });
-    }
-  });
-  return JSON.stringify(Array.from(map.values()));
-}
-
 function convertToWorkOrderSalesControl(item: ProductionItem, index: number): WorkOrderSalesControl {
   const sc = new WorkOrderSalesControl();
   sc.车间名称 = item.workshop || '未知车间';
@@ -578,17 +608,14 @@ function convertToWorkOrderSalesControl(item: ProductionItem, index: number): Wo
   sc.配料 = '未配料';
   sc.分析日期 = dayjs().format('YYYY-MM-DD HH:mm:ss');
   sc.生产完成率 = '0';
-  const deliveryDate = form.deliveryDate || dayjs().format('YYYY-MM-DD');
-  sc.交货计划 = JSON.stringify([
-    { 交货日期: deliveryDate, 交货数量: totalQty, 状态: '不满足' }
-  ]);
+  sc.交货日期 = form.deliveryDate || dayjs().format('YYYY-MM-DD');
   return sc;
 }
 
 // ========== 保存分析 ==========
 async function handleSave() {
   if (!form.deliveryDate) {
-    message.warning('请先选择生产交期');
+    message.warning('请先选择交货日期');
     return;
   }
   if (dataSource.value.length === 0) {
@@ -618,7 +645,6 @@ async function handleSave() {
         if (item.children && item.children.length > 0) {
           for (const child of item.children) {
             result.push(child);
-            result.push(...collectAllChildren([child]));
           }
         }
       }
@@ -631,18 +657,23 @@ async function handleSave() {
     allChildren.forEach(child => childMap.set(child.key, child));
     const uniqueChildren = Array.from(childMap.values());
 
+    // 货号 -> 工单单号 映射，用于明细赋值
+    const workOrderNoMap = new Map<string, string>();
     const salesControlList = productionNodes.filter(item => item.level !== 0).map((item, idx) => {
       const newSc = convertToWorkOrderSalesControl(item, idx);
       const existing = existingMap.get(newSc.货号 || '');
       if (existing) {
         newSc.编号 = existing.编号 || existing.id;
+        newSc.工单单号 = existing.工单单号 || props.orderNo || '';
         const oldTotal = Number(existing.工单总数) || 0;
         const addTotal = Number(newSc.工单总数) || 0;
         newSc.工单总数 = String(oldTotal + addTotal);
         const oldWip = Number(existing.在产数量) || 0;
         const addWip = Number(newSc.在产数量) || 0;
         newSc.在产数量 = String(oldWip + addWip);
-        newSc.交货计划 = mergeDeliveryPlans(existing.交货计划 || '', newSc.交货计划 || '');
+      }
+      if (newSc.货号) {
+        workOrderNoMap.set(newSc.货号, newSc.工单单号 || '');
       }
       return newSc;
     });
@@ -675,18 +706,18 @@ async function handleSave() {
       detail.货号 = item.partNo || '';
       detail.品名 = item.name || '-';
       detail.规格 = item.spec || '-';
-      detail.用量 = String(item.usage || 0);
-      detail.需求数 = String(item.needQty || 0);
-      detail.已出库数 = '0';
-      detail.缺料数 = '0';
-      detail.仓库名称 = item.warehouse || '-';
-      detail.仓库数 = String(item.stock || 0);
-      detail.仓库缺料 = '0';
       const parentPartNo = childParentMap.get(item.key);
       if (parentPartNo) {
         const parentNo = mainNoMap.get(parentPartNo);
         if (parentNo) detail.父级编号 = parentNo;
+        const parentWorkOrderNo = workOrderNoMap.get(parentPartNo);
+        if (parentWorkOrderNo) detail.工单单号 = parentWorkOrderNo;
       }
+      detail.交货日期 = form.deliveryDate || dayjs().format('YYYY-MM-DD');
+      const produceQty = item.produceQty > 0 ? item.produceQty : (item.needQty || 0);
+      detail.生产数 = String(produceQty);
+      detail.入库数 = '0';
+      detail.待产数 = String(Math.max(0, produceQty));
       return detail;
     });
 
@@ -753,7 +784,8 @@ async function loadData() {
     form.analysisType = 'normal';
     const treeData = buildTreeFromData(bomData, productData.qty);
     dataSource.value = treeData;
-    expandedKeys.value = getAllParentKeys(dataSource.value);
+    selectedLevel.value = 1;
+    expandedKeys.value = getExpandedKeysForFiltered(filteredDataSource.value);
   } catch (error) {
     console.error('加载排产分析数据失败:', error);
     message.error('加载排产分析数据失败，请稍后重试');

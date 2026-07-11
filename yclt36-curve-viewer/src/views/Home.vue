@@ -68,7 +68,26 @@
             </a-breadcrumb>
           </div>
           <div class="header-actions">
-            <a-button type="primary" class="wecom-btn" :icon="h(WechatOutlined)" @click="wechatModalVisible = true">发送企业微信</a-button>
+            <a-button type="primary" class="wecom-btn" :icon="h(CommentOutlined)" @click="wechatModalVisible = true">发送企业微信</a-button>
+            <a-badge :count="notificationCount" :offset="[-5, 5]">
+              <a-button class="header-action-btn" @click="showNotifications = true">
+                <BellOutlined /> 通知
+              </a-button>
+            </a-badge>
+            <a-dropdown :trigger="['click']">
+              <a-button class="header-action-btn">
+                <UserOutlined /> {{ currentUser }}
+                <DownOutlined />
+              </a-button>
+              <template #overlay>
+                <a-menu @click="handleUserMenu">
+                  <a-menu-item key="profile"><UserOutlined /> 个人中心</a-menu-item>
+                  <a-menu-item key="settings"><SettingOutlined /> 账户设置</a-menu-item>
+                  <a-menu-divider />
+                  <a-menu-item key="logout"><LogoutOutlined /> 退出登录</a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </div>
         </div>
       </a-layout-header>
@@ -125,12 +144,47 @@
     </a-layout>
   </a-layout>
 
-  <WeChatSendModal v-model:visible="wechatModalVisible" @sendSuccess="handleSendSuccess" />
+  <WeChatSendModal v-model:visible="wechatModalVisible" />
+
+  <!-- 通知抽屉 -->
+  <a-drawer
+    v-model:open="showNotifications"
+    title="通知中心"
+    placement="right"
+    width="400"
+  >
+    <a-tabs v-model:activeKey="notifTabKey">
+      <a-tab-pane key="all" :tab="`全部 (${notifications.length})`">
+        <a-list :data-source="notifications" :split="false">
+          <template #renderItem="{ item }">
+            <a-list-item class="notif-item" :class="{ unread: !item.read }">
+              <a-list-item-meta>
+                <template #avatar>
+                  <a-avatar :style="{ backgroundColor: item.avatarBg }">
+                    {{ item.icon }}
+                  </a-avatar>
+                </template>
+                <template #title>{{ item.title }}</template>
+                <template #description>
+                  <div class="notif-desc">{{ item.content }}</div>
+                  <div class="notif-time">{{ item.time }}</div>
+                </template>
+              </a-list-item-meta>
+            </a-list-item>
+          </template>
+        </a-list>
+      </a-tab-pane>
+      <a-tab-pane key="unread" :tab="`未读 (${unreadCount})`">
+        <a-empty v-if="unreadCount === 0" description="暂无未读通知" />
+      </a-tab-pane>
+    </a-tabs>
+  </a-drawer>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, watch, provide } from 'vue'
-import { Grid } from 'ant-design-vue'
+import { ref, computed, watch, provide, h } from 'vue'
+import { Grid, Modal } from 'ant-design-vue'
+import WeChatSendModal from '@/views/WeChatWork/WeChatSendModal.vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   MenuFoldOutlined, MenuUnfoldOutlined, WechatOutlined, ReloadOutlined,
@@ -140,9 +194,10 @@ import {
   TeamOutlined, ToolOutlined, FileDoneOutlined,
   ScheduleOutlined, LineChartOutlined, ContainerOutlined,
   FunnelPlotOutlined, ExperimentOutlined, ProjectOutlined,
-  DollarCircleOutlined
+  DollarCircleOutlined, CommentOutlined, ApartmentOutlined,
+  BellOutlined, UserOutlined, DownOutlined, LogoutOutlined
 } from '@ant-design/icons-vue'
-import WeChatSendModal from '../views/WeChatWork/WeChatSendModal.vue'
+
 
 // --- 基础配置 ---
 const TABS_KEY = 'V_APP_TABS'
@@ -161,7 +216,9 @@ const iconMap = {
   FunnelPlotOutlined,
   ExperimentOutlined,
   ProjectOutlined,
-  DollarCircleOutlined
+  DollarCircleOutlined,
+  CommentOutlined,
+  ApartmentOutlined
 }
 
 const DASHBOARD_CONF = {
@@ -180,6 +237,25 @@ const isNarrowLayout = computed(() => !screens.value?.lg)
 const collapsedSiderWidth = computed(() => (isNarrowLayout.value ? 0 : 80))
 const selectedKeys = ref<string[]>([])
 const wechatModalVisible = ref(false)
+
+// --- 通知与管理员 ---
+const notificationCount = ref(3)
+const currentUser = ref('管理员')
+const showNotifications = ref(false)
+const notifTabKey = ref('all')
+const notifications = ref([
+  { id: 1, icon: '📢', avatarBg: '#1890ff', title: '系统维护通知', content: '计划于今晚23:00进行系统维护升级', time: '5分钟前', read: false },
+  { id: 2, icon: '📋', avatarBg: '#52c41a', title: '任务提醒', content: '您有3个待处理任务需要处理', time: '1小时前', read: false },
+  { id: 3, icon: '💬', avatarBg: '#faad14', title: '新消息', content: '李四给您发了一条私信', time: '2小时前', read: true }
+])
+const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+
+const handleUserMenu = ({ key }: { key: string }) => {
+  if (key === 'logout') {
+    Modal.confirm({ title: '确认退出？', onOk: () => {} })
+  }
+}
+
 
 // --- 面包屑 ---
 const breadcrumbs = computed(() => route.matched.filter(item => item.meta && item.meta.title))
@@ -358,7 +434,7 @@ const handleMenuClick = ({ key }: any) => {
   if (isNarrowLayout.value) collapsed.value = true
   router.push({ name: key }).catch(() => {})
 }
-const handleSendSuccess = (res: any) => console.log('Send Success', res)
+
 </script>
 
 <style scoped>
@@ -489,6 +565,16 @@ const handleSendSuccess = (res: any) => console.log('Send Success', res)
   background-color: #f0f2f5;
   border-radius: 6px;
 }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .breadcrumb-nav { margin-left: 8px; }
 .breadcrumb-item-content { display: inline-flex; align-items: center; gap: 4px; }
 
@@ -574,5 +660,19 @@ const handleSendSuccess = (res: any) => console.log('Send Success', res)
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* 通知抽屉样式 */
+.notif-item.unread {
+  background-color: #f6ffed;
+}
+.notif-desc {
+  color: #666;
+  font-size: 13px;
+}
+.notif-time {
+  color: #999;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

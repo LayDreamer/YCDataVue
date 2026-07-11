@@ -97,6 +97,15 @@
                 <FolderOutlined />
               </template>全部收缩
             </a-button>
+            <a-select
+              v-model:value="selectedLevel"
+              style="width: 100px; margin-left: 8px;"
+              placeholder="选择层数"
+            >
+              <a-select-option v-for="level in availableLevels" :key="level" :value="level">
+                层 {{ level }}
+              </a-select-option>
+            </a-select>
             </div>
 
             <FixedColumnControl
@@ -110,7 +119,7 @@
 
       <!-- 2. 表格区域 -->
       <div class="table-wrapper">
-        <a-table :columns="columns" :data-source="dataSource" :pagination="false"
+        <a-table :columns="columns" :data-source="filteredDataSource" :pagination="false"
           :scroll="{ x: 2200, y: 'calc(100vh - 280px)' }" bordered row-key="key" :expand-icon-column-index="1"
           :indent-size="18" :expanded-row-keys="expandedKeys"
           @expand="(expanded: boolean, record: any) => handleExpand(expanded, record)">
@@ -164,6 +173,7 @@
 
             <!-- 输入框列 -->
             <template v-if="['produceQty', 'purchaseQty', 'loss'].includes(column.key as string)">
+              <div @click.stop>
               <a-input-number 
                 v-model:value="record[column.key]" 
                 size="small" 
@@ -171,6 +181,7 @@
                 :controls="false" 
                 @change="(val: any) => handleLossChange(record, column.key as string, val)"
               />
+              </div>
             </template>
           </template>
         </a-table>
@@ -278,6 +289,65 @@ const dataSource = ref<ProductionItem[]>([]);
 // 展开状态管理
 const expandedKeys = ref<string[]>([]);
 
+// 层数选择
+const selectedLevel = ref(1);
+
+// 计算数据中包含的层数（排除0）
+const availableLevels = computed(() => {
+  const levels = new Set<number>();
+  const traverse = (items: ProductionItem[]) => {
+    items.forEach(item => {
+      if (item.level > 0) levels.add(item.level);
+      if (item.children) traverse(item.children);
+    });
+  };
+  traverse(dataSource.value);
+  return Array.from(levels).sort((a, b) => a - b);
+});
+
+// 根据层数过滤树
+function filterTreeByLevel(items: ProductionItem[], maxLevel: number): ProductionItem[] {
+  return items
+    .filter(item => item.level <= maxLevel)
+    .map(item => {
+      const newItem = { ...item };
+      if (item.children && item.children.length > 0) {
+        const filteredChildren = filterTreeByLevel(item.children, maxLevel);
+        if (filteredChildren.length > 0) {
+          newItem.children = filteredChildren;
+        } else {
+          newItem.children = undefined;
+        }
+      }
+      return newItem;
+    });
+}
+
+// 过滤后的表格数据
+const filteredDataSource = computed(() => {
+  return filterTreeByLevel(dataSource.value, selectedLevel.value);
+});
+
+// 获取过滤后需要展开的节点
+function getExpandedKeysForFiltered(items: ProductionItem[]): string[] {
+  const keys: string[] = [];
+  const traverse = (node: ProductionItem) => {
+    if (node.children && node.children.length > 0) {
+      keys.push(node.key);
+      node.children.forEach(traverse);
+    }
+  };
+  items.forEach(traverse);
+  return keys;
+}
+
+// 监听层数变化，自动展开对应节点
+watch(selectedLevel, () => {
+  if (filteredDataSource.value.length > 0) {
+    expandedKeys.value = getExpandedKeysForFiltered(filteredDataSource.value);
+  }
+});
+
 // 固定列控制
 const fixedColumnKeys = ref<string[]>(['index', 'partNo']);
 
@@ -372,28 +442,52 @@ watch(() => form.analysisType, (newType) => {
   }
 });
 
+// 通过 key 在原始 dataSource 树中查找节点（返回原始引用，非副本）
+function findItemByKey(items: ProductionItem[], key: string): ProductionItem | null {
+  for (const item of items) {
+    if (item.key === key) return item;
+    if (item.children?.length) {
+      const found = findItemByKey(item.children, key);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 // 处理损耗字段变化，动态更新该行及子行的需求量
 const handleLossChange = (record: ProductionItem, field: string, value: number | null) => {
-  if (field === 'loss' && record) {
+  // produceQty / purchaseQty / loss 字段变化都需要处理
+  if (!record) return;
+
+  // 关键：通过 key 在原始 dataSource 中找到节点（而非 filteredDataSource 的副本）
+  const originalItem = findItemByKey(dataSource.value, record.key);
+  if (!originalItem) return;
+
+  // 如果是 loss 变化，更新值并重新计算该行及子行的需求量
+  if (field === 'loss') {
     const lossValue = value || 0;
-    // 更新当前行及子行的需求量
-    const updateItemAndChildren = (item: ProductionItem, loss: number) => {
-      item.loss = loss;
+    originalItem.loss = lossValue;
+    
+    const updateItemAndChildren = (item: ProductionItem) => {
       if (form.qty > 0 && (item.usage || 1)) {
-        const demandQty = calculateDemandQty(form.qty, item.usage || 1, loss);       
+        const demandQty = calculateDemandQty(form.qty, item.usage || 1, item.loss || 0);       
         item.needQty = demandQty;
-    if (item.source !== '自制') {
-      item.purchaseQty = demandQty + (item.avail || 0);
-    } else {
-      item.produceQty = demandQty + (item.avail || 0);
-    }
+        if (item.source !== '自制') {
+          item.purchaseQty = demandQty + (item.avail || 0);
+        } else {
+          item.produceQty = demandQty + (item.avail || 0);
+        }
       }
-      // 递归更新子节点
+      // 递归更新子节点（子节点保持各自损耗率不变，但因父级需求变化可能需重算）
       if (item.children && item.children.length > 0) {
-        item.children.forEach(child => updateItemAndChildren(child, child.loss || 0));
+        item.children.forEach(child => updateItemAndChildren(child));
       }
     };
-    updateItemAndChildren(record, lossValue);
+    updateItemAndChildren(originalItem);
+  } else if (field === 'produceQty') {
+    originalItem.produceQty = value || 0;
+  } else if (field === 'purchaseQty') {
+    originalItem.purchaseQty = value || 0;
   }
 };
 
@@ -540,9 +634,8 @@ const loadData = async () => {
 
     // 更新表格数据
     dataSource.value = treeData;
-
-    // 默认展开所有父节点
-    expandedKeys.value = getParentKeys(dataSource.value);
+    selectedLevel.value = 1;
+    expandedKeys.value = getExpandedKeysForFiltered(filteredDataSource.value);
   } catch (error) {
     console.error('加载数据失败:', error); 
     message.error('加载数据失败，请稍后重试');
@@ -588,26 +681,8 @@ function flattenTree(items: ProductionItem[]): ProductionItem[] {
   return result;
 }
 
-interface DeliveryPlan {
-  交货日期: string;
-  交货数量: number;
-  状态: string;
-}
 
-function parseDeliveryPlans(deliveryPlanStr: string): DeliveryPlan[] {
-  if (!deliveryPlanStr) return [];
-  try {
-    const parsed = JSON.parse(deliveryPlanStr);
-    const plans = Array.isArray(parsed) ? parsed : [parsed];
-    return plans.filter((p: any) => p && typeof p === 'object').map((p: any) => ({
-      交货日期: p.交货日期 || '',
-      交货数量: Number(p.交货数量) || 0,
-      状态: p.状态 || '不满足',
-    }));
-  } catch {
-    return [];
-  }
-}
+
 
 // 将排产分析明细项转换为工单销控表数据
 function convertToWorkOrderSalesControl(item: ProductionItem, index: number): WorkOrderSalesControl {
@@ -625,36 +700,11 @@ function convertToWorkOrderSalesControl(item: ProductionItem, index: number): Wo
   sc.配料 = '未配料';
   sc.分析日期 = dayjs().format('YYYY-MM-DD HH:mm:ss');
   sc.生产完成率 = '0';
-  // 构造交货计划：以生产交期为交货日期，工单总数为交货数量
-  const deliveryDate = form.deliveryDate || dayjs().format('YYYY-MM-DD');
-  sc.交货计划 = JSON.stringify([
-    { 交货日期: deliveryDate, 交货数量: totalQty, 状态: '不满足' }
-  ]);
+  sc.交货日期 = form.deliveryDate || dayjs().format('YYYY-MM-DD');
   return sc;
 }
 
-// 合并交货计划：相同日期数量累加，不同日期追加
-function mergeDeliveryPlans(existingStr: string, newStr: string): string {
-  const existing = parseDeliveryPlans(existingStr);
-  const newPlans = parseDeliveryPlans(newStr);
-  const map = new Map<string, DeliveryPlan>();
 
-  existing.forEach(p => {
-    map.set(p.交货日期, { ...p });
-  });
-
-  newPlans.forEach(p => {
-    const prev = map.get(p.交货日期);
-    if (prev) {
-      prev.交货数量 += p.交货数量;
-      map.set(p.交货日期, prev);
-    } else {
-      map.set(p.交货日期, { ...p });
-    }
-  });
-
-  return JSON.stringify(Array.from(map.values()));
-}
 
 // 保存分析
 const handleSave = async () => {
@@ -708,6 +758,8 @@ const handleSave = async () => {
     allChildren.forEach(child => childMap.set(child.key, child));
     const uniqueChildren = Array.from(childMap.values());
 
+    // 货号 -> 工单单号 映射，用于明细赋值
+    const workOrderNoMap = new Map<string, string>();
     // 保存主表（排除0层节点）
     const salesControlList = productionNodes.filter(item => item.level !== 0).map((item, idx) => {
       const newSc = convertToWorkOrderSalesControl(item, idx);
@@ -716,6 +768,7 @@ const handleSave = async () => {
       if (existing) {
         // 合并更新
         newSc.编号 = existing.编号 || existing.id;
+        newSc.工单单号 = existing.工单单号 || form.orderNo || '';
         const oldTotal = Number(existing.工单总数) || 0;
         const addTotal = Number(newSc.工单总数) || 0;
         newSc.工单总数 = String(oldTotal + addTotal);
@@ -723,9 +776,10 @@ const handleSave = async () => {
         const oldWip = Number(existing.在产数量) || 0;
         const addWip = Number(newSc.在产数量) || 0;
         newSc.在产数量 = String(oldWip + addWip);
+      }
 
-        // 合并交货计划
-        newSc.交货计划 = mergeDeliveryPlans(existing.交货计划 || '', newSc.交货计划 || '');
+      if (newSc.货号) {
+        workOrderNoMap.set(newSc.货号, newSc.工单单号 || '');
       }
 
       return newSc;
@@ -762,13 +816,6 @@ const handleSave = async () => {
       detail.货号 = item.partNo || '';
       detail.品名 = item.name || '-';
       detail.规格 = item.spec || '-';
-      detail.用量 = String(item.usage || 0);
-      detail.需求数 = String(item.needQty || 0);
-      detail.已出库数 = '0';
-      detail.缺料数 = '0';
-      detail.仓库名称 = item.warehouse || '-';
-      detail.仓库数 = String(item.stock || 0);
-      detail.仓库缺料 = '0';
       // 父级编号 = 直接父节点在主表中的编号
       const parentPartNo = childParentMap.get(item.key);
       if (parentPartNo) {
@@ -776,7 +823,16 @@ const handleSave = async () => {
         if (parentNo) {
           detail.父级编号 = parentNo;
         }
+        const parentWorkOrderNo = workOrderNoMap.get(parentPartNo);
+        if (parentWorkOrderNo) {
+          detail.工单单号 = parentWorkOrderNo;
+        }
       }
+      detail.交货日期 = form.deliveryDate || dayjs().format('YYYY-MM-DD');
+      const produceQty = item.produceQty > 0 ? item.produceQty : (item.needQty || 0);
+      detail.生产数 = String(produceQty);
+      detail.入库数 = '0';
+      detail.待产数 = String(Math.max(0, produceQty));
       return detail;
     });
 
