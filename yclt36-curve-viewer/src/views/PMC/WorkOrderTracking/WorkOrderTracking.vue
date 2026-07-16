@@ -688,42 +688,109 @@ function findBomNodeByPartNo(items: BomItem[], partNo: string | undefined): BomI
 
 async function generateMaterialDetail(record: TableRowData) {
   try {
-    // 通过外产BOM列表获取，传入当前货号，返回该货号的子节点数据
+    // 1. 获取当前货号对应的 BOM 子节点列表
     const bomList = await externalProductionService.getExternalProductionBOMList(
       new PMCRequestDto({ 货号: record.货号 } as any)
     )
     if (!bomList || bomList.length === 0) return []
 
-    // 所有物料的需求数统一取工单总数
-    const totalQty = Number(record.工单总数) || 0
+    // 2. 查询外产领料：按 BOM 子节点货号查出所有子记录
+    const bomGoodsNos = extractGoodsNos(bomList)
+    const childPickResults = await queryPickMaterialByGoodsNos(bomGoodsNos)
 
-    return bomList.map((item, idx) => {
-      const 用量 = Number(item.用量) || 0
-      const 已出库数 = Number(item.已出库数) || 0
-      const 仓库数 = Number(item.仓库数) || 0
-      // 需求数 = 工单总数 × 该物料用量
-      const 需求数 = totalQty * 用量
-      const 缺料数 = Math.max(0, 需求数 - 已出库数)
-      // 仓库缺料：缺料数>0 且 缺料数-仓库数>0 时 = 缺料数-仓库数，否则为 0
-      const 仓库缺料 = (缺料数 > 0 && 缺料数 - 仓库数 > 0) ? 缺料数 - 仓库数 : 0
-      return {
-        id: idx + 1,
-        货号: item.货号 || '-',
-        品名: item.品名 || '-',
-        规格: item.规格 || '-',
-        用量,
-        需求数,
-        已出库数,
-        缺料数,
-        仓库名称: item.仓库名称 || '',
-        仓库数,
-        仓库缺料,
-      }
-    })
+    // 3. 过滤并汇总出库数量：仅保留父节点货号等于当前货号的记录
+    const pickOutQtyMap = await buildOutQtyMap(childPickResults, record.货号 || '')
+
+    // 4. 映射为物料明细
+    const totalQty = Number(record.工单总数) || 0
+    return bomList.map((item, idx) => buildMaterialRow(item, idx, totalQty, pickOutQtyMap))
   } catch (error) {
     console.error('加载物料明细失败:', error)
     message.error('查询物料明细失败')
     return []
+  }
+}
+
+/** 从 BOM 列表提取去重后的货号列表 */
+function extractGoodsNos(bomList: any[]): string[] {
+  const nos = bomList.map((d) => d.货号).filter((g: any) => !!g) as string[]
+  return Array.from(new Set(nos))
+}
+
+/** 按货号列表批量查询外产领料 */
+async function queryPickMaterialByGoodsNos(goodsNos: string[]): Promise<any[][]> {
+  return Promise.all(
+    goodsNos.map((g) =>
+      externalProductionService.getExternalProductionPickMaterialList(
+        new PMCRequestDto({ 货号: g } as any)
+      )
+    )
+  )
+}
+
+/** 根据子记录查询父记录，构建「父级编号 → 父节点货号」映射 */
+async function buildParentPartNoMap(childResults: any[][]): Promise<Map<string, string>> {
+  const parentIds = Array.from(
+    new Set(childResults.flatMap((list) => list.map((p) => p.父级编号).filter(Boolean)))
+  )
+  const map = new Map<string, string>()
+  if (parentIds.length === 0) return map
+
+  const parentResults = await Promise.all(
+    parentIds.map((id) =>
+      externalProductionService.getExternalProductionPickMaterialList(
+        new PMCRequestDto({ 编号: id } as any)
+      )
+    )
+  )
+  for (const list of parentResults) {
+    for (const p of list || []) {
+      if (p.编号) map.set(p.编号, p.货号 || '')
+    }
+  }
+  return map
+}
+
+/** 构建货号 → 出库数量的汇总映射（仅父节点货号等于目标货号） */
+async function buildOutQtyMap(childResults: any[][], targetPartNo: string): Promise<Map<string, number>> {
+  const parentPartNoMap = await buildParentPartNoMap(childResults)
+  const outQtyMap = new Map<string, number>()
+  for (const list of childResults) {
+    for (const p of list || []) {
+      if (!p.货号) continue
+      const parentPartNo = parentPartNoMap.get(p.父级编号) || ''
+      if (parentPartNo !== targetPartNo) continue
+      outQtyMap.set(p.货号, (outQtyMap.get(p.货号) || 0) + (Number(p.出库数量) || 0))
+    }
+  }
+  return outQtyMap
+}
+
+/** 组装单条物料明细数据 */
+function buildMaterialRow(
+  item: any,
+  index: number,
+  totalQty: number,
+  outQtyMap: Map<string, number>
+) {
+  const 用量 = Number(item.用量) || 0
+  const 已出库数 = outQtyMap.get(item.货号) || 0
+  const 仓库数 = Number(item.仓库数) || 0
+  const 需求数 = totalQty * 用量
+  const 缺料数 = Math.max(0, 需求数 - 已出库数)
+  const 仓库缺料 = 缺料数 > 0 && 缺料数 - 仓库数 > 0 ? 缺料数 - 仓库数 : 0
+  return {
+    id: index + 1,
+    货号: item.货号 || '-',
+    品名: item.品名 || '-',
+    规格: item.规格 || '-',
+    用量,
+    需求数,
+    已出库数,
+    缺料数,
+    仓库名称: item.仓库名称 || '',
+    仓库数,
+    仓库缺料,
   }
 }
 

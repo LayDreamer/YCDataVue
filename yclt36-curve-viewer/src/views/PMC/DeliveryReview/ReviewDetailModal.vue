@@ -139,7 +139,16 @@
 
       <!-- 右侧：排产分析单详情（占满剩余空间） -->
       <div class="right-panel">
-        <a-card title="排产分析单详情" :bordered="false" class="scheduling-card">
+        <a-card :bordered="false" class="scheduling-card">
+          <template #title>
+            <div class="sch-card-title">
+              <span>排产分析单详情</span>
+              <a-button type="link" size="small" @click="loadSchedulingData" :loading="schedulingLoading">
+                <template #icon><ReloadOutlined /></template>
+                刷新
+              </a-button>
+            </div>
+          </template>
           <a-spin :spinning="schedulingLoading" tip="加载排产分析数据...">
             <!-- 排产分析控制区 -->
             <div class="scheduling-controls">
@@ -221,10 +230,6 @@
                     <template #icon><SaveOutlined /></template>
                     保存分析
                   </a-button>
-                  <a-button type="primary" @click="handleTestSaveBOM" :loading="schSaveBomLoading">
-                    <template #icon><SaveOutlined /></template>
-                    仅保存BOM
-                  </a-button>
                   <a-button type="primary" @click="handleSchExpandAll">
                     <template #icon><FolderOpenOutlined /></template>
                     全部展开
@@ -234,6 +239,7 @@
                     全部收缩
                   </a-button>
                   <a-popconfirm
+                    v-if="false"
                     title="确定要删除选中的货号吗？"
                     :subtitle="'有子级物料将一并删除'"
                     ok-text="确定"
@@ -246,6 +252,7 @@
                     </a-button>
                   </a-popconfirm>
                   <a-popconfirm
+                    v-if="false"
                     title="确定要删除选中的根节点吗？"
                     subtitle="子级物料将自动提升一级"
                     ok-text="确定"
@@ -301,13 +308,13 @@
                     <span class="level-badge">{{ record.level }}</span>
                   </template>
                   <template v-if="column.key === 'partNo'">
-                    <span class="partno-text">{{ record.partNo || '-' }}</span>
+                    <span class="partno-text">{{ record.partNo || '' }}</span>
                   </template>
                   <template v-if="column.key === 'name'">
                     <span class="product-text">{{ record.name }}</span>
                   </template>
                   <template v-if="column.key === 'spec'">
-                    <span class="spec-text">{{ record.spec || record.unit || '-' }}</span>
+                    <span class="spec-text">{{ record.spec || record.unit || '' }}</span>
                   </template>
                   <template v-if="column.key === 'source'">
                     <a-tag :color="getSchSourceColor(record.source)" class="m-0">{{ record.source }}</a-tag>
@@ -380,6 +387,7 @@ import {
   LineChartOutlined,
   SearchOutlined,
   DeleteOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons-vue';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { salesControlService } from '@/services/salesControlService';
@@ -998,6 +1006,12 @@ function calculateDemandQty(qty: number, usage: number, loss: number) {
   return Math.ceil(demand);
 }
 
+// ========== 计算生产数/采购数：仓库可用 - 需求量 >= 0 则为0，否则取绝对值 ==========
+function calculateProduceQty(needQty: number, avail: number): number {
+  const diff = avail - needQty;
+  return diff >= 0 ? 0 : Math.abs(diff);
+}
+
 // ========== 递归更新仓库可用量 ==========
 function updateAvailInTree(items: ProductionItem[]) {
   items.forEach(item => {
@@ -1007,10 +1021,10 @@ function updateAvailInTree(items: ProductionItem[]) {
     const min = item.min || 0;
     item.avail = schedulingForm.analysisType === 'limit' ? stock + transit - wip - min : stock + transit - wip;
     if (item.source !== '自制') {
-      item.purchaseQty = (item.needQty || 0) + (item.avail || 0);
+      item.purchaseQty = calculateProduceQty(item.needQty || 0, item.avail || 0);
       item.produceQty = 0;
     } else {
-      item.produceQty = (item.needQty || 0) + (item.avail || 0);
+      item.produceQty = calculateProduceQty(item.needQty || 0, item.avail || 0);
       item.purchaseQty = 0;
     }
     if (item.children && item.children.length > 0) {
@@ -1046,8 +1060,11 @@ function handleSchWorkshopChange(record: ProductionItem, value: string | undefin
   if (!originalItem) return;
   originalItem.workshop = value || '';
   // 每次选择车间时，自动取车间前两字作为工序名称（实时联动）
+  // 清空车间时，工序名称也一并清空
   if (value) {
     originalItem.process = value.substring(0, 2);
+  } else {
+    originalItem.process = '';
   }
 }
 
@@ -1068,9 +1085,9 @@ function handleSchLossChange(record: ProductionItem, field: string, value: numbe
         const demandQty = calculateDemandQty(schedulingProduct.qty, item.usage || 1, item.loss || 0);
         item.needQty = demandQty;
         if (item.source !== '自制') {
-          item.purchaseQty = demandQty + (item.avail || 0);
+          item.purchaseQty = calculateProduceQty(demandQty, item.avail || 0);
         } else {
-          item.produceQty = demandQty + (item.avail || 0);
+          item.produceQty = calculateProduceQty(demandQty, item.avail || 0);
         }
       }
       if (item.children && item.children.length > 0) {
@@ -1107,28 +1124,28 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
     const item: ProductionItem = {
       key,
       level,
-      name: record.品名 || '-',
-      source: record.来源 || '-',
-      produceQty: record.来源 === '自制' ? demandQty + _avail : 0,
-      purchaseQty: record.来源 !== '自制' ? demandQty + _avail : 0,
+      name: record.品名 || '',
+      source: record.来源 || '',
+      produceQty: record.来源 === '自制' ? calculateProduceQty(demandQty, _avail) : 0,
+      purchaseQty: record.来源 !== '自制' ? calculateProduceQty(demandQty, _avail) : 0,
       loss,
       rowNum: rowCounter,
-      spec: record.规格 || '-',
-      partNo: record.货号 || '-',
+      spec: record.规格 || '',
+      partNo: record.货号 || '',
       usage: cumulativeUsage,
-      unit: record.单位 || '-',
-      process: record.工序名称 || '-',
-      workshop: record.工序车间 || '-',
-      warehouse: record.仓库名称 || '-',
+      unit: record.单位 || '',
+      process: record.工序名称 || '',
+      workshop: record.工序车间 || '',
+      warehouse: record.仓库名称 || '',
       stock: _stock,
       transit: _transit,
       wip: _wip,
       max: record.库存上限 !== undefined && record.库存上限 !== '' ? Number(record.库存上限) : 0,
       min: _min,
       avail: _avail,
-      attr: record.产品属性 || '-',
+      attr: record.产品属性 || '',
       needQty: demandQty,
-      remark: record.备注 || '-',
+      remark: record.备注 || '',
       children: [],
     };
 
@@ -1187,9 +1204,9 @@ function updateDemandQtyInTree(items: ProductionItem[], qty: number) {
     const demandQty = calculateDemandQty(qty, item.usage || 1, item.loss || 0);
     item.needQty = demandQty;
     if (item.source !== '自制') {
-      item.purchaseQty = demandQty + (item.avail || 0);
+      item.purchaseQty = calculateProduceQty(demandQty, item.avail || 0);
     } else {
-      item.produceQty = demandQty + (item.avail || 0);
+      item.produceQty = calculateProduceQty(demandQty, item.avail || 0);
     }
     if (item.children && item.children.length > 0) {
       updateDemandQtyInTree(item.children, qty);
@@ -1207,10 +1224,10 @@ function onSchQtyChange(newQty: number) {
 function convertToWorkOrderSalesControl(item: ProductionItem, index: number): WorkOrderSalesControl {
   const sc = new WorkOrderSalesControl();
   sc.车间名称 = item.workshop || '未知车间';
-  sc.商品属性 = item.attr || '-';
+  sc.商品属性 = item.attr || '';
   sc.货号 = item.partNo || `TEMP-${index}`;
-  sc.品名 = item.name || '-';
-  sc.规格 = item.spec || '-';
+  sc.品名 = item.name || '';
+  sc.规格 = item.spec || '';
   const totalQty = item.produceQty > 0 ? item.produceQty : (item.needQty || 0);
   sc.工单总数 = String(totalQty);
   sc.已入库数 = '0';
@@ -1276,6 +1293,18 @@ async function handleSchSave() {
       return;
     }
 
+    // 校验：生产数>0 的节点必须选择工序车间（不能为空或"-"）
+    const missingWorkshop = flatItems.filter(
+      item => item.produceQty > 0 && (!item.workshop || item.workshop === '-' || item.workshop.trim() === '')
+    );
+    if (missingWorkshop.length > 0) {
+      const names = missingWorkshop.map(i => i.partNo || i.key).slice(0, 3).join('、');
+      const tip = missingWorkshop.length > 3 ? `等${missingWorkshop.length}条` : '';
+      message.warning(`以下货号，请选择合适的车间：${names}${tip}`);
+      schSaveLoading.value = false;
+      return;
+    }
+
     // 按货号合并 BOM 内相同货号的数量，避免重复保存时彼此覆盖导致丢数
     const mergedMap = new Map<string, ProductionItem>();
     for (const item of productionNodes) {
@@ -1296,12 +1325,12 @@ async function handleSchSave() {
       const existing = existingMap.get(newSc.货号 || '');
       if (existing) {
         newSc.编号 = existing.编号 || existing.id;
-        const oldTotal = Number(existing.工单总数) || 0;
-        const addTotal = Number(newSc.工单总数) || 0;
-        newSc.工单总数 = String(oldTotal + addTotal);
-        const oldWip = Number(existing.在产数量) || 0;
-        const addWip = Number(newSc.在产数量) || 0;
-        newSc.在产数量 = String(oldWip + addWip);
+        // const oldTotal = Number(existing.工单总数) || 0;
+        // const addTotal = Number(newSc.工单总数) || 0;
+        // newSc.工单总数 = String(oldTotal + addTotal);
+        // const oldWip = Number(existing.在产数量) || 0;
+        // const addWip = Number(newSc.在产数量) || 0;
+        // newSc.在产数量 = String(oldWip + addWip);
       }
       return newSc;
     });
@@ -1327,8 +1356,8 @@ async function handleSchSave() {
     const detailList = salesControlList.map(item => {
       const detail = new WorkOrderSalesControlDetail();
       detail.货号 = item.货号 || '';
-      detail.品名 = item.品名 || '-';
-      detail.规格 = item.规格 || '-';
+      detail.品名 = item.品名 || '';
+      detail.规格 = item.规格 || '';
       // 关联主表自身编号
       const no = mainNoMap.get(item.货号 || '');
       if (no) detail.父级编号 = no;
@@ -1338,14 +1367,14 @@ async function handleSchSave() {
       // 明细编号直接取外产BOM对应的编号，使两表通过编号强关联
       const bomId = bomIdMap.get(item.货号 || '');
       if (bomId) detail.编号 = bomId;
-      // 工单单号暂未赋值
+      // 工单单号由后端在保存明细表时赋值，此处不赋值
       detail.交货日期 = schedulingForm.deliveryDate || dayjs().format('YYYY-MM-DD');
       const qty = mergedQtyMap.get(item.货号 || '') || 0;
-      // 入库数由其他表关联，暂不操作（当前固定为 0）
-      const 入库数 = 0;
+      // // // 入库数由其他表关联，暂不操作（当前固定为 0）
+      //  const 入库数 = 0;
       detail.生产数 = String(qty);
-      detail.入库数 = String(入库数);
-      detail.待产数 = String(Math.max(0, qty - 入库数));
+      // detail.入库数 = String(入库数);
+      // detail.待产数 = String(Math.max(0, qty - 入库数));
       return detail;
     });
 
@@ -1353,12 +1382,30 @@ async function handleSchSave() {
       await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlDetailList(detailList);
     }
 
-    // ========== 保存外产领料：基于外产BOM数据，编号/货号直接赋值，需求量=生产数 ==========
+    // 构建 编号 -> 生产数 映射，用于按父级编号取生产数
+    const bomProduceMap = new Map<string, string>();
+    (savedBomList || []).forEach((b: any) => {
+      if (b.编号) bomProduceMap.set(b.编号, b.生产数);
+    });
+
+    // 来源编号统一取整棵 BOM 最顶层根节点的编号（savedBomList 第一条即根）
+    const rootBomNo = (savedBomList && savedBomList.length > 0) ? (savedBomList[0].编号 || '') : '';
+
+    // ========== 保存外产领料：基于外产BOM数据，编号/货号直接赋值 ==========
     const pickMaterialList = (savedBomList || []).map((b: any) => {
       const pick = new ExternalProductionPickMaterial();
       pick.编号 = b.编号;            // 直接取外产BOM的编号
       pick.货号 = b.货号;            // 直接取外产BOM的货号
-      pick.需求量 = b.生产数;        // 需求量 = 生产数
+      pick.分析单号 = b.分析单号;    // 关联外产BOM的分析单号
+      pick.父级编号 = b.父级编号;    // 父级编号取自外产BOM
+      pick.来源编号 = rootBomNo;     // 来源编号 = 整棵BOM最顶层根节点的编号
+
+      // 生产数：按父级编号去外产BOM中找到编号等于父级编号的记录，取其生产数
+      // 用量：取外产BOM中相同编号（自身）的用量
+      // 需求量 = 父级生产数 × 自身用量
+      const parentProduce = b.父级编号 ? (Number(bomProduceMap.get(b.父级编号)) || 0) : 0;
+      const usage = Number(b.用量) || 0;
+      pick.需求量 = parentProduce > 0 ? String(Math.ceil(parentProduce * usage)) : '';
       // 其他字段不赋值
       return pick;
     });
@@ -1372,6 +1419,8 @@ async function handleSchSave() {
       wh.编号 = item.编号;           // 直接取明细的编号
       wh.货号 = item.货号;           // 直接取明细的货号
       wh.需求量 = item.生产数;       // 需求量 = 生产数
+      wh.入库数量="0";
+      wh.分析单号 = item.分析单号;   // 关联明细的分析单号
       // 入库数量不赋值
       return wh;
     });
@@ -1401,14 +1450,6 @@ async function handleSchSave() {
   }
 }
 
-// ========== 测试：仅执行保存BOM功能 ==========
-async function handleTestSaveBOM() {
-  const savedList = await handleSchSaveBOM();
-  if (savedList && savedList.length > 0) {
-    message.success(`已保存 ${savedList.length} 条BOM数据`);
-  }
-}
-
 // ========== 保存BOM（返回后端保存后的完整列表，含分析单号） ==========
 async function handleSchSaveBOM(): Promise<ExternalProductionBOM[] | null> {
   if (!schedulingProduct.partNo) {
@@ -1426,7 +1467,7 @@ async function handleSchSaveBOM(): Promise<ExternalProductionBOM[] | null> {
     const bomList: ExternalProductionBOM[] = [];
     const savedPartNoSet = new Set<string>();
 
-    const buildBOM = (item: ProductionItem, parentPartNo: string) =>
+    const buildBOM = (item: ProductionItem, parentPartNo: string, visible: boolean) =>
       new ExternalProductionBOM({
         货号: item.partNo || '',
         层: String(item.level),
@@ -1436,23 +1477,27 @@ async function handleSchSaveBOM(): Promise<ExternalProductionBOM[] | null> {
         用量: String(item.usage || ''),
         仓库名称: item.warehouse || '',
         仓库数: String(item.stock || ''),
-        生产数: String(item.produceQty || ''),
+        // 仅可见且生产数>0 的节点才保存生产数，否则为 null
+        生产数: ((visible && Number(item.produceQty) > 0) ? String(item.produceQty) : null) as any,
         交货日期: schedulingForm.deliveryDate || '',
       });
 
-    const traverse = (items: ProductionItem[], parentPartNo: string) => {
+    const traverse = (items: ProductionItem[], parentPartNo: string, parentVisible: boolean) => {
       for (const item of items) {
         const partNo = item.partNo || '';
+        const visible = parentVisible;
         if (partNo && !savedPartNoSet.has(partNo)) {
           savedPartNoSet.add(partNo);
-          bomList.push(buildBOM(item, parentPartNo));
+          bomList.push(buildBOM(item, parentPartNo, visible));
         }
         if (item.children && item.children.length > 0) {
-          traverse(item.children, partNo);
+          // 子节点可见的前提：当前节点可见且当前节点已展开
+          const childVisible = visible && schExpandedKeys.value.includes(item.key);
+          traverse(item.children, partNo, childVisible);
         }
       }
     };
-    traverse(schDataSource.value, '');
+    traverse(schDataSource.value, '', true);
 
     if (bomList.length === 0) {
       message.warning('没有可保存的BOM数据');
@@ -1485,6 +1530,7 @@ async function loadSchedulingData() {
       排产编号: props.record?.排产编号,
     });
     const bomData = await salesControlService.getSchedulingAnalysisList(requestDto);
+
     if (!bomData || !bomData.length) {
       message.warning('未获取到排产分析数据');
       schDataSource.value = [];
@@ -1495,6 +1541,7 @@ async function loadSchedulingData() {
     const treeData = buildTreeFromData(bomData, schedulingProduct.qty);
     schDataSource.value = treeData;
     selectedLevel.value = 1;
+    selectedRowKey.value = '';          // 切换数据时清空选中行
     schExpandedKeys.value = getExpandedKeysForFiltered(filteredSchDataSource.value);
   } catch (error) {
     console.error('加载排产分析数据失败:', error);
@@ -1769,6 +1816,25 @@ watch(
   font-weight: 600;
   color: #fff;
   padding: 11px 0;
+}
+
+/* 排产分析单标题栏（标题+刷新按钮） */
+.sch-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.sch-card-title .ant-btn-link {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  padding: 0 4px;
+  height: auto;
+}
+
+.sch-card-title .ant-btn-link:hover {
+  color: #fff;
 }
 
 .scheduling-card :deep(.ant-card-body) {

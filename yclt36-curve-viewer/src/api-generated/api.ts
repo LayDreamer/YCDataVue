@@ -716,6 +716,48 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
+    deleteWorkOrderSalesControlList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteWorkOrderSalesControlList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteWorkOrderSalesControlList(_response);
+        });
+    }
+
+    protected processDeleteWorkOrderSalesControlList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     addOrUpdateWorkOrderSalesControlDetailList(body: WorkOrderSalesControlDetail[] | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/AddOrUpdateWorkOrderSalesControlDetailList";
         url_ = url_.replace(/[?&]$/, "");
@@ -2792,6 +2834,9 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
     货号?: string | undefined;
     需求量?: string | undefined;
     出库数量?: string | undefined;
+    分析单号?: string | undefined;
+    父级编号?: string | undefined;
+    来源编号?: string | undefined;
 
     constructor(data?: IExternalProductionPickMaterial) {
         if (data) {
@@ -2815,6 +2860,9 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
             this.货号 = _data["货号"];
             this.需求量 = _data["需求量"];
             this.出库数量 = _data["出库数量"];
+            this.分析单号 = _data["分析单号"];
+            this.父级编号 = _data["父级编号"];
+            this.来源编号 = _data["来源编号"];
         }
     }
 
@@ -2838,6 +2886,9 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
         data["货号"] = this.货号;
         data["需求量"] = this.需求量;
         data["出库数量"] = this.出库数量;
+        data["分析单号"] = this.分析单号;
+        data["父级编号"] = this.父级编号;
+        data["来源编号"] = this.来源编号;
         return data;
     }
 }
@@ -2854,6 +2905,9 @@ export interface IExternalProductionPickMaterial {
     货号?: string | undefined;
     需求量?: string | undefined;
     出库数量?: string | undefined;
+    分析单号?: string | undefined;
+    父级编号?: string | undefined;
+    来源编号?: string | undefined;
 }
 
 export class ExternalProductionShipment implements IExternalProductionShipment {
@@ -2956,6 +3010,8 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
     货号?: string | undefined;
     需求量?: string | undefined;
     入库数量?: string | undefined;
+    分析单号?: string | undefined;
+    工单单号?: string | undefined;
 
     constructor(data?: IExternalProductionWarehousing) {
         if (data) {
@@ -2979,6 +3035,8 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
             this.货号 = _data["货号"];
             this.需求量 = _data["需求量"];
             this.入库数量 = _data["入库数量"];
+            this.分析单号 = _data["分析单号"];
+            this.工单单号 = _data["工单单号"];
         }
     }
 
@@ -3002,6 +3060,8 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
         data["货号"] = this.货号;
         data["需求量"] = this.需求量;
         data["入库数量"] = this.入库数量;
+        data["分析单号"] = this.分析单号;
+        data["工单单号"] = this.工单单号;
         return data;
     }
 }
@@ -3018,6 +3078,8 @@ export interface IExternalProductionWarehousing {
     货号?: string | undefined;
     需求量?: string | undefined;
     入库数量?: string | undefined;
+    分析单号?: string | undefined;
+    工单单号?: string | undefined;
 }
 
 export class GetBLFParameterRequest implements IGetBLFParameterRequest {
@@ -3377,6 +3439,7 @@ export interface IPMCDeliveryReviewListApiResponse {
 }
 
 export class PMCRequestDto implements IPMCRequestDto {
+    编号?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
     分析单号?: string | undefined;
@@ -3395,6 +3458,7 @@ export class PMCRequestDto implements IPMCRequestDto {
 
     init(_data?: any) {
         if (_data) {
+            this.编号 = _data["编号"];
             this.合同号 = _data["合同号"];
             this.排产编号 = _data["排产编号"];
             this.分析单号 = _data["分析单号"];
@@ -3413,6 +3477,7 @@ export class PMCRequestDto implements IPMCRequestDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
         data["合同号"] = this.合同号;
         data["排产编号"] = this.排产编号;
         data["分析单号"] = this.分析单号;
@@ -3424,6 +3489,7 @@ export class PMCRequestDto implements IPMCRequestDto {
 }
 
 export interface IPMCRequestDto {
+    编号?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
     分析单号?: string | undefined;

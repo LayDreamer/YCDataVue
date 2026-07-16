@@ -2,6 +2,7 @@
   <a-modal
     v-model:open="localVisible"
     :footer="null"
+    :mask-closable="false"
     width="1400px"
     class="work-order-detail-modal"
     @cancel="handleClose"

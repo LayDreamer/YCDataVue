@@ -754,7 +754,7 @@ async function handleSaveBOM() {
   }
   saveBomLoading.value = true;
   try {
-    await externalProductionService.saveExternalProductionBOMByPartNo(productData.partNo);
+    await externalProductionService.saveExternalProductionBOMByPartNo("","",productData.partNo);
     message.success(`货号【${productData.partNo}】BOM保存成功`);
   } catch (error) {
     console.error('保存BOM失败:', error);

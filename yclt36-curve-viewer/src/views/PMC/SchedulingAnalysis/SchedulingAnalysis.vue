@@ -872,7 +872,7 @@ const handleSaveBOM = async () => {
   }
   saveBomLoading.value = true;
   try {
-    await externalProductionService.saveExternalProductionBOMByPartNo(form.partNo);
+    await externalProductionService.saveExternalProductionBOMByPartNo("","",form.partNo);
     
     message.success(`货号【${form.partNo}】BOM保存成功`);
   } catch (error) {

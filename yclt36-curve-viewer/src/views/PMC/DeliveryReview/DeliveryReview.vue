@@ -116,10 +116,13 @@ const baseColumns = [
   // { title: '来源编号', dataIndex: '来源编号', key: '来源编号' },
   { title: '数量', dataIndex: '数量', key: '数量' },
   { title: '来源', dataIndex: '来源', key: '来源' },
-  { title: '工单单号', dataIndex: '工单单号', key: '工单单号' },
   { title: '交货日期', dataIndex: '交货日期', key: '交货日期' },
   { title: '电压', dataIndex: '电压', key: '电压', width: 100 },
-  { title: '创建时间', dataIndex: '创建时间', key: '创建时间', width: 180 },
+  { title: '创建时间', dataIndex: '创建时间', key: '创建时间', width: 180, sorter: (a: PMCDeliveryReview, b: PMCDeliveryReview) => {
+      const timeA = a.创建时间 ? new Date(a.创建时间).getTime() : 0;
+      const timeB = b.创建时间 ? new Date(b.创建时间).getTime() : 0;
+      return timeA - timeB;
+    }, defaultSortOrder: 'descend' },
   { title: '特殊要求', dataIndex: '特殊要求', key: '特殊要求', width: 150 },
   { title: '状态', dataIndex: '状态', key: '状态', width: 100, fixed: 'right' },
   { title: '操作', key: 'action', width: 120, fixed: 'right' },
@@ -128,7 +131,7 @@ const baseColumns = [
 const columns = computed(() => {
   if (viewMode.value === 'reviewed') {
     const result = [...baseColumns];
-    result.splice(10, 0, { title: '排产用户', dataIndex: '排产用户', key: '排产用户' });
+    result.splice(9, 0, { title: '排产用户', dataIndex: '排产用户', key: '排产用户' });
     return result;
   }
   return baseColumns;
