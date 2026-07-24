@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="production-container">
     <!-- 加载状态 -->
     <a-spin :spinning="loading" tip="加载中...">
@@ -231,7 +231,6 @@ interface ProductionItem {
   purchaseQty: number;
   loss: number;
   rowNum?: number;
-  levelIndex?: string;
   children?: ProductionItem[];
   // 额外字段
   spec?: string;
@@ -346,13 +345,11 @@ function getExpandedKeysForFiltered(items: ProductionItem[]): string[] {
 watch(selectedLevel, () => {
   if (filteredDataSource.value.length > 0) {
     expandedKeys.value = getExpandedKeysForFiltered(filteredDataSource.value);
-    // 切换层数后重新计算层序号
-    reassignLevelIndex(dataSource.value);
   }
 });
 
 // 固定列控制
-const fixedColumnKeys = ref<string[]>(['index', 'levelIndex', 'partNo']);
+const fixedColumnKeys = ref<string[]>(['index', 'partNo']);
 
 // 动态计算带 fixed 属性的 columns
 const columns = computed(() => {
@@ -494,49 +491,6 @@ const handleLossChange = (record: ProductionItem, field: string, value: number |
   }
 };
 
-// 重新分配层序号（按 rowNum 在同层递增），格式 "{level}-{position}"
-// 重要：只对"可见"节点计算（顶层 + 已展开父级的子节点），
-// 未展开父级的子集不参与计算，避免折叠父级下的子集"抢占"层序号位置
-// 最后替换 dataSource.value 引用，触发 filteredDataSource computed 重新计算
-function reassignLevelIndex(items: ProductionItem[]): void {
-  // 先清空所有节点的 levelIndex（避免折叠父级的子集残留旧值）
-  const clearAll = (list: ProductionItem[]) => {
-    list.forEach(item => {
-      item.levelIndex = undefined;
-      if (item.children && item.children.length > 0) clearAll(item.children);
-    });
-  };
-  clearAll(items);
-
-  // 只收集"可见"节点：顶层节点 + 已展开父级（expandedKeys）的子节点
-  const all: ProductionItem[] = [];
-  const collectVisible = (list: ProductionItem[]) => {
-    list.forEach(item => {
-      all.push(item);
-      if (item.children && item.children.length > 0 && expandedKeys.value.includes(item.key)) {
-        collectVisible(item.children);
-      }
-    });
-  };
-  collectVisible(items);
-
-  // 按序号升序排序，保证层序号顺序与"序号"列完全一致
-  all.sort((a, b) => (a.rowNum ?? 0) - (b.rowNum ?? 0));
-  // 同层内按序号顺序递增编号（跨父级共享同一计数器，全树唯一）
-  const levelCounters: Map<number, number> = new Map();
-  all.forEach(item => {
-    const next = (levelCounters.get(item.level) || 0) + 1;
-    levelCounters.set(item.level, next);
-    item.levelIndex = `${item.level}-${next}`;
-  });
-
-  // 关键：替换 dataSource.value 引用，触发 filteredDataSource computed 重新计算
-  // （否则仅修改对象属性，Vue 不会感知，a-table 看不到新层序号）
-  if (items === dataSource.value) {
-    dataSource.value = [...items];
-  }
-}
-
 // 构建树形数据（适配新BOM格式，支持多层嵌套）
 const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): ProductionItem[] => {
   const treeData: ProductionItem[] = [];
@@ -642,9 +596,6 @@ const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): P
   };
   reassignRowNum(treeData);
 
-  // 重新分配层序号（按序号 rowNum 在同层递增），格式 "{level}-{position}"
-  reassignLevelIndex(treeData);
-
   return treeData;
 };
 
@@ -685,8 +636,6 @@ const loadData = async () => {
     dataSource.value = treeData;
     selectedLevel.value = 1;
     expandedKeys.value = getExpandedKeysForFiltered(filteredDataSource.value);
-    // 在 expandedKeys 设置之后再计算层序号（依赖 expandedKeys）
-    reassignLevelIndex(dataSource.value);
   } catch (error) {
     console.error('加载数据失败:', error); 
     message.error('加载数据失败，请稍后重试');
@@ -941,8 +890,6 @@ const handleExpand = (expanded: boolean, record: any) => {
   } else {
     expandedKeys.value = expandedKeys.value.filter(k => k !== record.key);
   }
-  // 展开/收起后重新计算层序号（只对可见节点计算）
-  reassignLevelIndex(dataSource.value);
 };
 
 // 全部展开
@@ -963,8 +910,6 @@ const handleExpandAll = () => {
     return;
   }
   expandedKeys.value = allKeys;
-  // 全部展开后重新计算层序号
-  reassignLevelIndex(dataSource.value);
 };
 
 // 全部收缩
@@ -974,8 +919,6 @@ const handleCollapseAll = () => {
     return;
   }
   expandedKeys.value = [];
-  // 全部收缩后重新计算层序号
-  reassignLevelIndex(dataSource.value);
 };
 
 

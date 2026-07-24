@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <a-drawer
     :visible="visible"
     @update:visible="handleVisibleUpdate"
@@ -164,18 +164,18 @@
                 </a-form-item>
               </a-col>
             </a-row>
-            <a-form-item label="评审备注" class="remark-item" :required="reviewForm.resultStatus === 'reject'">
+            <a-form-item label="评审备注" class="remark-item">
               <a-textarea
                 v-model:value="reviewForm.remark"
-                :placeholder="reviewForm.resultStatus === 'reject' ? '驳回时评审备注为必填项，请说明驳回原因...' : '请输入评审意见或异常说明...'"
+                placeholder="请输入评审意见或异常说明..."
                 :auto-size="{ minRows: 3, maxRows: 8 }"
               />
             </a-form-item>
           </a-form>
         </a-card>
 
-        <!-- 左侧折叠态底部操作栏（提交评审后隐藏） -->
-        <div v-if="!showSchedulingPanel && !reviewSubmitted" class="footer-bar left-footer">
+        <!-- 左侧折叠态底部操作栏 -->
+        <div v-if="!showSchedulingPanel" class="footer-bar left-footer">
           <div class="footer-left">
             <span>展开查看物料BOM结构，编辑损耗和数量会自动计算需求量</span>
           </div>
@@ -188,15 +188,21 @@
         </div>
       </div>
 
-      <!-- 右侧：排产分析单详情（默认不显示切换按钮，改由提交评审结果打开） -->
+      <!-- 右侧：排产分析单详情 -->
       <div class="right-panel" :class="{ expanded: showSchedulingPanel, collapsed: !showSchedulingPanel }">
-      <!-- 展开态：排产分析单详情（排产分析入口已改为由提交评审结果打开） -->
-      <template v-if="showSchedulingPanel || reviewSubmitted">
+      <!-- 折叠态：箭头图标 + 文字 -->
+      <div v-if="!showSchedulingPanel" class="scheduling-toggle" @click="toggleSchedulingPanel">
+        <span class="toggle-text">排产分析</span>
+        <RightOutlined class="toggle-arrow" />
+      </div>
+
+      <!-- 展开态：排产分析单详情 -->
+      <template v-else>
         <a-card :bordered="false" class="scheduling-card">
           <template #title>
             <div class="sch-card-title">
               <span class="sch-title-left">
-                <LeftOutlined v-if="!reviewSubmitted" class="sch-collapse-icon" @click="toggleSchedulingPanel" />
+                <LeftOutlined class="sch-collapse-icon" @click="toggleSchedulingPanel" />
                 <span>排产分析单详情</span>
               </span>
               <span class="sch-title-right">
@@ -335,6 +341,10 @@
 
                 </div>
                 <div class="sch-btn-group sch-btn-group-2">
+                  <a-button type="primary" @click="handleSchSave" :loading="schSaveLoading">
+                    <template #icon><SaveOutlined /></template>
+                    保存分析
+                  </a-button>
                   <a-button type="primary" @click="handleSchExpandAll">
                     <template #icon><FolderOpenOutlined /></template>
                     全部展开
@@ -342,10 +352,6 @@
                   <a-button type="primary" @click="handleSchCollapseAll">
                     <template #icon><FolderOutlined /></template>
                     全部收缩
-                  </a-button>
-                  <a-button type="primary" @click="handleSchSave" :loading="schSaveLoading">
-                    <template #icon><SaveOutlined /></template>
-                    保存分析
                   </a-button>
                   <a-popconfirm
                     v-if="false"
@@ -464,8 +470,8 @@
           </a-spin>
         </a-card>
 
-        <!-- 底部操作栏（提交评审后隐藏） -->
-        <div v-if="!reviewSubmitted" class="footer-bar">
+        <!-- 底部操作栏 -->
+        <div class="footer-bar">
           <div class="footer-left">
             <span>展开查看物料BOM结构，编辑损耗和数量会自动计算需求量</span>
           </div>
@@ -498,6 +504,7 @@ import {
   SearchOutlined,
   DeleteOutlined,
   ReloadOutlined,
+  RightOutlined,
   LeftOutlined,
   SwapOutlined,
   FullscreenOutlined,
@@ -525,7 +532,6 @@ interface ProductionItem {
   purchaseQty: number;
   loss: number;
   rowNum?: number;
-  levelIndex?: string;
   children?: ProductionItem[];
   spec?: string;
   partNo?: string;
@@ -577,8 +583,6 @@ function toggleFullscreen() {
 
 // ========== 排产分析面板展开/折叠状态 ==========
 const showSchedulingPanel = ref(false);
-// 是否已经点击过"提交评审结果"（进入排产分析流程后隐藏取消/提交按钮）
-const reviewSubmitted = ref(false);
 
 // 线圈货号是否已修改（与主表不一致且校验通过）
 const isCoilModified = computed(() => {
@@ -753,8 +757,16 @@ const validateCoil = async () => {
 };
 
 // ========== 提交评审 ==========
-// 真正提交评审结果到后端
-const doSubmitReview = async () => {
+const submitReview = async () => {
+  if (verifyStatus.value !== 'success') {
+    message.error('线圈货号未经验证或验证不通过，无法提交评审！');
+    return;
+  }
+  if (schedulingSelectedUsers.value.length === 0 && !hasPresetSchedulingUser.value) {
+    message.warning('请选择排产用户');
+    return;
+  }
+  // 有预设用户但未手动选择时，使用预设用户名
   const finalUserNames = schedulingSelectedUsers.value.length > 0
     ? schedulingSelectedUsers.value.map(u => u.name)
     : presetUserNames.value;
@@ -791,59 +803,19 @@ const doSubmitReview = async () => {
     特殊要求: reviewForm.specialRequirement,
   });
 
-  await deliveryReviewService.addPMCDeliveryReview(reviewData);
-  return mappedStatus;
-};
-
-// 点击"提交评审结果"：根据评审结果分两种情况处理
-const submitReview = async () => {
-  if (verifyStatus.value !== 'success') {
-    message.error('线圈货号未经验证或验证不通过，无法提交评审！');
-    return;
+  confirmLoading.value = true;
+  try {
+    await deliveryReviewService.addPMCDeliveryReview(reviewData);
+    emit('update:visible', false);
+    emit('confirm', { id: props.record!.编号 || '', status: mappedStatus });
+    emit('refresh');
+    message.success('评审结果提交成功!');
+  } catch (error) {
+    console.error('提交评审失败:', error);
+    message.error('提交评审失败，请稍后重试');
+  } finally {
+    confirmLoading.value = false;
   }
-  if (schedulingSelectedUsers.value.length === 0 && !hasPresetSchedulingUser.value) {
-    message.warning('请选择排产用户');
-    return;
-  }
-  // 驳回时评审备注必填
-  if (reviewForm.resultStatus === 'reject' && !reviewForm.remark.trim()) {
-    message.error('驳回时评审备注为必填项，请说明驳回原因');
-    return;
-  }
-
-  // 驳回：直接执行原提交接口（旧逻辑），不打开排产分析
-  if (reviewForm.resultStatus === 'reject') {
-    confirmLoading.value = true;
-    try {
-      const mappedStatus = await doSubmitReview();
-      emit('update:visible', false);
-      emit('confirm', { id: props.record!.编号 || '', status: mappedStatus });
-      emit('refresh');
-      message.success('评审结果提交成功!');
-    } catch (error) {
-      console.error('提交评审失败:', error);
-      message.error('提交评审失败，请稍后重试');
-    } finally {
-      confirmLoading.value = false;
-    }
-    return;
-  }
-
-  // 通过：打开排产分析页面，提交动作延后到保存分析之后
-  reviewSubmitted.value = true;
-  showSchedulingPanel.value = true;
-
-  // 展开排产分析时：交货日期默认同步最终生产交期
-  schedulingForm.deliveryDate = reviewForm.finalDate
-    ? dayjs(reviewForm.finalDate).format('YYYY-MM-DD')
-    : undefined;
-
-  // 线圈货号已修改且校验通过时，替换货号括号内线圈货号部分作为请求参数
-  if (isCoilModified.value) {
-    schedulingProduct.partNo = buildModifiedPartNo(props.record?.货号 || '', reviewForm.coilItemNo.trim());
-  }
-
-  loadSchedulingData();
 };
 
 // ========== 排产分析数据 ==========
@@ -934,11 +906,6 @@ function filterTreeByLevel(items: ProductionItem[], maxLevel: number): Productio
 // 过滤后的表格数据
 const filteredSchDataSource = computed(() => {
   return filterTreeByLevel(schDataSource.value, selectedLevel.value);
-});
-
-// 监听 selectedLevel 变化：切换层数后重新计算层序号
-watch(selectedLevel, () => {
-  reassignLevelIndex(schDataSource.value);
 });
 
 // 获取过滤后需要展开的节点（所有有子节点的父节点）
@@ -1042,9 +1009,6 @@ function handleMaterialAnalysis() {
     }
   }
 
-  // 展开后重新计算层序号（只对可见节点计算，未展开父级的子集不参与）
-  reassignLevelIndex(schDataSource.value);
-
   message.success(
     materialScopeAll.value === 'all'
       ? `已分析货号【${selectedNode.partNo || '未知'}】的全部层级物料`
@@ -1057,7 +1021,7 @@ const schSaveLoading = ref(false);
 const schSaveBomLoading = ref(false);
 
 // 固定列
-const fixedColumnKeys = ref<string[]>(['index', 'levelIndex', 'partNo']);
+const fixedColumnKeys = ref<string[]>(['index', 'partNo']);
 
 // 隐藏列（排除 index 和 partNo，这两个始终显示）
 const hiddenColumnKeys = ref<string[]>([]);
@@ -1162,8 +1126,6 @@ function handleSchExpand(expanded: boolean, record: any) {
   } else {
     schExpandedKeys.value = schExpandedKeys.value.filter(k => k !== record.key);
   }
-  // 展开/收起后重新计算层序号（只对可见节点计算）
-  reassignLevelIndex(schDataSource.value);
 }
 
 function getAllParentKeys(items: ProductionItem[]): string[] {
@@ -1184,8 +1146,6 @@ function handleSchExpandAll() {
     return;
   }
   schExpandedKeys.value = allKeys;
-  // 全部展开后重新计算层序号
-  reassignLevelIndex(schDataSource.value);
 }
 
 function handleSchCollapseAll() {
@@ -1194,8 +1154,6 @@ function handleSchCollapseAll() {
     return;
   }
   schExpandedKeys.value = [];
-  // 全部收缩后重新计算层序号
-  reassignLevelIndex(schDataSource.value);
 }
 
 // ========== 删除选中货号及其子级 ==========
@@ -1259,55 +1217,9 @@ function handleSchDelete() {
   const deleted = deleteFromTree(schDataSource.value, selectedRowKey.value);
   if (deleted) {
     selectedRowKey.value = '';
-    // 删除后整棵树按 rowNum 重新分配层序号
-    reassignLevelIndex(schDataSource.value);
     message.success('已删除选中的货号及其子级物料');
   } else {
     message.error('删除失败，未找到选中的货号');
-  }
-}
-
-// 重新分配层序号（按 rowNum 在同层递增），格式 "{level}-{position}"
-// 严格按"序号"列动态排序，与分析/展开/遍历顺序无关
-// 重要：只对"可见"节点计算（顶层 + 已展开父级的子节点），
-// 未展开父级的子集不参与计算，避免折叠父级下的子集"抢占"层序号位置
-// 最后替换 schDataSource.value 引用，触发 filteredSchDataSource computed 重新计算
-function reassignLevelIndex(items: ProductionItem[]): void {
-  // 先清空所有节点的 levelIndex（避免折叠父级的子集残留旧值）
-  const clearAll = (list: ProductionItem[]) => {
-    list.forEach(item => {
-      item.levelIndex = undefined;
-      if (item.children && item.children.length > 0) clearAll(item.children);
-    });
-  };
-  clearAll(items);
-
-  // 只收集"可见"节点：顶层节点 + 已展开父级（schExpandedKeys）的子节点
-  const all: ProductionItem[] = [];
-  const collectVisible = (list: ProductionItem[]) => {
-    list.forEach(item => {
-      all.push(item);
-      if (item.children && item.children.length > 0 && schExpandedKeys.value.includes(item.key)) {
-        collectVisible(item.children);
-      }
-    });
-  };
-  collectVisible(items);
-
-  // 按序号升序排序，保证层序号顺序与"序号"列完全一致
-  all.sort((a, b) => (a.rowNum ?? 0) - (b.rowNum ?? 0));
-  // 同层内按序号顺序递增编号（跨父级共享同一计数器，全树唯一）
-  const levelCounters: Map<number, number> = new Map();
-  all.forEach(item => {
-    const next = (levelCounters.get(item.level) || 0) + 1;
-    levelCounters.set(item.level, next);
-    item.levelIndex = `${item.level}-${next}`;
-  });
-
-  // 关键：替换 schDataSource.value 引用，触发 filteredSchDataSource computed 重新计算
-  // （否则仅修改对象属性，Vue 不会感知，a-table 看不到新层序号）
-  if (items === schDataSource.value) {
-    schDataSource.value = [...items];
   }
 }
 
@@ -1382,8 +1294,6 @@ function handleSchDeleteRoot() {
 
         // 重新分配行号
         reassignRowNums(schDataSource.value);
-        // 重新分配层序号（提升子级后按 rowNum 重算）
-        reassignLevelIndex(schDataSource.value);
         return true;
       }
 
@@ -1391,8 +1301,6 @@ function handleSchDeleteRoot() {
         if (deleteRootAndPromote(item.children, targetKey)) {
           // 递归返回后也重新分配行号
           reassignRowNums(schDataSource.value);
-          // 重新分配层序号
-          reassignLevelIndex(schDataSource.value);
           return true;
         }
       }
@@ -1620,9 +1528,6 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
     });
   };
   reassignRowNum(treeData);
-
-  // 注意：层序号的计算依赖 schExpandedKeys，必须在 loadSchedulingData 中
-  // 设置 schExpandedKeys 之后才能调用 reassignLevelIndex
 
   return treeData;
 }
@@ -1872,13 +1777,6 @@ async function handleSchSave() {
 
     const bomCount = savedBomList?.length || 0;
     message.success(`已保存 ${salesControlList.length} 条到工单销控表，${detailList.length} 条明细，${bomCount} 条BOM数据，${pickMaterialList.length} 条领料，${warehousingList.length} 条入库`);
-
-    // 排产分析保存成功后，才真正提交评审结果
-    const mappedStatus = await doSubmitReview();
-    emit('update:visible', false);
-    emit('confirm', { id: props.record!.编号 || '', status: mappedStatus });
-    emit('refresh');
-    message.success('评审结果提交成功!');
   } catch (error) {
     console.error('保存分析失败:', error);
     message.error('保存分析失败，请稍后重试');
@@ -1990,8 +1888,6 @@ async function loadSchedulingData() {
     selectedLevel.value = 1;
     selectedRowKey.value = '';          // 切换数据时清空选中行
     schExpandedKeys.value = getExpandedKeysForFiltered(filteredSchDataSource.value);
-    // 在 schExpandedKeys 设置之后再计算层序号（依赖 schExpandedKeys）
-    reassignLevelIndex(schDataSource.value);
   } catch (error) {
     console.error('加载排产分析数据失败:', error);
     message.error('加载排产分析数据失败，请稍后重试');
@@ -2003,11 +1899,9 @@ async function loadSchedulingData() {
 
 // ========== 事件处理 ==========
 const handleVisibleUpdate = (val: boolean) => {
-  // 关闭页面时退出全屏，并重置排产分析相关状态
+  // 关闭页面时退出全屏，下次打开不保留全屏状态
   if (!val) {
     isSchedulingFullscreen.value = false;
-    showSchedulingPanel.value = false;
-    reviewSubmitted.value = false;
   }
   emit('update:visible', val);
 };
@@ -2017,10 +1911,6 @@ watch(
   () => props.visible,
   (newVal) => {
     if (newVal && props.record) {
-      // 重置提交状态
-      reviewSubmitted.value = false;
-      showSchedulingPanel.value = false;
-
       // 评审表单初始化
       reviewForm.coilItemNo = props.record.线圈货号 || '';
       verifyStatus.value = 'none';
@@ -2192,6 +2082,43 @@ watch(
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* 折叠态：箭头 + 文字 */
+.scheduling-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 0;
+  color: #1e3a5f;
+  font-size: 14px;
+  font-weight: 600;
+  user-select: none;
+  transition: all 0.25s ease;
+}
+
+.scheduling-toggle:hover {
+  color: #1890ff;
+  transform: scale(1.05);
+}
+
+.toggle-arrow {
+  font-size: 24px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              color 0.25s ease;
+}
+
+.scheduling-toggle:hover .toggle-arrow {
+  transform: translateY(5px);
+}
+
+.toggle-text {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 3px;
+  white-space: nowrap;
 }
 
 .info-card {
