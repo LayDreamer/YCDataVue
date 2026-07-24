@@ -214,6 +214,7 @@ export class Service {
     }
 
     /**
+     * 转换交期评审列表(根据外销合同客户产品表)
      * @param body (optional) 
      * @return OK
      */
@@ -256,6 +257,7 @@ export class Service {
     }
 
     /**
+     * 获取产品信息列表
      * @param body (optional) 
      * @return OK
      */
@@ -298,6 +300,7 @@ export class Service {
     }
 
     /**
+     * 根据货号获取产品资料装配清单
      * @param body (optional) 
      * @return OK
      */
@@ -340,6 +343,7 @@ export class Service {
     }
 
     /**
+     * 检查线圈货号是否存在于装配清单中
      * @param body (optional) 
      * @return OK
      */
@@ -382,6 +386,50 @@ export class Service {
     }
 
     /**
+     * 按关键字模糊查询产品资料中的线圈（货号包含关键字即可），最多返回 50 条
+     * @param body (optional) 
+     * @return OK
+     */
+    searchCoilsByKeyword(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/SearchCoilsByKeyword";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSearchCoilsByKeyword(_response);
+        });
+    }
+
+    protected processSearchCoilsByKeyword(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取交期评审列表
      * @param body (optional) 
      * @return OK
      */
@@ -424,6 +472,7 @@ export class Service {
     }
 
     /**
+     * 新增交期评审记录
      * @param body (optional) 
      * @return OK
      */
@@ -466,6 +515,7 @@ export class Service {
     }
 
     /**
+     * 新增成品销控表主表数据
      * @return OK
      */
     addPMCSalesControlList(): Promise<ObjectApiResponse> {
@@ -503,6 +553,7 @@ export class Service {
     }
 
     /**
+     * 获取成品销控表主表数据
      * @param body (optional) 
      * @return OK
      */
@@ -545,6 +596,7 @@ export class Service {
     }
 
     /**
+     * 根据货号获取产品资料
      * @param body (optional) 
      * @return OK
      */
@@ -587,6 +639,7 @@ export class Service {
     }
 
     /**
+     * 获取排产分析列表
      * @param body (optional) 
      * @return OK
      */
@@ -629,6 +682,7 @@ export class Service {
     }
 
     /**
+     * 批量添加或更新工单销控表数据（存在则覆盖，不存在则新增）
      * @param body (optional) 
      * @return OK
      */
@@ -671,6 +725,7 @@ export class Service {
     }
 
     /**
+     * 获取工单销控表列表
      * @param body (optional) 
      * @return OK
      */
@@ -713,6 +768,7 @@ export class Service {
     }
 
     /**
+     * 批量删除工单销控表数据
      * @param body (optional) 
      * @return OK
      */
@@ -755,6 +811,7 @@ export class Service {
     }
 
     /**
+     * 批量添加或更新工单销控表明细数据（存在则覆盖，不存在则新增）
      * @param body (optional) 
      * @return OK
      */
@@ -797,6 +854,7 @@ export class Service {
     }
 
     /**
+     * 获取工单销控表明细列表
      * @param body (optional) 
      * @return OK
      */
@@ -839,6 +897,7 @@ export class Service {
     }
 
     /**
+     * 批量删除工单销控表明细数据
      * @param body (optional) 
      * @return OK
      */
@@ -881,6 +940,7 @@ export class Service {
     }
 
     /**
+     * 批量添加或更新成品销控表明细数据（存在则覆盖，不存在则新增）
      * @param body (optional) 
      * @return OK
      */
@@ -923,6 +983,7 @@ export class Service {
     }
 
     /**
+     * 获取成品销控表明细列表
      * @param body (optional) 
      * @return OK
      */
@@ -965,6 +1026,7 @@ export class Service {
     }
 
     /**
+     * 批量删除成品销控表明细数据
      * @param body (optional) 
      * @return OK
      */
@@ -1007,6 +1069,7 @@ export class Service {
     }
 
     /**
+     * 批量添加或更新外产发运数据（存在则覆盖，不存在则新增）
      * @param body (optional) 
      * @return OK
      */
@@ -1049,6 +1112,7 @@ export class Service {
     }
 
     /**
+     * 批量添加或更新外产领料数据（存在则覆盖，不存在则新增）
      * @param body (optional) 
      * @return OK
      */
@@ -1091,6 +1155,7 @@ export class Service {
     }
 
     /**
+     * 批量添加或更新外产生产数据（存在则覆盖，不存在则新增）
      * @param body (optional) 
      * @return OK
      */
@@ -1133,6 +1198,7 @@ export class Service {
     }
 
     /**
+     * 批量添加或更新外产入库数据（存在则覆盖，不存在则新增）
      * @param body (optional) 
      * @return OK
      */
@@ -1175,6 +1241,7 @@ export class Service {
     }
 
     /**
+     * 获取外产发运列表
      * @param body (optional) 
      * @return OK
      */
@@ -1217,6 +1284,7 @@ export class Service {
     }
 
     /**
+     * 批量删除外产发运数据
      * @param body (optional) 
      * @return OK
      */
@@ -1259,6 +1327,7 @@ export class Service {
     }
 
     /**
+     * 获取外产领料列表
      * @param body (optional) 
      * @return OK
      */
@@ -1301,6 +1370,7 @@ export class Service {
     }
 
     /**
+     * 批量删除外产领料数据
      * @param body (optional) 
      * @return OK
      */
@@ -1343,6 +1413,7 @@ export class Service {
     }
 
     /**
+     * 获取外产生产列表
      * @param body (optional) 
      * @return OK
      */
@@ -1385,6 +1456,7 @@ export class Service {
     }
 
     /**
+     * 批量删除外产生产数据
      * @param body (optional) 
      * @return OK
      */
@@ -1427,6 +1499,7 @@ export class Service {
     }
 
     /**
+     * 获取外产入库列表
      * @param body (optional) 
      * @return OK
      */
@@ -1469,6 +1542,7 @@ export class Service {
     }
 
     /**
+     * 批量删除外产入库数据
      * @param body (optional) 
      * @return OK
      */
@@ -1511,6 +1585,7 @@ export class Service {
     }
 
     /**
+     * 根据成品货号生成并保存外产BOM结构
      * @param username (optional) 
      * @param schedulingNo (optional) 
      * @param body (optional) 
@@ -1563,6 +1638,7 @@ export class Service {
     }
 
     /**
+     * 获取外产BOM列表
      * @param body (optional) 
      * @return OK
      */
@@ -1605,6 +1681,7 @@ export class Service {
     }
 
     /**
+     * 批量删除外产BOM数据
      * @param body (optional) 
      * @return OK
      */
@@ -1647,6 +1724,7 @@ export class Service {
     }
 
     /**
+     * 获取所有BOM结构工序数据
      * @return OK
      */
     getBOMStructureProcessList(): Promise<ObjectApiResponse> {
@@ -1654,7 +1732,7 @@ export class Service {
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
-            method: "GET",
+            method: "POST",
             headers: {
                 "Accept": "application/json"
             }
@@ -1684,8 +1762,9 @@ export class Service {
     }
 
     /**
-     * @param redirectUri (optional) 
-     * @param state (optional) 
+     * 生成授权跳转URL
+     * @param redirectUri (optional) 授权后跳转的回调地址
+     * @param state (optional) 状态参数
      * @return OK
      */
     authorizeUrl(redirectUri: string | undefined, state: string | undefined): Promise<void> {
@@ -1727,8 +1806,9 @@ export class Service {
     }
 
     /**
-     * @param code (optional) 
-     * @param state (optional) 
+     * 授权回调处理
+     * @param code (optional) 授权code
+     * @param state (optional) 状态参数
      * @return OK
      */
     callback(code: string | undefined, state: string | undefined): Promise<void> {
@@ -1770,6 +1850,8 @@ export class Service {
     }
 
     /**
+     * 直接通过userid获取用户信息
+     * @param userId 用户ID
      * @return OK
      */
     user(userId: string): Promise<void> {
@@ -1806,6 +1888,7 @@ export class Service {
     }
 
     /**
+     * 获取指定部门下的成员列表（包含详情）
      * @param body (optional) 
      * @return OK
      */
@@ -2105,6 +2188,7 @@ export class Service {
     }
 
     /**
+     * 创建企业微信群聊并发送消息
      * @param body (optional) 
      * @return OK
      */
@@ -2147,6 +2231,7 @@ export class Service {
     }
 
     /**
+     * 向已有的企业微信群聊发送消息
      * @param body (optional) 
      * @return OK
      */
@@ -2189,6 +2274,7 @@ export class Service {
     }
 
     /**
+     * 获取所有已创建的群聊列表（从数据库查询）
      * @return OK
      */
     groupChats(): Promise<ObjectApiResponse> {
@@ -2268,6 +2354,7 @@ export class Service {
     }
 
     /**
+     * 获取 JS-SDK 配置（用于前端 wx.config 鉴权，调用扫码等能力）
      * @param url (optional) 
      * @return OK
      */
@@ -2542,6 +2629,7 @@ export interface ICreateSmartSheetDto {
     adminUserIds?: string[] | undefined;
 }
 
+/** 电流流量 */
 export class CurrentFlowRate implements ICurrentFlowRate {
     id?: string;
     current?: number;
@@ -2580,6 +2668,7 @@ export class CurrentFlowRate implements ICurrentFlowRate {
     }
 }
 
+/** 电流流量 */
 export interface ICurrentFlowRate {
     id?: string;
     current?: number;
@@ -2622,6 +2711,7 @@ export interface IDepartmentRequestDto {
     departmentId?: number;
 }
 
+/** 外产_生产 */
 export class ExternalProduction implements IExternalProduction {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2693,6 +2783,7 @@ export class ExternalProduction implements IExternalProduction {
     }
 }
 
+/** 外产_生产 */
 export interface IExternalProduction {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2710,6 +2801,7 @@ export interface IExternalProduction {
     关联编号?: string | undefined;
 }
 
+/** 外产_BOM */
 export class ExternalProductionBOM implements IExternalProductionBOM {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2799,6 +2891,7 @@ export class ExternalProductionBOM implements IExternalProductionBOM {
     }
 }
 
+/** 外产_BOM */
 export interface IExternalProductionBOM {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2822,6 +2915,7 @@ export interface IExternalProductionBOM {
     交货日期?: string | undefined;
 }
 
+/** 外产_领料 */
 export class ExternalProductionPickMaterial implements IExternalProductionPickMaterial {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2893,6 +2987,7 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
     }
 }
 
+/** 外产_领料 */
 export interface IExternalProductionPickMaterial {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2910,6 +3005,7 @@ export interface IExternalProductionPickMaterial {
     来源编号?: string | undefined;
 }
 
+/** 外产_发运 */
 export class ExternalProductionShipment implements IExternalProductionShipment {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2981,6 +3077,7 @@ export class ExternalProductionShipment implements IExternalProductionShipment {
     }
 }
 
+/** 外产_发运 */
 export interface IExternalProductionShipment {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -2998,6 +3095,7 @@ export interface IExternalProductionShipment {
     关联编号?: string | undefined;
 }
 
+/** 外产_入库 */
 export class ExternalProductionWarehousing implements IExternalProductionWarehousing {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -3066,6 +3164,7 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
     }
 }
 
+/** 外产_入库 */
 export interface IExternalProductionWarehousing {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -3118,16 +3217,26 @@ export interface IGetBLFParameterRequest {
     number: string | undefined;
 }
 
+/** 企业微信群聊消息统一 DTO（支持创建群聊+发送 / 仅发送） */
 export class GroupChatMessageDto implements IGroupChatMessageDto {
+    /** 群成员 userid 列表，至少2人，最多2000人（必须包含群主）。仅在创建群聊时必填。 */
     userIds?: string[] | undefined;
+    /** 群聊名称，最多50个UTF-8字符。仅在创建群聊时必填。 */
     chatName?: string | undefined;
+    /** 群主 userid（必须在 UserIds 中）。仅在创建群聊时必填。 */
     ownerUserId?: string | undefined;
+    /** 群聊ID。发送消息时必填；创建群聊时可选（不传则由系统生成）。 */
     chatId?: string | undefined;
+    /** 消息内容（文本/Markdown 内容） */
     content?: string | undefined;
     msgType?: WechatWorkMessageType;
+    /** 卡片标题，仅在 MsgType 为 Card 时必填 */
     title?: string | undefined;
+    /** 卡片描述，仅在 MsgType 为 Card 时必填 */
     description?: string | undefined;
+    /** 卡片跳转链接，仅在 MsgType 为 Card 时必填 */
     url?: string | undefined;
+    /** 卡片按钮文字，仅在 MsgType 为 Card 时有效，默认"查看详情" */
     buttonText?: string | undefined;
 
     constructor(data?: IGroupChatMessageDto) {
@@ -3185,16 +3294,26 @@ export class GroupChatMessageDto implements IGroupChatMessageDto {
     }
 }
 
+/** 企业微信群聊消息统一 DTO（支持创建群聊+发送 / 仅发送） */
 export interface IGroupChatMessageDto {
+    /** 群成员 userid 列表，至少2人，最多2000人（必须包含群主）。仅在创建群聊时必填。 */
     userIds?: string[] | undefined;
+    /** 群聊名称，最多50个UTF-8字符。仅在创建群聊时必填。 */
     chatName?: string | undefined;
+    /** 群主 userid（必须在 UserIds 中）。仅在创建群聊时必填。 */
     ownerUserId?: string | undefined;
+    /** 群聊ID。发送消息时必填；创建群聊时可选（不传则由系统生成）。 */
     chatId?: string | undefined;
+    /** 消息内容（文本/Markdown 内容） */
     content?: string | undefined;
     msgType?: WechatWorkMessageType;
+    /** 卡片标题，仅在 MsgType 为 Card 时必填 */
     title?: string | undefined;
+    /** 卡片描述，仅在 MsgType 为 Card 时必填 */
     description?: string | undefined;
+    /** 卡片跳转链接，仅在 MsgType 为 Card 时必填 */
     url?: string | undefined;
+    /** 卡片按钮文字，仅在 MsgType 为 Card 时有效，默认"查看详情" */
     buttonText?: string | undefined;
 }
 
@@ -3268,6 +3387,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
     线圈货号?: string | undefined;
     电压?: string | undefined;
     交货日期?: string | undefined;
+    生产类型?: string | undefined;
     排产用户?: string | undefined;
     状态?: string | undefined;
     物料货号?: string | undefined;
@@ -3306,6 +3426,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
             this.线圈货号 = _data["线圈货号"];
             this.电压 = _data["电压"];
             this.交货日期 = _data["交货日期"];
+            this.生产类型 = _data["生产类型"];
             this.排产用户 = _data["排产用户"];
             this.状态 = _data["状态"];
             this.物料货号 = _data["物料货号"];
@@ -3344,6 +3465,7 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
         data["线圈货号"] = this.线圈货号;
         data["电压"] = this.电压;
         data["交货日期"] = this.交货日期;
+        data["生产类型"] = this.生产类型;
         data["排产用户"] = this.排产用户;
         data["状态"] = this.状态;
         data["物料货号"] = this.物料货号;
@@ -3375,6 +3497,7 @@ export interface IPMCDeliveryReview {
     线圈货号?: string | undefined;
     电压?: string | undefined;
     交货日期?: string | undefined;
+    生产类型?: string | undefined;
     排产用户?: string | undefined;
     状态?: string | undefined;
     物料货号?: string | undefined;
@@ -3498,6 +3621,7 @@ export interface IPMCRequestDto {
     补充数据?: string | undefined;
 }
 
+/** 压力流量 */
 export class PressureFlowRate implements IPressureFlowRate {
     id?: string;
     pressure?: number;
@@ -3536,12 +3660,14 @@ export class PressureFlowRate implements IPressureFlowRate {
     }
 }
 
+/** 压力流量 */
 export interface IPressureFlowRate {
     id?: string;
     pressure?: number;
     flowRate?: number;
 }
 
+/** 成品销控表明细 */
 export class ProductSalesControlDetail implements IProductSalesControlDetail {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -3628,6 +3754,7 @@ export class ProductSalesControlDetail implements IProductSalesControlDetail {
     }
 }
 
+/** 成品销控表明细 */
 export interface IProductSalesControlDetail {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -3714,6 +3841,7 @@ export interface ISendMessageDto {
     msgType?: WechatWorkMessageType;
 }
 
+/** 企业微信消息类型枚举 */
 export enum WechatWorkMessageType {
     _0 = 0,
     _1 = 1,
@@ -3723,6 +3851,7 @@ export enum WechatWorkMessageType {
     _5 = 5,
 }
 
+/** 工单销控表 */
 export class WorkOrderSalesControl implements IWorkOrderSalesControl {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -3747,6 +3876,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
     分析日期?: string | undefined;
     生产完成率?: string | undefined;
     层?: string | undefined;
+    排产用户?: string | undefined;
 
     constructor(data?: IWorkOrderSalesControl) {
         if (data) {
@@ -3782,6 +3912,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
             this.分析日期 = _data["分析日期"];
             this.生产完成率 = _data["生产完成率"];
             this.层 = _data["层"];
+            this.排产用户 = _data["排产用户"];
         }
     }
 
@@ -3817,10 +3948,12 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
         data["分析日期"] = this.分析日期;
         data["生产完成率"] = this.生产完成率;
         data["层"] = this.层;
+        data["排产用户"] = this.排产用户;
         return data;
     }
 }
 
+/** 工单销控表 */
 export interface IWorkOrderSalesControl {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -3845,8 +3978,10 @@ export interface IWorkOrderSalesControl {
     分析日期?: string | undefined;
     生产完成率?: string | undefined;
     层?: string | undefined;
+    排产用户?: string | undefined;
 }
 
+/** 工单销控表明细 */
 export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail {
     编号?: string | undefined;
     用户编号?: string | undefined;
@@ -3930,6 +4065,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
     }
 }
 
+/** 工单销控表明细 */
 export interface IWorkOrderSalesControlDetail {
     编号?: string | undefined;
     用户编号?: string | undefined;

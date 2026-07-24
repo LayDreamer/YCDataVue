@@ -6,6 +6,7 @@ import { TableColumnsType } from "ant-design-vue";
 export interface ProductionItem {
   key: string;
   rowNum: number;
+  levelIndex?: string;
   partNo: string;
   level: number;
   attr: string;
@@ -34,6 +35,7 @@ export interface ProductionItem {
 // 列配置
 export const columns: TableColumnsType = [
   { title: '序号', key: 'index', width: 60, fixed: 'left', align: 'center' },
+  { title: '层序号', dataIndex: 'levelIndex', width: 80, fixed: 'left', align: 'center' },
   { title: '货号', dataIndex: 'partNo', width: 220, fixed: 'left' },
   { title: '层', key: 'level', width: 60, align: 'center' },
   { title: '产品属性', dataIndex: 'attr', width: 100 },

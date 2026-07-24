@@ -18,9 +18,9 @@
     </template>
 
     <!-- 主体内容区：左右布局 -->
-    <div class="drawer-body">
+    <div class="drawer-body" :class="{ 'scheduling-fullscreen': isSchedulingFullscreen }">
       <!-- 左侧：基础资料 + 校验 + 结论（上下排列） -->
-      <div class="left-panel">
+      <div class="left-panel" :class="{ expanded: showSchedulingPanel, collapsed: !showSchedulingPanel }">
         <!-- 基础资料 -->
         <a-card title="基础资料" :bordered="false" class="info-card left-card">
           <div class="info-grid">
@@ -45,6 +45,10 @@
               <span class="info-value">{{ record?.电压 || '--' }}</span>
             </div>
             <div class="info-item">
+              <span class="info-label">生产类型</span>
+              <span class="info-value">{{ record?.生产类型 || '--' }}</span>
+            </div>
+            <div class="info-item">
               <span class="info-label">交货日期</span>
               <span class="info-value">{{ record?.交货日期 || '--' }}</span>
             </div>
@@ -67,9 +71,31 @@
         <a-card :bordered="false" class="info-card user-selector-card left-card">
           <template #title>
             <span>选择排产用户</span>
-            <span class="required-mark">*</span>
+            <span v-if="!hasPresetSchedulingUser" class="required-mark">*</span>
           </template>
-          <div class="user-selector-wrap">
+
+          <!-- 已有预设排产用户：显示标签 + 更换按钮 -->
+          <div v-if="hasPresetSchedulingUser && !showUserSelector" class="preset-user-display">
+            <div class="preset-user-tags">
+              <a-tag v-for="(name, idx) in presetUserNames" :key="idx" color="blue">
+                {{ name }}
+              </a-tag>
+            </div>
+            <div class="preset-user-action">
+              <a-button type="link" size="small" @click="showUserSelector = true">
+                <SwapOutlined /> 更换用户
+              </a-button>
+            </div>
+          </div>
+
+          <!-- 无预设用户 或 点击更换后：显示选择器 -->
+          <div v-else class="user-selector-wrap">
+            <div v-if="hasPresetSchedulingUser && showUserSelector" class="user-selector-header">
+              <a-button type="text" size="small" class="back-btn" @click="cancelUserChange">
+                <LeftOutlined /> 返回
+              </a-button>
+              <span class="header-title">重新选择排产用户</span>
+            </div>
             <OrgUserSelector
               ref="orgSelectorRef"
               v-model:selectedUserIds="schedulingSelectedUserIds"
@@ -77,19 +103,31 @@
               :maxTableHeight="'260px'"
               @userSelect="onSchedulingUserSelect"
             />
+            <div v-if="hasPresetSchedulingUser && showUserSelector" class="cancel-change-hint">
+              <a-button type="text" size="small" @click="cancelUserChange">
+                恢复默认用户
+              </a-button>
+            </div>
           </div>
         </a-card>
 
         <!-- 核心要素校验 -->
         <a-card title="核心要素校验" :bordered="false" class="info-card verify-card-compact left-card">
-          <a-input-search
-            v-model:value="reviewForm.coilItemNo"
-            placeholder="线圈货号进行系统反查"
-            enter-button="校验"
-            :loading="validatingCoil"
-            size="small"
-            @search="validateCoil"
-          />
+          <div class="coil-search-row">
+            <SearchSelect
+              v-model:value="reviewForm.coilItemNo"
+              :columns="coilColumns"
+              :search="searchCoils"
+              value-field="value"
+              :dropdown-width="560"
+              :max-height="380"
+              placeholder="线圈货号进行系统反查"
+              :disabled="validatingCoil"
+              style="flex: 1"
+              @select="onCoilSelected"
+            />
+            <a-button type="primary" :loading="validatingCoil" @click="validateCoil">校验</a-button>
+          </div>
           <div v-if="verifyStatus !== 'none'" class="verify-result">
             <a-alert
               v-if="verifyStatus === 'success'"
@@ -135,18 +173,52 @@
             </a-form-item>
           </a-form>
         </a-card>
+
+        <!-- 左侧折叠态底部操作栏 -->
+        <div v-if="!showSchedulingPanel" class="footer-bar left-footer">
+          <div class="footer-left">
+            <span>展开查看物料BOM结构，编辑损耗和数量会自动计算需求量</span>
+          </div>
+          <div class="footer-actions">
+            <a-button @click="handleVisibleUpdate(false)">取消</a-button>
+            <a-button type="primary" :loading="confirmLoading" @click="submitReview">
+              提交评审结果
+            </a-button>
+          </div>
+        </div>
       </div>
 
-      <!-- 右侧：排产分析单详情（占满剩余空间） -->
-      <div class="right-panel">
+      <!-- 右侧：排产分析单详情 -->
+      <div class="right-panel" :class="{ expanded: showSchedulingPanel, collapsed: !showSchedulingPanel }">
+      <!-- 折叠态：箭头图标 + 文字 -->
+      <div v-if="!showSchedulingPanel" class="scheduling-toggle" @click="toggleSchedulingPanel">
+        <span class="toggle-text">排产分析</span>
+        <RightOutlined class="toggle-arrow" />
+      </div>
+
+      <!-- 展开态：排产分析单详情 -->
+      <template v-else>
         <a-card :bordered="false" class="scheduling-card">
           <template #title>
             <div class="sch-card-title">
-              <span>排产分析单详情</span>
-              <a-button type="link" size="small" @click="loadSchedulingData" :loading="schedulingLoading">
-                <template #icon><ReloadOutlined /></template>
-                刷新
-              </a-button>
+              <span class="sch-title-left">
+                <LeftOutlined class="sch-collapse-icon" @click="toggleSchedulingPanel" />
+                <span>排产分析单详情</span>
+              </span>
+              <span class="sch-title-right">
+                <a-tooltip :title="isSchedulingFullscreen ? '退出全屏' : '全屏'">
+                  <a-button type="link" size="small" @click="toggleFullscreen">
+                    <template #icon>
+                      <FullscreenExitOutlined v-if="isSchedulingFullscreen" />
+                      <FullscreenOutlined v-else />
+                    </template>
+                  </a-button>
+                </a-tooltip>
+                <a-button type="link" size="small" @click="loadSchedulingData" :loading="schedulingLoading">
+                  <template #icon><ReloadOutlined /></template>
+                  刷新
+                </a-button>
+              </span>
             </div>
           </template>
           <a-spin :spinning="schedulingLoading" tip="加载排产分析数据...">
@@ -156,15 +228,21 @@
               <div class="sch-row sch-input-row">
                 <div class="sch-info-item">
                   <span class="sch-label">货号</span>
-                  <span class="sch-value w-220">{{ schedulingProduct.partNo || '--' }}</span>
+                  <a-tooltip :title="schedulingProduct.partNo || '--'" placement="top">
+                    <span class="sch-value w-220">{{ schedulingProduct.partNo || '--' }}</span>
+                  </a-tooltip>
                 </div>
                 <div class="sch-info-item">
                   <span class="sch-label">品名</span>
-                  <span class="sch-value w-300">{{ schedulingProduct.productName || '--' }}</span>
+                  <a-tooltip :title="schedulingProduct.productName || '--'" placement="top">
+                    <span class="sch-value w-300">{{ schedulingProduct.productName || '--' }}</span>
+                  </a-tooltip>
                 </div>
                 <div class="sch-info-item">
                   <span class="sch-label">规格</span>
-                  <span class="sch-value w-200">{{ schedulingProduct.spec || '--' }}</span>
+                  <a-tooltip :title="schedulingProduct.spec || '--'" placement="top">
+                    <span class="sch-value w-200">{{ schedulingProduct.spec || '--' }}</span>
+                  </a-tooltip>
                 </div>
                 <div class="sch-info-item">
                   <span class="sch-label">成品数量</span>
@@ -195,6 +273,43 @@
                   v-model="fixedColumnKeys"
                   :columns="rawColumns"
                 />
+                <!-- 隐藏列选择 -->
+                <a-popover trigger="click" placement="bottomLeft">
+                  <a-tooltip title="隐藏列" placement="top">
+                    <a-button size="small" class="hide-column-btn">
+                      <template #icon><EyeOutlined /></template>
+                      列设置
+                      <DownOutlined style="font-size: 10px; margin-left: 2px;" />
+                    </a-button>
+                  </a-tooltip>
+                  <template #content>
+                    <div class="hide-column-dropdown">
+                      <div class="hide-column-header">选择要隐藏的列</div>
+                      <a-checkbox-group
+                        :value="hiddenColumnKeys"
+                        @change="onHiddenColumnsChange"
+                        class="hide-column-check-group"
+                      >
+                        <div
+                          v-for="opt in hideableColumnOptions"
+                          :key="opt.value"
+                          class="hide-column-item"
+                        >
+                          <a-checkbox :value="opt.value">{{ opt.label }}</a-checkbox>
+                        </div>
+                      </a-checkbox-group>
+                      <div class="hide-column-footer">
+                        <a-button
+                          type="link"
+                          size="small"
+                          @click="hideAllColumns"
+                        >
+                          {{ hiddenColumnKeys.length === hideableColumnOptions.length ? '取消全选' : '隐藏全部' }}
+                        </a-button>
+                      </div>
+                    </div>
+                  </template>
+                </a-popover>
                 <div class="sch-analysis-modes">
                   <a-radio-group v-model:value="schedulingForm.analysisType">
                     <a-radio value="normal">
@@ -367,9 +482,10 @@
             </a-button>
           </div>
         </div>
-      </div>
+      </template>
     </div>
-  </a-drawer>
+    </div>
+</a-drawer>
 </template>
 
 <script lang="ts" setup>
@@ -388,6 +504,11 @@ import {
   SearchOutlined,
   DeleteOutlined,
   ReloadOutlined,
+  RightOutlined,
+  LeftOutlined,
+  SwapOutlined,
+  FullscreenOutlined,
+  FullscreenExitOutlined,
 } from '@ant-design/icons-vue';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { salesControlService } from '@/services/salesControlService';
@@ -397,8 +518,9 @@ import { bomStructureProcessService } from '@/services/bomStructureProcessServic
 import { type WeChatUser } from '@/services/wechatWorkService';
 import { PMCRequestDto, PMCDeliveryReview, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail, ExternalProductionBOM, ExternalProductionPickMaterial, ExternalProductionWarehousing } from '@/api-generated/api';
 import { columns as rawColumns } from '../SchedulingAnalysis/types';
-import FixedColumnControl from '@/components/FixedColumnControl.vue';
+import TableColumnSettings, { type ColumnSetting } from '@/components/TableColumnSettings.vue';
 import OrgUserSelector from '@/components/OrgUserSelector.vue';
+import SearchSelect, { type SearchSelectColumn } from '@/components/SearchSelect.vue';
 
 // ========== 类型定义 ==========
 interface ProductionItem {
@@ -445,7 +567,64 @@ const emit = defineEmits<{
 
 // ========== 响应式尺寸 ==========
 const screens = Grid.useBreakpoint();
-const drawerWidth = computed(() => (screens.value?.md ? '76vw' : '100%'));
+// 折叠态：抽屉宽度贴合左侧卡片（约 760px）；展开态：占满 86vw
+const drawerWidth = computed(() => {
+  if (!screens.value?.md) return '100%';
+  return showSchedulingPanel.value ? '86vw' : '760px';
+});
+
+// 排产分析单详情局部全屏（隐藏左侧卡片，详情占满整个页面区域）
+const isSchedulingFullscreen = ref(false);
+
+function toggleFullscreen() {
+  isSchedulingFullscreen.value = !isSchedulingFullscreen.value;
+  nextTick(() => updateTableScrollY());
+}
+
+// ========== 排产分析面板展开/折叠状态 ==========
+const showSchedulingPanel = ref(false);
+
+// 线圈货号是否已修改（与主表不一致且校验通过）
+const isCoilModified = computed(() => {
+  const original = props.record?.线圈货号 || '';
+  return verifyStatus.value === 'success' &&
+    reviewForm.coilItemNo.trim() !== '' &&
+    reviewForm.coilItemNo.trim() !== original;
+});
+
+// 根据原货号替换括号内线圈货号，生成新货号
+// 例：原 YCSM31-25-1GSN-S91B(S91B-DC24V-D-16W) + 新 S91B-AC24V-D-20VA
+//   → YCSM31-25-1GSN-S91B(S91B-AC24V-D-20VA)
+function buildModifiedPartNo(originalPartNo: string, newCoilNo: string): string {
+  const match = originalPartNo.match(/^(.*)\((.*)\)$/);
+  if (match) {
+    return `${match[1]}(${newCoilNo})`;
+  }
+  // 原货号无括号结构，直接追加括号
+  return `${originalPartNo}(${newCoilNo})`;
+}
+
+const toggleSchedulingPanel = () => {
+  showSchedulingPanel.value = !showSchedulingPanel.value;
+  if (showSchedulingPanel.value) {
+    // 展开排产分析时：交货日期默认同步最终生产交期
+    schedulingForm.deliveryDate = reviewForm.finalDate
+      ? dayjs(reviewForm.finalDate).format('YYYY-MM-DD')
+      : undefined;
+    // 线圈货号已修改且校验通过时，替换货号括号内线圈货号部分作为请求参数
+    if (isCoilModified.value) {
+      schedulingProduct.partNo = buildModifiedPartNo(props.record?.货号 || '', reviewForm.coilItemNo.trim());
+    }
+    loadSchedulingData();
+  } else {
+    // 收起时恢复原始货号（下次打开可能重新判断）
+    if (isCoilModified.value) {
+      schedulingProduct.partNo = props.record?.货号 || '';
+      schedulingProduct.productName = props.record?.中文品名 || '';
+      schedulingProduct.spec = props.record?.中文规格 || '';
+    }
+  }
+};
 
 // ========== 评审表单数据 ==========
 const reviewForm = reactive({
@@ -460,15 +639,98 @@ const validatingCoil = ref(false);
 const verifyStatus = ref<'none' | 'success' | 'error'>('none');
 const confirmLoading = ref(false);
 
+// 线圈货号模糊查询：通用搜索选择组件配置
+const coilColumns: SearchSelectColumn[] = [
+  { title: '货号', dataIndex: 'value', width: 160, fixed: true, color: '#1e3a5f' },
+  { title: '中文品名', dataIndex: '中文品名', width: 220 },
+  { title: '中文规格', dataIndex: '中文规格', width: 260 },
+];
+
+// 远程搜索：传入关键字，返回下拉所需的数据源
+async function searchCoils(keyword: string): Promise<Record<string, any>[]> {
+  const data = await deliveryReviewService.searchCoilsByKeyword(
+    new PMCRequestDto({ 线圈货号: keyword.trim() })
+  );
+  const list = Array.isArray(data) ? data : [];
+  return list.map((item: any) => {
+    const partNo = item?.货号 || item?.value || '';
+    const name = item?.中文品名 || item?.name || item?.产品名称 || '';
+    const spec = item?.中文规格 || item?.spec || item?.规格 || '';
+    return { value: partNo, 中文品名: name, 中文规格: spec };
+  });
+}
+
+// 选中某条线圈后触发系统校验
+function onCoilSelected(row: Record<string, any>) {
+  reviewForm.coilItemNo = String(row.value ?? '');
+  validateCoil();
+}
+
 // ========== 排产用户选择（企业微信） ==========
 const schedulingSelectedUserIds = ref<string[]>([]);
 const schedulingSelectedUsers = ref<WeChatUser[]>([]);
 const orgSelectorRef = ref<InstanceType<typeof OrgUserSelector>>();
+const showUserSelector = ref(false);
+
+// 是否有预设排产用户（来自主表 record）
+const hasPresetSchedulingUser = computed(() => {
+  return props.record?.排产用户 && props.record.排产用户.trim() !== '';
+});
+
+// 预设排产用户名称列表
+const presetUserNames = computed(() => {
+  if (!hasPresetSchedulingUser.value) return [];
+  return props.record?.排产用户?.split(/[,，]/).map(n => n.trim()).filter(Boolean) ?? [];
+});
 
 const onSchedulingUserSelect = (userIds: string[]) => {
   const allUsers = orgSelectorRef.value?.deptUsers || [];
   schedulingSelectedUsers.value = allUsers.filter(u => userIds.includes(u.userid));
 };
+
+// 取消更换，恢复为默认预设用户
+function cancelUserChange() {
+  showUserSelector.value = false;
+  schedulingSelectedUserIds.value = [];
+  schedulingSelectedUsers.value = [];
+}
+
+// ========== 初始化预选排产用户 ==========
+async function initPreselectedUsers() {
+  const existingNames = props.record?.排产用户;
+  if (!existingNames || !existingNames.trim()) return;
+
+  // 等待全量用户列表加载完成
+  await nextTick();
+  let retryCount = 0;
+  while (retryCount < 10) {
+    const allUsers = orgSelectorRef.value?.deptUsers || [];
+    if (allUsers.length > 0) break;
+    await new Promise(resolve => setTimeout(resolve, 200));
+    retryCount++;
+  }
+
+  const allUsers = orgSelectorRef.value?.deptUsers || [];
+  if (allUsers.length === 0) return;
+
+  // 按逗号分割已有用户名，匹配 WeChat 用户
+  const nameList = existingNames.split(/[,，]/).map(n => n.trim()).filter(Boolean);
+  const matchedIds: string[] = [];
+  const matchedUsers: WeChatUser[] = [];
+
+  for (const name of nameList) {
+    const found = allUsers.find(u => u.name === name || u.userid === name);
+    if (found && !matchedIds.includes(found.userid)) {
+      matchedIds.push(found.userid);
+      matchedUsers.push(found);
+    }
+  }
+
+  if (matchedIds.length > 0) {
+    schedulingSelectedUserIds.value = matchedIds;
+    schedulingSelectedUsers.value = matchedUsers;
+  }
+}
 
 // ========== 线圈货号校验 ==========
 const validateCoil = async () => {
@@ -500,13 +762,22 @@ const submitReview = async () => {
     message.error('线圈货号未经验证或验证不通过，无法提交评审！');
     return;
   }
-  if (schedulingSelectedUsers.value.length === 0) {
+  if (schedulingSelectedUsers.value.length === 0 && !hasPresetSchedulingUser.value) {
     message.warning('请选择排产用户');
     return;
   }
+  // 有预设用户但未手动选择时，使用预设用户名
+  const finalUserNames = schedulingSelectedUsers.value.length > 0
+    ? schedulingSelectedUsers.value.map(u => u.name)
+    : presetUserNames.value;
   const mappedStatus = reviewForm.resultStatus === 'pass' ? '评审通过' : '评审驳回';
-  const { 编号, 用户编号, 合同号, 排产编号, 货号, 中文品名, 中文规格, 分析单号, 来源编号, 来源, 工单单号, 电压, 数量 } = props.record!;
-  const 排产用户 = schedulingSelectedUsers.value.map(u => u.name).join(',');
+  const { 编号, 用户编号, 合同号, 排产编号, 中文品名, 中文规格, 分析单号, 来源编号, 来源, 工单单号, 电压, 数量, 生产类型 } = props.record!;
+  const 排产用户 = finalUserNames.join(',');
+
+  // 线圈货号已修改且校验通过时，无论是否展开排产分析，提交均使用替换括号内线圈货号后的新完整货号
+  const finalPartNo = isCoilModified.value
+    ? buildModifiedPartNo(props.record?.货号 || '', reviewForm.coilItemNo.trim())
+    : schedulingProduct.partNo;
 
   const reviewData = new PMCDeliveryReview({
     编号,
@@ -514,7 +785,7 @@ const submitReview = async () => {
     合同号,
     排产编号,
     数量,
-    货号,
+    货号: finalPartNo,
     中文品名,
     中文规格,
     分析单号,
@@ -523,6 +794,7 @@ const submitReview = async () => {
     工单单号,
     排产用户,
     电压,
+    生产类型,
     物料货号: '',
     状态: mappedStatus,
     线圈货号: reviewForm.coilItemNo,
@@ -751,22 +1023,74 @@ const schSaveBomLoading = ref(false);
 // 固定列
 const fixedColumnKeys = ref<string[]>(['index', 'partNo']);
 
+// 隐藏列（排除 index 和 partNo，这两个始终显示）
+const hiddenColumnKeys = ref<string[]>([]);
+
+// 可供隐藏的列选项（排除 index 和 partNo）
+const hideableColumnOptions = computed(() =>
+  rawColumns
+    .map((col) => ({
+      label: (col.title as string) || '',
+      value: ((col.key || (col as any).dataIndex) as string) || '',
+    }))
+    .filter((opt) => !['index', 'partNo'].includes(opt.value))
+);
+
 const displayColumns = computed(() => {
-  return rawColumns.map(col => {
-    const colKey = (col.key || (col as any).dataIndex) as string;
-    return {
-      ...col,
-      fixed: fixedColumnKeys.value.includes(colKey) ? ('left' as const) : undefined,
-    };
+  const getKey = (col: any) => ((col.key || (col as any).dataIndex) as string) || '';
+
+  const visibleColumns = rawColumns.filter(
+    (col) => !hiddenColumnKeys.value.includes(getKey(col))
+  );
+
+  // 固定列按用户选择顺序提到最左侧
+  const fixedCols: typeof visibleColumns = [];
+  fixedColumnKeys.value.forEach((key) => {
+    const col = visibleColumns.find((c) => getKey(c) === key);
+    if (col) {
+      fixedCols.push({ ...col, fixed: 'left' as const });
+    }
   });
+
+  const otherCols = visibleColumns.filter(
+    (col) => !fixedColumnKeys.value.includes(getKey(col))
+  );
+
+  return [...fixedCols, ...otherCols];
 });
+
+// 隐藏列变更处理
+function onHiddenColumnsChange(checkedValue: any) {
+  hiddenColumnKeys.value = checkedValue as string[];
+}
+
+// 隐藏/取消隐藏全部列
+function hideAllColumns() {
+  if (hiddenColumnKeys.value.length === hideableColumnOptions.value.length) {
+    // 已全选，取消全选
+    hiddenColumnKeys.value = [];
+  } else {
+    // 隐藏全部可选列
+    hiddenColumnKeys.value = hideableColumnOptions.value.map(opt => opt.value);
+  }
+}
 
 // 表格滚动高度 - 动态获取容器高度
 const tableWrapRef = ref<HTMLElement | null>(null);
 const schTableScrollY = ref(300);
 
+// 根据可见列动态计算表格滚动宽度
+const schTableScrollX = computed(() => {
+  const totalWidth = displayColumns.value.reduce((sum, col) => {
+    const w = (col.width as number) || 120;
+    return sum + w;
+  }, 0);
+  // 如果总宽度较小，不需要横向滚动，返回 undefined 让表格自适应
+  return totalWidth > 600 ? totalWidth : undefined;
+});
+
 const schTableScroll = computed(() => ({
-  x: 2200 as const,
+  x: schTableScrollX.value,
   y: schTableScrollY.value,
 }));
 
@@ -1039,6 +1363,16 @@ watch(() => schedulingForm.analysisType, () => {
     updateAvailInTree(schDataSource.value);
   }
 });
+
+// ========== 排产分析交货日期变化时同步到最终生产交期 ==========
+watch(
+  () => schedulingForm.deliveryDate,
+  (newDate) => {
+    if (newDate) {
+      reviewForm.finalDate = dayjs(newDate);
+    }
+  }
+);
 
 // 通过 key 在原始 schDataSource 树中查找节点（返回原始引用，非 filteredSchDataSource 的副本）
 function findItemByKey(items: ProductionItem[], key: string): ProductionItem | null {
@@ -1428,20 +1762,21 @@ async function handleSchSave() {
       await externalProductionService.addOrUpdateExternalProductionWarehousingList(warehousingList);
     }
 
-    const externalProductionList = productionNodes.map(item => {
-      const ep = new ExternalProduction();
-      ep.合同号 = schedulingProduct.orderNo || '';
-      ep.货号 = item.partNo || '';
-      ep.排产编号 = props.record?.排产编号 || '';
-      ep.需求量 = String(item.needQty || 0);
-      ep.生产数量 = String(item.produceQty || 0);
-      return ep;
-    });
+    // ========== 保存外产生产：基于外产BOM数据，编号/货号直接赋值 ==========
+    // const externalProductionList = productionNodes.map(item => {
+    //   const ep = new ExternalProduction();
+    //   ep.合同号 = schedulingProduct.orderNo || '';
+    //   ep.货号 = item.partNo || '';
+    //   ep.排产编号 = props.record?.排产编号 || '';
+    //   ep.需求量 = String(item.needQty || 0);
+    //   ep.生产数量 = String(item.produceQty || 0);
+    //   return ep;
+    // });
 
-    await externalProductionService.addOrUpdateExternalProductionList(externalProductionList);
+    // await externalProductionService.addOrUpdateExternalProductionList(externalProductionList);
 
     const bomCount = savedBomList?.length || 0;
-    message.success(`已保存 ${salesControlList.length} 条到工单销控表，${detailList.length} 条明细，${productionNodes.length} 条到外产生产，${bomCount} 条BOM数据，${pickMaterialList.length} 条领料，${warehousingList.length} 条入库`);
+    message.success(`已保存 ${salesControlList.length} 条到工单销控表，${detailList.length} 条明细，${bomCount} 条BOM数据，${pickMaterialList.length} 条领料，${warehousingList.length} 条入库`);
   } catch (error) {
     console.error('保存分析失败:', error);
     message.error('保存分析失败，请稍后重试');
@@ -1538,6 +1873,16 @@ async function loadSchedulingData() {
     }
 
     schedulingForm.analysisType = 'normal';
+
+    // 如果线圈货号已修改，从后端返回的根节点（第0层）更新头部品名和规格
+    if (isCoilModified.value && bomData.length > 0) {
+      const rootNode = bomData.find((item: any) => Number(item.层) === 0) || bomData[0];
+      if (rootNode) {
+        schedulingProduct.productName = rootNode.品名 || schedulingProduct.productName;
+        schedulingProduct.spec = rootNode.规格 || schedulingProduct.spec;
+      }
+    }
+
     const treeData = buildTreeFromData(bomData, schedulingProduct.qty);
     schDataSource.value = treeData;
     selectedLevel.value = 1;
@@ -1554,6 +1899,10 @@ async function loadSchedulingData() {
 
 // ========== 事件处理 ==========
 const handleVisibleUpdate = (val: boolean) => {
+  // 关闭页面时退出全屏，下次打开不保留全屏状态
+  if (!val) {
+    isSchedulingFullscreen.value = false;
+  }
   emit('update:visible', val);
 };
 
@@ -1570,7 +1919,7 @@ watch(
       reviewForm.finalDate = props.record.交货日期 ? dayjs(props.record.交货日期) : dayjs();
       reviewForm.resultStatus = 'pass';
       reviewForm.remark = '';
-      reviewForm.specialRequirement = '';
+      reviewForm.specialRequirement = props.record?.特殊要求 || '';
 
       // 排产分析初始化
       schedulingProduct.partNo = props.record.货号 || '';
@@ -1580,16 +1929,22 @@ watch(
       schedulingProduct.orderNo = props.record.合同号 || '';
       schedulingForm.deliveryDate = undefined;
 
-      loadSchedulingData();
+      showSchedulingPanel.value = false;
       loadWorkshopOptions();
       nextTick(() => updateTableScrollY());
 
       // 加载企业微信部门列表（重新加载，确保每次打开都刷新最新部门/用户数据）
       schedulingSelectedUserIds.value = [];
       schedulingSelectedUsers.value = [];
+      showUserSelector.value = false;
       orgSelectorRef.value?.clearSelection();
       orgSelectorRef.value?.loadDepartments();
       orgSelectorRef.value?.loadAllUsers();
+
+      // 如果记录中已有排产用户，尝试自动匹配并预选
+      initPreselectedUsers();
+    } else {
+      showSchedulingPanel.value = false;
     }
   },
   { flush: 'post' }
@@ -1638,16 +1993,66 @@ watch(
   padding: 14px 20px 16px;
 }
 
-/* ========== 左侧面板（固定比例 1:2） ========== */
+.drawer-body:has(.right-panel.collapsed) {
+  justify-content: center;
+}
+
+/* ========== 左侧面板 ========== */
 .left-panel {
-  flex: 0 0 38%;
-  max-width: 520px;
-  min-width: 400px;
+  flex: 0 0 auto;
+  width: 400px;
+  max-width: 400px;
+  min-width: 340px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 28px;
   overflow-y: auto;
   padding-right: 4px;
+  transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.left-panel.collapsed {
+  flex: 1;
+  max-width: 680px;
+  min-width: 400px;
+  margin: 0 auto;
+}
+
+/* 全屏时隐藏折叠箭头，避免误触导致页面空白，退出全屏用全屏按钮 */
+.drawer-body.scheduling-fullscreen .sch-collapse-icon {
+  display: none;
+}
+
+/* 排产分析单详情全屏占满，整页覆盖半透明黑色遮罩（放大图片的灯箱效果） */
+.drawer-body.scheduling-fullscreen {
+  position: relative;
+}
+
+.drawer-body.scheduling-fullscreen .left-panel {
+  display: none;
+}
+
+.drawer-body.scheduling-fullscreen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.drawer-body.scheduling-fullscreen .right-panel {
+  position: relative;
+  z-index: 20;
+  flex: 1;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* 全屏时隐藏底部操作栏（提示文字、取消/提交按钮）和公式提示 */
+.drawer-body.scheduling-fullscreen .footer-bar,
+.drawer-body.scheduling-fullscreen .scheduling-formula-bar {
+  display: none;
 }
 
 .left-card {
@@ -1664,6 +2069,56 @@ watch(
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.right-panel.collapsed {
+  flex: 0 0 60px;
+  min-width: 60px;
+  max-width: 64px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e8eef5 100%);
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(30, 58, 95, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* 折叠态：箭头 + 文字 */
+.scheduling-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 0;
+  color: #1e3a5f;
+  font-size: 14px;
+  font-weight: 600;
+  user-select: none;
+  transition: all 0.25s ease;
+}
+
+.scheduling-toggle:hover {
+  color: #1890ff;
+  transform: scale(1.05);
+}
+
+.toggle-arrow {
+  font-size: 24px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              color 0.25s ease;
+}
+
+.scheduling-toggle:hover .toggle-arrow {
+  transform: translateY(5px);
+}
+
+.toggle-text {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 3px;
+  white-space: nowrap;
 }
 
 .info-card {
@@ -1675,14 +2130,14 @@ watch(
 .info-card :deep(.ant-card-head) {
   min-height: 40px;
   padding: 0 18px;
-  background: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2b4b78 100%);
+  border-bottom: none;
 }
 
 .info-card :deep(.ant-card-head-title) {
   font-size: 14px;
   font-weight: 600;
-  color: #1f1f1f;
+  color: #fff;
   padding: 10px 0;
 }
 
@@ -1801,6 +2256,18 @@ watch(
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  animation: fadeInSlideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fadeInSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(28px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
 
 .scheduling-card :deep(.ant-card-head) {
@@ -1824,6 +2291,32 @@ watch(
   align-items: center;
   justify-content: space-between;
   width: 100%;
+}
+
+.sch-title-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sch-title-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sch-collapse-icon {
+  cursor: pointer;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.sch-collapse-icon:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .sch-card-title .ant-btn-link {
@@ -1881,6 +2374,64 @@ watch(
   align-items: center;
 }
 
+/* 隐藏列按钮 */
+.hide-column-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f0f5ff;
+  border-color: #b3d8ff;
+  color: #1890ff;
+  font-size: 13px;
+}
+
+.hide-column-btn:hover {
+  background: #e6f0ff !important;
+  border-color: #69b1ff !important;
+  color: #0958d9 !important;
+}
+
+/* 隐藏列下拉面板 */
+.hide-column-dropdown {
+  padding: 10px 12px;
+  min-width: 180px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: #fff;
+}
+
+.hide-column-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f1f1f;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.hide-column-check-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hide-column-item {
+  padding: 3px 0;
+}
+
+.hide-column-item :deep(.ant-checkbox-wrapper) {
+  font-size: 13px;
+  color: #434343;
+}
+
+.hide-column-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
 .sch-info-item {
   display: flex;
   align-items: center;
@@ -1933,7 +2484,7 @@ watch(
 .sch-btn-group {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 22px;
 }
 
 /* 排产表格 */
@@ -2130,6 +2681,72 @@ watch(
   overflow-y: auto;
 }
 
+/* 预设排产用户展示区 */
+.preset-user-display {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 8px 0;
+}
+
+/* 选择器返回栏 */
+.user-selector-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.user-selector-header .back-btn {
+  color: #1890ff;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+}
+
+.user-selector-header .back-btn:hover {
+  color: #0958d9;
+}
+
+.header-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #595959;
+}
+
+.preset-user-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preset-user-tags .ant-tag {
+  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.preset-user-action {
+  text-align: right;
+}
+
+.preset-user-action .ant-btn-link {
+  font-size: 13px;
+  color: #1890ff;
+}
+
+.cancel-change-hint {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #f0f0f0;
+  text-align: center;
+}
+
 /* ========== 核心校验紧凑卡片 ========== */
 .verify-card-compact :deep(.ant-card-body) {
   padding: 10px 14px;
@@ -2139,14 +2756,14 @@ watch(
 .left-card :deep(.ant-card-head) {
   min-height: 40px;
   padding: 0 14px;
-  background: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2b4b78 100%);
+  border-bottom: none;
 }
 
 .left-card :deep(.ant-card-head-title) {
   font-size: 13px;
   font-weight: 600;
-  color: #1f1f1f;
+  color: #fff;
   padding: 8px 0;
 }
 
@@ -2171,5 +2788,16 @@ watch(
   .right-panel {
     min-height: 400px;
   }
+}
+
+/* 线圈货号搜索行布局 */
+.coil-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.coil-search-row :deep(.ant-input) {
+  border-radius: 6px;
 }
 </style>

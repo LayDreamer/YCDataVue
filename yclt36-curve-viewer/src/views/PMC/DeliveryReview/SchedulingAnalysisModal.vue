@@ -315,13 +315,22 @@ const saveBomLoading = ref(false);
 const fixedColumnKeys = ref<string[]>(['index', 'partNo']);
 
 const displayColumns = computed(() => {
-  return rawColumns.map(col => {
-    const colKey = (col.key || (col as any).dataIndex) as string;
-    return {
-      ...col,
-      fixed: fixedColumnKeys.value.includes(colKey) ? 'left' : undefined,
-    };
+  const getKey = (col: any) => ((col.key || (col as any).dataIndex) as string) || '';
+
+  // 固定列按用户选择顺序提到最左侧
+  const fixedCols: any[] = [];
+  fixedColumnKeys.value.forEach((key) => {
+    const col = rawColumns.find((c: any) => getKey(c) === key);
+    if (col) {
+      fixedCols.push({ ...col, fixed: 'left' });
+    }
   });
+
+  const otherCols = rawColumns.filter(
+    (col: any) => !fixedColumnKeys.value.includes(getKey(col))
+  );
+
+  return [...fixedCols, ...otherCols];
 });
 
 // ========== 类型定义 ==========

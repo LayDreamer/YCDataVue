@@ -82,5 +82,20 @@ export const deliveryReviewService = {
       }
       throw new Error("保存评审记录失败"+errorMessage);
     }
+  },
+
+  // 根据关键字模糊查询线圈货号
+  async searchCoilsByKeyword(requestDto: PMCRequestDto): Promise<any> {
+    try {
+      const response = await service.searchCoilsByKeyword(requestDto);
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('模糊查询线圈货号失败:' + errorMessage);
+    }
   }
 }

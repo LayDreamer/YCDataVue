@@ -10,8 +10,7 @@
     <!-- 自定义标题栏 -->
     <template #title>
       <div class="custom-modal-header">
-        <span class="modal-title-text">工单总数明细 - {{ productNo }}</span>
-        <span class="modal-product-info">{{ productInfo }}</span>
+        <span class="modal-title-product-info" :title="productInfo">{{ productInfo }}</span>
       </div>
     </template>
 
@@ -151,10 +150,19 @@ function handleClose() {
 .custom-modal-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: flex-end;
   width: 100%;
-  padding-right: 24px;
+  padding-right: 56px;
+  box-sizing: border-box;
+}
+
+.modal-title-product-info {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 56px);
 }
 
 .modal-title-text {
@@ -163,16 +171,6 @@ function handleClose() {
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
-}
-
-.modal-product-info {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 70%;
 }
 
 /* body 区域 */

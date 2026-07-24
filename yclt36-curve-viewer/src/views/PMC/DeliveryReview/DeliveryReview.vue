@@ -33,7 +33,19 @@
           <a-form-item label="货号">
             <a-input v-model:value="searchForm.itemNo" placeholder="请输入" allow-clear class="search-field" />
           </a-form-item>
-          <a-form-item label="排产用户" v-if="viewMode === 'reviewed'">
+          <a-form-item label="生产类型">
+            <a-select
+              v-model:value="selectedProductionType"
+              placeholder="全部"
+              allow-clear
+              class="search-field search-select"
+            >
+              <a-select-option v-for="type in productionTypeOptions" :key="type" :value="type">
+                {{ type }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item label="排产用户">
             <a-select
               v-model:value="selectedProductionUser"
               placeholder="全部"
@@ -59,7 +71,18 @@
       </a-form>
     </a-card>
 
-    <a-card class="table-card">
+    <a-card class="table-card" :class="{ fullscreen: isFullscreen }" title="交期评审列表">
+      <template #extra>
+        <TableColumnSettings
+          v-model="columnSettings"
+          :columns="baseColumns"
+          :storage-key="storageKey"
+          :loading="loading"
+          v-model:fullscreen="isFullscreen"
+          @change="handleColumnSettingsChange"
+          @refresh="handleRefresh"
+        />
+      </template>
       <div class="table-scroll">
         <a-table
           :columns="columns"
@@ -87,6 +110,26 @@
             </a-button>
             <span v-else class="reviewed-tag">已评审</span>
           </template>
+          <template v-if="column.key === '特殊要求'">
+            <a-tooltip :title="record.特殊要求" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+              {{ truncateText(record.特殊要求, 40) }}
+            </a-tooltip>
+          </template>
+          <template v-if="column.key === '货号'">
+            <a-tooltip :title="record.货号" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+              {{ truncateText(record.货号, 40) }}
+            </a-tooltip>
+          </template>
+          <template v-if="column.key === '中文品名'">
+            <a-tooltip :title="record.中文品名" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+              {{ truncateText(record.中文品名, 40) }}
+            </a-tooltip>
+          </template>
+          <template v-if="column.key === '备注'">
+            <a-tooltip :title="record.备注" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+              {{ truncateText(record.备注, 40) }}
+            </a-tooltip>
+          </template>
         </template>
         </a-table>
       </div>
@@ -100,22 +143,25 @@
 <script lang="ts" setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { message, Grid } from 'ant-design-vue';
+import type { TableColumnsType } from 'ant-design-vue';
 import ReviewModal from '../DeliveryReview/ReviewDetailModal.vue';
 import type { PMCProductInfo } from '../DeliveryReview/types';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { RequestDto } from '../types';
 import { PMCRequestDto,PMCDeliveryReview  } from '@/api-generated/api';
+import { truncateText } from '@/utils';
+import TableColumnSettings, { type ColumnSetting } from '@/components/TableColumnSettings.vue';
 
-const baseColumns = [
+const baseColumns: TableColumnsType = [
   { title: '合同号', dataIndex: '合同号', key: '合同号' },
   { title: '排产编号', dataIndex: '排产编号', key: '排产编号' },
-  // { title: '分析单号', dataIndex: '分析单号', key: '分析单号' },
-  { title: '货号', dataIndex: '货号', key: '货号' },
-  { title: '中文品名', dataIndex: '中文品名', key: '中文品名' },
+  { title: '货号', dataIndex: '货号', key: '货号', ellipsis: true },
+  { title: '中文品名', dataIndex: '中文品名', key: '中文品名', ellipsis: true },
   { title: '线圈货号', dataIndex: '线圈货号', key: '线圈货号' },
-  // { title: '来源编号', dataIndex: '来源编号', key: '来源编号' },
   { title: '数量', dataIndex: '数量', key: '数量' },
   { title: '来源', dataIndex: '来源', key: '来源' },
+  { title: '生产类型', dataIndex: '生产类型', key: '生产类型' },
+  { title: '排产用户', dataIndex: '排产用户', key: '排产用户' },
   { title: '交货日期', dataIndex: '交货日期', key: '交货日期' },
   { title: '电压', dataIndex: '电压', key: '电压', width: 100 },
   { title: '创建时间', dataIndex: '创建时间', key: '创建时间', width: 180, sorter: (a: PMCDeliveryReview, b: PMCDeliveryReview) => {
@@ -123,23 +169,107 @@ const baseColumns = [
       const timeB = b.创建时间 ? new Date(b.创建时间).getTime() : 0;
       return timeA - timeB;
     }, defaultSortOrder: 'descend' },
-  { title: '特殊要求', dataIndex: '特殊要求', key: '特殊要求', width: 150 },
+  { title: '特殊要求', dataIndex: '特殊要求', key: '特殊要求', width: 150, ellipsis: true },
   { title: '状态', dataIndex: '状态', key: '状态', width: 100, fixed: 'right' },
   { title: '操作', key: 'action', width: 120, fixed: 'right' },
 ];
 
-const columns = computed(() => {
-  if (viewMode.value === 'reviewed') {
-    const result = [...baseColumns];
-    result.splice(9, 0, { title: '排产用户', dataIndex: '排产用户', key: '排产用户' });
+const storageKey = 'delivery-review-column-settings';
+
+/** 根据原始列生成默认列设置 */
+function buildDefaultSettings(): ColumnSetting[] {
+  return baseColumns.map((col) => ({
+    key: col.key as string,
+    title: (col.title as string) || (col.key as string),
+    visible: true,
+    fixed: (col.fixed as 'left' | 'right' | undefined) || undefined,
+  }));
+}
+
+/** 读取本地持久化配置并与默认配置合并 */
+function loadColumnSettings(): ColumnSetting[] {
+  const defaults = buildDefaultSettings();
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return defaults;
+    const saved: ColumnSetting[] = JSON.parse(raw);
+    const savedMap = new Map(saved.map((s) => [s.key, s]));
+    const result: ColumnSetting[] = [];
+
+    saved.forEach((s) => {
+      const def = defaults.find((d) => d.key === s.key);
+      if (def) {
+        result.push({
+          ...def,
+          visible: s.visible !== undefined ? s.visible : def.visible,
+          fixed: s.fixed !== undefined ? s.fixed : def.fixed,
+        });
+      }
+    });
+
+    defaults.forEach((def) => {
+      if (!savedMap.has(def.key)) {
+        result.push(def);
+      }
+    });
+
     return result;
+  } catch {
+    return defaults;
   }
-  return baseColumns;
+}
+
+const columnSettings = ref<ColumnSetting[]>(loadColumnSettings());
+
+function handleColumnSettingsChange(settings: ColumnSetting[]) {
+  columnSettings.value = settings;
+}
+
+const columns = computed(() => {
+  const settings = [...columnSettings.value];
+
+  if (viewMode.value === 'reviewed') {
+    const remarkIndex = settings.findIndex((s) => s.key === '备注');
+    if (remarkIndex === -1) {
+      const statusIndex = settings.findIndex((s) => s.key === '状态');
+      settings.splice(statusIndex >= 0 ? statusIndex : settings.length, 0, {
+        key: '备注',
+        title: '备注',
+        visible: true,
+        fixed: undefined,
+      });
+    }
+  } else {
+    const remarkIndex = settings.findIndex((s) => s.key === '备注');
+    if (remarkIndex !== -1) {
+      settings.splice(remarkIndex, 1);
+    }
+  }
+
+  const baseMap = new Map(baseColumns.map((c) => [c.key as string, c]));
+  baseMap.set('备注', { title: '备注', dataIndex: '备注', key: '备注', width: 200, ellipsis: true });
+
+  const mapped = settings
+    .filter((s) => s.visible)
+    .map((s) => {
+      const base = baseMap.get(s.key) || { title: s.title, dataIndex: s.key, key: s.key };
+      return { ...base, fixed: s.fixed };
+    });
+
+  // 安全兜底：如果所有列都被隐藏，则显示全部原始列，避免表格空白无法恢复
+  const effectiveColumns = mapped.length > 0 ? mapped : baseColumns;
+
+  // 固定列分组：左侧固定在前，右侧固定在后，中间列保持设置顺序
+  const left = effectiveColumns.filter((c) => c.fixed === 'left');
+  const center = effectiveColumns.filter((c) => !c.fixed);
+  const right = effectiveColumns.filter((c) => c.fixed === 'right');
+  return [...left, ...center, ...right];
 });
 
 const searchForm = reactive({ contractNo: "", productionNo: '', itemNo: '', coilItemNo: '', analysisNo: '' });
 const dataSource = ref<PMCDeliveryReview[]>([]);
 const selectedProductionUser = ref<string | null>(null);
+const selectedProductionType = ref<string | null>(null);
 const modalVisible = ref(false);
 const currentItem = ref<PMCDeliveryReview | null>(null);
 const pagination = reactive({
@@ -161,6 +291,7 @@ const tablePagination = computed(() => ({
 }));
 const loading = ref(false);
 const loadingCount = ref(0);
+const isFullscreen = ref(false);
 
 // 设置加载状态（使用计数器处理并发请求）
 const setLoading = (isLoading: boolean) => {
@@ -206,7 +337,11 @@ const filteredData = computed(() => {
   // 排产用户筛选（两种模式均适用）
   if (selectedProductionUser.value) {
     result = result.filter(item => item.排产用户 === selectedProductionUser.value);
-  }  
+  }
+  // 生产类型筛选
+  if (selectedProductionType.value) {
+    result = result.filter(item => item.生产类型 === selectedProductionType.value);
+  }
   return result;
 });
 
@@ -218,6 +353,14 @@ const productionUserOptions = computed(() => {
   return [...new Set(users)];
 });
 
+// 计算属性：动态生成生产类型选项（基于当前数据源，去重）
+const productionTypeOptions = computed(() => {
+  const types = dataSource.value
+    .map(item => item.生产类型)
+    .filter(t => t && t.trim() !== '');
+  return [...new Set(types)];
+});
+
 // 获取未评审数据（产品信息）
 const  fetchProductData = async () => {
   setLoading(true);
@@ -227,7 +370,6 @@ const  fetchProductData = async () => {
       货号: searchForm.itemNo
     });
     const response = await deliveryReviewService.convertToPMCDeliveryReviewList(requestDto);
-// 
     if (!response || response.length === 0) {
       dataSource.value = [];
       fullUnreviewedData.value = [];
@@ -260,7 +402,6 @@ const fetchReviewedData = async () => {
       合同号: searchForm.contractNo,
       货号: searchForm.itemNo
     }));
-    
     if (!response || response.length === 0) {
       if (viewMode.value === 'reviewed') {
         dataSource.value = [];
@@ -300,6 +441,7 @@ watch(viewMode, (newMode, oldMode) => {
   searchForm.contractNo = '';
   searchForm.itemNo = '';
   selectedProductionUser.value = null;
+  selectedProductionType.value = null;
   
   if (newMode === 'unreviewed') {
     fetchProductData();
@@ -334,6 +476,7 @@ const resetSearch = () => {
   searchForm.itemNo = '';
   searchForm.coilItemNo = '';
   selectedProductionUser.value = null;
+  selectedProductionType.value = null;
   
   if (viewMode.value === 'reviewed') {
     if (fullReviewedData.value.length) {
@@ -410,6 +553,47 @@ onMounted(() => {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+}
+.table-card.fullscreen {
+  position: fixed;
+  inset: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+.table-card.fullscreen :deep(.ant-card-body) {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+.table-card.fullscreen .table-scroll {
+  flex: 1;
+  overflow: auto;
+}
+.table-card :deep(.ant-card-head) {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2b4b78 100%);
+  border-bottom: none;
+}
+.table-card :deep(.ant-card-head-title) {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.table-card :deep(.ant-card-extra) {
+  padding: 12px 0;
+}
+.table-card :deep(.ant-card-extra .settings-trigger) {
+  color: #fff;
+}
+.table-card :deep(.ant-card-extra .settings-trigger:hover) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
 }
 .table-scroll {
   width: 100%;

@@ -97,21 +97,29 @@
     </div>
 
     <!-- 表格区域 -->
-    <div class="table-container">
-      <a-table
-        :columns="tableColumns"
-        :data-source="tableData"
-        :pagination="tablePagination"
-        :scroll="{ x: tableScrollWidth, y: tableScrollY }"
-        :loading="loading"
-        row-key="编号"
-        size="small"
-      >
-        <template #headerCell="{ column }">
-          <span class="header-cell">{{ column.title }}</span>
-        </template>
-
-        <template #bodyCell="{ column, record, text, index }">
+    <a-card class="table-card" :class="{ fullscreen: isFullscreen }" title="工单销控表" size="small">
+      <template #extra>
+        <TableColumnSettings
+          v-model="columnSettings"
+          :columns="baseColumns"
+          :storage-key="storageKey"
+          :loading="loading"
+          v-model:fullscreen="isFullscreen"
+          @change="handleColumnSettingsChange"
+          @refresh="handleRefresh"
+        />
+      </template>
+      <div class="table-scroll">
+        <a-table
+          :columns="columns"
+          :data-source="tableData"
+          :pagination="tablePagination"
+          :scroll="{ x: tableScrollWidth, y: tableScrollY }"
+          :loading="loading"
+          row-key="编号"
+          size="small"
+        >
+          <template #bodyCell="{ column, record, text, index }">
           <template v-if="column.key === 'index'">
             <span class="index-cell">{{ index + 1 }}</span>
           </template>
@@ -167,8 +175,9 @@
             <span class="number-cell">{{ formatNumber(text) }}</span>
           </template>
         </template>
-      </a-table>
-    </div>
+        </a-table>
+      </div>
+    </a-card>
 
     <WorkOrderDetailModal
       v-model:visible="detailModalVisible"
@@ -195,13 +204,14 @@ import WorkOrderDetailModal from './WorkOrderDetailModal.vue'
 import {
   statusLegendItems,
   kittingStatusOptions,
-  feedingStatusOptions,
-  generateDateRange
+  feedingStatusOptions
 } from './data'
 import { workOrderSalesControlService } from '@/services/workOrderSalesControlService'
 import { salesControlService } from '@/services/salesControlService'
 import { externalProductionService } from '@/services/externalProductionService'
 import { WorkOrderSalesControl, PMCRequestDto } from '@/api-generated/api'
+import TableColumnSettings, { type ColumnSetting } from '@/components/TableColumnSettings.vue'
+import type { TableColumnsType } from 'ant-design-vue'
 
 interface TableRowData extends WorkOrderSalesControl {
   deliveryMap: Record<string, { quantity: number; status: string } | null>
@@ -216,6 +226,7 @@ const COLUMN_WIDTHS = {
   productNo: 110,
   productName: 140,
   spec: 150,
+  schedulingUser: 110,
   total: 90,
   stored: 90,
   inProd: 90,
@@ -249,6 +260,13 @@ function isNumberColumn(key: string) {
 function formatNumber(v: unknown) {
   if (v === null || v === undefined || v === '') return '--'
   return typeof v === 'number' ? v.toLocaleString('zh-CN') : v
+}
+
+/** 将可能为带千分位逗号的数字字符串解析为数值 */
+function parseNumberValue(v: unknown): number {
+  if (v === null || v === undefined || v === '') return 0
+  const n = Number(String(v).replace(/,/g, ''))
+  return isFinite(n) ? n : 0
 }
 
 function toDateColumnKey(isoDate: string) {
@@ -329,7 +347,7 @@ function getEarliestDeliveryDate(item: WorkOrderSalesControl): string | null {
   const itemDetails = workOrderDetailList.value.filter(
     (d) => String(d.货号 || '') === String(partNo)
   )
-  const rangeDates = new Set(displayDates.value)
+  const rangeDates = new Set(deliveryDatesWithData.value)
   let earliest: string | null = null
   for (const d of itemDetails) {
     const date = (d.交货日期 || '').substring(0, 10)
@@ -340,10 +358,20 @@ function getEarliestDeliveryDate(item: WorkOrderSalesControl): string | null {
   return earliest
 }
 
-const displayDates = computed(() => {
+// 在当前日期范围内，仅保留至少存在一条交货数据的日期作为表格列
+const deliveryDatesWithData = computed(() => {
   if (!dateRange.value) return []
   const [start, end] = dateRange.value
-  return generateDateRange(start.format(dateFormat), end.format(dateFormat))
+  const startStr = start.format(dateFormat)
+  const endStr = end.format(dateFormat)
+  const dateSet = new Set<string>()
+  for (const detail of workOrderDetailList.value) {
+    const date = (detail.交货日期 || '').substring(0, 10)
+    if (date && date >= startStr && date <= endStr) {
+      dateSet.add(date)
+    }
+  }
+  return Array.from(dateSet).sort()
 })
 
 const tableScrollWidth = computed(() => {
@@ -354,6 +382,7 @@ const tableScrollWidth = computed(() => {
     COLUMN_WIDTHS.productNo +
     COLUMN_WIDTHS.productName +
     COLUMN_WIDTHS.spec +
+    COLUMN_WIDTHS.schedulingUser +
     COLUMN_WIDTHS.total +
     COLUMN_WIDTHS.stored +
     COLUMN_WIDTHS.inProd +
@@ -361,7 +390,7 @@ const tableScrollWidth = computed(() => {
     COLUMN_WIDTHS.feeding +
     COLUMN_WIDTHS.analysisDate +
     COLUMN_WIDTHS.progress
-  const dateColumnWidth = COLUMN_WIDTHS.delivery * displayDates.value.length
+  const dateColumnWidth = COLUMN_WIDTHS.delivery * deliveryDatesWithData.value.length
   return Math.max(fixedWidth + dateColumnWidth, 1200)
 })
 
@@ -409,24 +438,91 @@ const filteredData = computed(() => {
   return result
 })
 
-const tableColumns = computed(() => {
-  const baseColumns = [
-    { title: '序号', dataIndex: 'index', key: 'index', width: COLUMN_WIDTHS.index, fixed: 'left', align: 'center' },
-    { title: '车间名称', dataIndex: '车间名称', key: '车间名称', width: COLUMN_WIDTHS.workshop, fixed: 'left' },
-    { title: '商品属性', dataIndex: '商品属性', key: '商品属性', width: COLUMN_WIDTHS.attribute, fixed: 'left' },
-    { title: '货号', dataIndex: '货号', key: '货号', width: COLUMN_WIDTHS.productNo, fixed: 'left' },
-    { title: '品名', dataIndex: '品名', key: '品名', width: COLUMN_WIDTHS.productName, fixed: 'left' },
-    { title: '规格', dataIndex: '规格', key: '规格', width: COLUMN_WIDTHS.spec, fixed: 'left' },
-    { title: '工单总数', dataIndex: '工单总数', key: '工单总数', width: COLUMN_WIDTHS.total, fixed: 'left', align: 'center' },
-    { title: '已入库数', dataIndex: '已入库数', key: '已入库数', width: COLUMN_WIDTHS.stored, fixed: 'left', align: 'center' },
-    { title: '在产数量', dataIndex: '在产数量', key: '在产数量', width: COLUMN_WIDTHS.inProd, fixed: 'left', align: 'center' },
-    { title: '齐套', dataIndex: '齐套', key: '齐套', width: COLUMN_WIDTHS.kitting, fixed: 'left', align: 'center' },
-    { title: '配料', dataIndex: '配料', key: '配料', width: COLUMN_WIDTHS.feeding, fixed: 'left', align: 'center' },
-    { title: '分析日期', dataIndex: '分析日期', key: '分析日期', width: COLUMN_WIDTHS.analysisDate, fixed: 'left', align: 'center' },
-    { title: '生产完成率', dataIndex: '生产完成率', key: '生产完成率', width: COLUMN_WIDTHS.progress, fixed: 'left', align: 'center' },
-  ]
+// 基础静态列（用于列设置与表格渲染；排产用户为新增字段）
+const baseColumns: TableColumnsType = [
+  { title: '序号', dataIndex: 'index', key: 'index', width: COLUMN_WIDTHS.index, fixed: 'left', align: 'center' },
+  { title: '车间名称', dataIndex: '车间名称', key: '车间名称', width: COLUMN_WIDTHS.workshop, fixed: 'left' },
+  { title: '商品属性', dataIndex: '商品属性', key: '商品属性', width: COLUMN_WIDTHS.attribute, fixed: 'left' },
+  { title: '货号', dataIndex: '货号', key: '货号', width: COLUMN_WIDTHS.productNo, fixed: 'left' },
+  { title: '品名', dataIndex: '品名', key: '品名', width: COLUMN_WIDTHS.productName, fixed: 'left' },
+  { title: '规格', dataIndex: '规格', key: '规格', width: COLUMN_WIDTHS.spec, fixed: 'left' },
+  { title: '排产用户', dataIndex: '排产用户', key: '排产用户', width: COLUMN_WIDTHS.schedulingUser, fixed: 'left' },
+  { title: '工单总数', dataIndex: '工单总数', key: '工单总数', width: COLUMN_WIDTHS.total, fixed: 'left', align: 'center' },
+  { title: '已入库数', dataIndex: '已入库数', key: '已入库数', width: COLUMN_WIDTHS.stored, fixed: 'left', align: 'center' },
+  { title: '在产数量', dataIndex: '在产数量', key: '在产数量', width: COLUMN_WIDTHS.inProd, fixed: 'left', align: 'center' },
+  { title: '齐套', dataIndex: '齐套', key: '齐套', width: COLUMN_WIDTHS.kitting, fixed: 'left', align: 'center' },
+  { title: '配料', dataIndex: '配料', key: '配料', width: COLUMN_WIDTHS.feeding, fixed: 'left', align: 'center' },
+  { title: '分析日期', dataIndex: '分析日期', key: '分析日期', width: COLUMN_WIDTHS.analysisDate, fixed: 'left', align: 'center' },
+  { title: '生产完成率', dataIndex: '生产完成率', key: '生产完成率', width: COLUMN_WIDTHS.progress, fixed: 'left', align: 'center' },
+]
 
-  const dateColumns = displayDates.value.map(date => ({
+const storageKey = 'work-order-tracking-column-settings'
+
+/** 根据基础列生成默认列设置 */
+function buildDefaultSettings(): ColumnSetting[] {
+  return baseColumns.map((col) => ({
+    key: (col.key as string) || (col.title as string) || '',
+    title: (col.title as string) || (col.key as string),
+    visible: true,
+    fixed: (col.fixed as 'left' | 'right' | undefined) || undefined,
+  }))
+}
+
+/** 读取本地持久化配置并与默认配置合并 */
+function loadColumnSettings(): ColumnSetting[] {
+  const defaults = buildDefaultSettings()
+  try {
+    const raw = localStorage.getItem(storageKey)
+    if (!raw) return defaults
+    const saved: ColumnSetting[] = JSON.parse(raw)
+    const savedMap = new Map(saved.map((s) => [s.key, s]))
+    const result: ColumnSetting[] = []
+    saved.forEach((s) => {
+      const def = defaults.find((d) => d.key === s.key)
+      if (def) {
+        result.push({
+          ...def,
+          visible: s.visible !== undefined ? s.visible : def.visible,
+          fixed: s.fixed !== undefined ? s.fixed : def.fixed,
+        })
+      }
+    })
+    defaults.forEach((def) => {
+      if (!savedMap.has(def.key)) result.push(def)
+    })
+    return result
+  } catch {
+    return defaults
+  }
+}
+
+const columnSettings = ref<ColumnSetting[]>(loadColumnSettings())
+
+function handleColumnSettingsChange(settings: ColumnSetting[]) {
+  columnSettings.value = settings
+}
+
+const isFullscreen = ref(false)
+
+function handleRefresh() {
+  fetchData()
+}
+
+const columns = computed(() => {
+  const settings = [...columnSettings.value]
+  const baseMap = new Map(baseColumns.map((c) => [c.key as string, c]))
+  const mapped = settings
+    .filter((s) => s.visible)
+    .map((s) => {
+      const base = baseMap.get(s.key) || { title: s.title, dataIndex: s.key, key: s.key }
+      return { ...base, fixed: s.fixed }
+    })
+
+  // 安全兜底：所有列被隐藏时回退到全部基础列
+  const effectiveColumns = mapped.length > 0 ? mapped : baseColumns
+
+  // 动态交货日期列始终追加在末尾（不参与列设置）
+  const deliveryCols = deliveryDatesWithData.value.map((date) => ({
     title: date,
     dataIndex: toDateColumnKey(date),
     key: toDateColumnKey(date),
@@ -435,7 +531,10 @@ const tableColumns = computed(() => {
     align: 'center' as const,
   }))
 
-  return [...baseColumns, ...dateColumns]
+  const left = effectiveColumns.filter((c) => c.fixed === 'left')
+  const center = effectiveColumns.filter((c) => !c.fixed)
+  const right = effectiveColumns.filter((c) => c.fixed === 'right')
+  return [...left, ...center, ...right, ...deliveryCols]
 })
 
 /** 从工单明细表中获取指定货号的交货计划（参考成品销控表 getDeliveryPlansFromDetail） */
@@ -475,7 +574,7 @@ const tableData = computed<TableRowData[]>(() => {
     const planMap = getWorkOrderPlansFromDetail(item)
     const deliveryMap: Record<string, { quantity: number; status: string } | null> = {}
 
-    for (const date of displayDates.value) {
+    for (const date of deliveryDatesWithData.value) {
       const dateKey = toDateColumnKey(date)
       const planInfo = planMap.get(date)
       deliveryMap[dateKey] = planInfo
@@ -483,8 +582,14 @@ const tableData = computed<TableRowData[]>(() => {
         : null
     }
 
+    // 生产完成率实时按「已入库数 / 工单总数」计算（百分比，四舍五入）
+    const total = parseNumberValue(item.工单总数)
+    const stored = parseNumberValue(item.已入库数)
+    const completionRate = total > 0 ? Math.round((stored / total) * 100) : 0
+
     return {
       ...item,
+      生产完成率: String(completionRate),
       deliveryMap,
       _earliestDate: getEarliestDeliveryDate(item),
     } as TableRowData & { _earliestDate: string | null }
@@ -810,6 +915,7 @@ function mapApiItemToTableItem(item: any): WorkOrderSalesControl {
   record.货号 = item['货号'] || ''
   record.品名 = item['品名'] || ''
   record.规格 = item['规格'] || ''
+  record.排产用户 = item['排产用户'] || ''
   record.工单总数 = item['工单总数'] || '0'
   record.已入库数 = item['已入库数'] || '0'
   record.在产数量 = item['在产数量'] || '0'
@@ -993,12 +1099,65 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-:deep(.ant-table-thead > tr > th) {
-  background-color: #1e3a5f !important;
-  color: #ffffff;
-  font-weight: 500;
-  padding: 12px 8px;
-  font-size: 13px;
+.table-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.table-card.fullscreen {
+  position: fixed;
+  inset: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.table-card.fullscreen :deep(.ant-card-body) {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.table-card.fullscreen .table-scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+.table-card :deep(.ant-card-head) {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2b4b78 100%);
+  border-bottom: none;
+}
+
+.table-card :deep(.ant-card-head-title) {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.table-card :deep(.ant-card-extra) {
+  padding: 12px 0;
+}
+
+.table-card :deep(.ant-card-extra .settings-trigger) {
+  color: #fff;
+}
+
+.table-card :deep(.ant-card-extra .settings-trigger:hover) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 :deep(.ant-table-tbody > tr:hover > td) {
