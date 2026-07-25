@@ -1,7 +1,7 @@
 <template>
   <a-drawer
-    :visible="visible"
-    @update:visible="handleVisibleUpdate"
+    :open="visible"
+    @update:open="handleVisibleUpdate"
     placement="right"
     :width="drawerWidth"
     :body-style="{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%' }"
@@ -207,7 +207,8 @@
             :expand-icon-column-index="1"
             :indent-size="20"
             :expanded-row-keys="schExpandedKeys"
-            :row-class-name="(record: any) => record.key === selectedRowKey ? 'selected-row' : ''"
+            v-model:selected-row-key="selectedRowKey"
+            :row-click-select="false"
             :custom-row="(record: any) => ({ onClick: (e: MouseEvent) => handleRowClick(record, e) })"
             v-model:fullscreen="isSchedulingFullscreen"
             :overlay="false"
@@ -376,7 +377,9 @@
                 <span class="product-text">{{ record.name }}</span>
               </template>
               <template v-if="column.key === 'spec'">
-                <span class="spec-text">{{ record.spec || record.unit || '' }}</span>
+                <a-tooltip :title="record.spec || record.unit || ''" placement="topLeft">
+                  <span class="spec-text">{{ record.spec || record.unit || '' }}</span>
+                </a-tooltip>
               </template>
               <template v-if="column.key === 'source'">
                 <a-tag :color="getSchSourceColor(record.source)" class="m-0">{{ record.source }}</a-tag>
@@ -623,6 +626,14 @@ const presetUserNames = computed(() => {
   return props.record?.排产用户?.split(/[,，]/).map(n => n.trim()).filter(Boolean) ?? [];
 });
 
+// 计算当前评审对应的排产用户（已手动选择优先，否则取主表预设）
+function getSchedulingUserName(): string {
+  const names = schedulingSelectedUsers.value.length > 0
+    ? schedulingSelectedUsers.value.map(u => u.name)
+    : presetUserNames.value;
+  return names.join(',');
+}
+
 const onSchedulingUserSelect = (userIds: string[]) => {
   const allUsers = orgSelectorRef.value?.deptUsers || [];
   schedulingSelectedUsers.value = allUsers.filter(u => userIds.includes(u.userid));
@@ -699,12 +710,9 @@ const validateCoil = async () => {
 // ========== 提交评审 ==========
 // 真正提交评审结果到后端
 const doSubmitReview = async () => {
-  const finalUserNames = schedulingSelectedUsers.value.length > 0
-    ? schedulingSelectedUsers.value.map(u => u.name)
-    : presetUserNames.value;
   const mappedStatus = reviewForm.resultStatus === 'pass' ? '评审通过' : '评审驳回';
   const { 编号, 用户编号, 合同号, 排产编号, 中文品名, 中文规格, 分析单号, 来源编号, 来源, 工单单号, 电压, 数量, 生产类型 } = props.record!;
-  const 排产用户 = finalUserNames.join(',');
+  const 排产用户 = getSchedulingUserName();
 
   // 线圈货号已修改且校验通过时，无论是否展开排产分析，提交均使用替换括号内线圈货号后的新完整货号
   const finalPartNo = isCoilModified.value
@@ -1266,6 +1274,9 @@ function handleSchDeleteRoot() {
 
 // ========== 生成唯一 key ==========
 let keyCounter = 0;
+// 竞态保护：每次 loadSchedulingData 调用自增，await 返回后比对当前值；
+// 若已被新调用覆盖则丢弃旧响应，避免“多次触发导致旧 partNo 的响应覆盖新数据”
+let loadSeq = 0;
 function generateKey(prefix: string, index: number) {
   return `${prefix}-${index}-${++keyCounter}`;
 }
@@ -1629,7 +1640,8 @@ async function handleSchSave() {
       }
     });
 
-    // 工单销控明细：遍历当前主表记录，货号/品名/规格取自主表，区别仅在于交货日期与工单单号
+
+    // 工单销控表明细：遍历当前主表记录，货号/品名/规格取自主表，区别仅在于交货日期与工单单号
     // 生产数/待产数取本次 BOM 的原始数量（非主表累加值），保证每次保存时记录的是当次实际数量
     const mergedQtyMap = new Map<string, number>();
     for (const node of mergedNodes) {
@@ -1637,11 +1649,18 @@ async function handleSchSave() {
       if (key) mergedQtyMap.set(key, node.produceQty > 0 ? node.produceQty : (node.needQty || 0));
     }
 
+    // 当前评审对应的排产用户（明细与主表共用同一排产用户）
+    const schedulingUser = getSchedulingUserName();
+
     const detailList = salesControlList.map(item => {
       const detail = new WorkOrderSalesControlDetail();
       detail.货号 = item.货号 || '';
       detail.品名 = item.品名 || '';
       detail.规格 = item.规格 || '';
+      // 将对应的排产用户写入明细：优先取该货号在工单销控主表中的排产用户，
+      // 再回退到本次评审选定的排产用户（主表预设），保证每条明细各持一个排产用户
+      const existingSC = existingMap.get(item.货号 || '');
+      detail.排产用户 = existingSC?.排产用户 || schedulingUser || props.record?.排产用户 || '';
       // 关联主表自身编号
       const no = mainNoMap.get(item.货号 || '');
       if (no) detail.父级编号 = no;
@@ -1816,12 +1835,26 @@ async function loadSchedulingData() {
   if (!schedulingProduct.partNo) return;
   schedulingLoading.value = true;
   keyCounter = 0;
+  // 竞态保护：本次调用的序列号
+  const mySeq = ++loadSeq;
   try {
     const requestDto = new PMCRequestDto({
       货号: schedulingProduct.partNo,
       排产编号: props.record?.排产编号,
     });
     const bomData = await salesControlService.getSchedulingAnalysisList(requestDto);
+
+    // 竞态保护：若本次调用期间已有更新的 loadSchedulingData 启动，丢弃本次响应
+    if (mySeq !== loadSeq) return;
+
+    // 临时排查：后端返回非空但表格空，定位哪个环节丢了数据
+    console.log('[loadSchedulingData] 后端返回', {
+      partNo: schedulingProduct.partNo,
+      scheduleNo: props.record?.排产编号,
+      bomDataLength: bomData.length,
+      firstLevel: Number(bomData[0]?.层),
+      firstPartNo: bomData[0]?.货号,
+    });
 
     if (!bomData || !bomData.length) {
       message.warning('未获取到排产分析数据');
@@ -1841,12 +1874,38 @@ async function loadSchedulingData() {
     }
 
     const treeData = buildTreeFromData(bomData, schedulingProduct.qty);
+    console.log('[loadSchedulingData] 树形转换', {
+      treeDataLength: treeData.length,
+      firstTreeLevel: treeData[0]?.level,
+      firstTreePartNo: treeData[0]?.partNo,
+    });
+
     schDataSource.value = treeData;
     selectedLevel.value = 1;
     selectedRowKey.value = '';          // 切换数据时清空选中行
     schExpandedKeys.value = getExpandedKeysForFiltered(filteredSchDataSource.value);
+
+    console.log('[loadSchedulingData] 过滤后', {
+      filteredLength: filteredSchDataSource.value.length,
+      selectedLevel: selectedLevel.value,
+      firstFilteredLevel: filteredSchDataSource.value[0]?.level,
+      firstFilteredKey: filteredSchDataSource.value[0]?.key,
+      // 完整快照，用于判断是过滤环节丢数据还是表格渲染丢数据
+      filteredSnapshot: filteredSchDataSource.value.map((i: ProductionItem) => ({
+        key: i.key,
+        level: i.level,
+        partNo: i.partNo,
+        childrenLen: i.children?.length ?? 0,
+      })),
+    });
+
     // 在 schExpandedKeys 设置之后再计算层序号（依赖 schExpandedKeys）
     reassignLevelIndex(schDataSource.value);
+
+    console.log('[loadSchedulingData] 层序号计算后', {
+      finalDataSourceLength: schDataSource.value.length,
+      finalFilteredLength: filteredSchDataSource.value.length,
+    });
   } catch (error) {
     console.error('加载排产分析数据失败:', error);
     message.error('加载排产分析数据失败，请稍后重试');
@@ -1867,36 +1926,45 @@ const handleVisibleUpdate = (val: boolean) => {
   emit('update:visible', val);
 };
 
-// 监听弹窗打开，初始化所有数据
+// 监听弹窗打开/record 变化，初始化所有数据
+// 必须同时监听 props.record：外层 DeliveryReview 被 keep-alive 缓存，
+// 组件重新激活时 props.visible 可能从 false 直接变为 true，但 record 的更新与
+// visible 变化可能不在同一 tick；单独监听 visible 会导致用旧 record 初始化，
+// 从而 partNo/排产编号错误，排产数据为空。
 watch(
-  () => props.visible,
-  (newVal) => {
-    if (newVal && props.record) {
+  [() => props.visible, () => props.record],
+  ([newVisible, newRecord]) => {
+    if (newVisible && newRecord) {
       // 重置提交状态
       reviewSubmitted.value = false;
       showSchedulingPanel.value = false;
 
       // 评审表单初始化
-      reviewForm.coilItemNo = props.record.线圈货号 || '';
+      reviewForm.coilItemNo = newRecord.线圈货号 || '';
       verifyStatus.value = 'none';
       validatingCoil.value = false;
 
-      reviewForm.finalDate = props.record.交货日期 ? dayjs(props.record.交货日期) : dayjs();
+      reviewForm.finalDate = newRecord.交货日期 ? dayjs(newRecord.交货日期) : dayjs();
       reviewForm.resultStatus = 'pass';
       reviewForm.remark = '';
-      reviewForm.specialRequirement = props.record?.特殊要求 || '';
+      reviewForm.specialRequirement = newRecord.特殊要求 || '';
 
       // 排产分析初始化
-      schedulingProduct.partNo = props.record.货号 || '';
-      schedulingProduct.productName = props.record.中文品名 || '';
-      schedulingProduct.spec = props.record.中文规格 || '';
-      schedulingProduct.qty = Number(props.record.数量) || 1;
-      schedulingProduct.orderNo = props.record.合同号 || '';
+      schedulingProduct.partNo = newRecord.货号 || '';
+      schedulingProduct.productName = newRecord.中文品名 || '';
+      schedulingProduct.spec = newRecord.中文规格 || '';
+      schedulingProduct.qty = Number(newRecord.数量) || 1;
+      schedulingProduct.orderNo = newRecord.合同号 || '';
       schedulingForm.deliveryDate = undefined;
+
+      // 清空上一次的排产数据状态（keep-alive 缓存会导致旧数据残留）
+      schDataSource.value = [];
+      selectedLevel.value = 1;
+      schExpandedKeys.value = [];
+      selectedRowKey.value = '';
 
       showSchedulingPanel.value = false;
       loadWorkshopOptions();
-  
 
       // 加载企业微信部门列表（重新加载，确保每次打开都刷新最新部门/用户数据）
       schedulingSelectedUserIds.value = [];
@@ -1908,11 +1976,12 @@ watch(
 
       // 如果记录中已有排产用户，尝试自动匹配并预选
       initPreselectedUsers();
-    } else {
+    } else if (!newVisible) {
       showSchedulingPanel.value = false;
+      reviewSubmitted.value = false;
     }
   },
-  { flush: 'post' }
+  { flush: 'post', immediate: true }
 );
 </script>
 
@@ -2037,6 +2106,27 @@ watch(
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* 右侧 Spin 容器撑满高度：让 a-spin 在 flex column 的 right-panel 内成为弹性容器，
+   否则 .scheduling-card 高度会由表格内容决定，形成"内容定高"死循环，
+   导致表格只显示几行而无法与左侧"评审结论"卡片底部对齐 */
+.right-panel :deep(.ant-spin-nested-loading) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.right-panel :deep(.ant-spin-container) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
 }
 
 .info-card {
@@ -2447,6 +2537,10 @@ watch(
 .spec-text {
   color: #595959;
   font-size: 12px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 排产公式栏 */

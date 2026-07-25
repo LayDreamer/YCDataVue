@@ -444,18 +444,18 @@ const filteredData = computed(() => {
 const baseColumns: TableColumnsType = [
   { title: '序号', dataIndex: 'index', key: 'index', width: COLUMN_WIDTHS.index, fixed: 'left', align: 'center' },
   { title: '车间名称', dataIndex: '车间名称', key: '车间名称', width: COLUMN_WIDTHS.workshop, fixed: 'left' },
-  { title: '商品属性', dataIndex: '商品属性', key: '商品属性', width: COLUMN_WIDTHS.attribute, fixed: 'left' },
   { title: '货号', dataIndex: '货号', key: '货号', width: COLUMN_WIDTHS.productNo, fixed: 'left' },
   { title: '品名', dataIndex: '品名', key: '品名', width: COLUMN_WIDTHS.productName, fixed: 'left' },
   { title: '规格', dataIndex: '规格', key: '规格', width: COLUMN_WIDTHS.spec, fixed: 'left' },
-  { title: '排产用户', dataIndex: '排产用户', key: '排产用户', width: COLUMN_WIDTHS.schedulingUser, fixed: 'left' },
-  { title: '工单总数', dataIndex: '工单总数', key: '工单总数', width: COLUMN_WIDTHS.total, fixed: 'left', align: 'center' },
-  { title: '已入库数', dataIndex: '已入库数', key: '已入库数', width: COLUMN_WIDTHS.stored, fixed: 'left', align: 'center' },
-  { title: '在产数量', dataIndex: '在产数量', key: '在产数量', width: COLUMN_WIDTHS.inProd, fixed: 'left', align: 'center' },
-  { title: '齐套', dataIndex: '齐套', key: '齐套', width: COLUMN_WIDTHS.kitting, fixed: 'left', align: 'center' },
-  { title: '配料', dataIndex: '配料', key: '配料', width: COLUMN_WIDTHS.feeding, fixed: 'left', align: 'center' },
-  { title: '分析日期', dataIndex: '分析日期', key: '分析日期', width: COLUMN_WIDTHS.analysisDate, fixed: 'left', align: 'center' },
-  { title: '生产完成率', dataIndex: '生产完成率', key: '生产完成率', width: COLUMN_WIDTHS.progress, fixed: 'left', align: 'center' },
+  { title: '商品属性', dataIndex: '商品属性', key: '商品属性', width: COLUMN_WIDTHS.attribute },
+  { title: '排产用户', dataIndex: '排产用户', key: '排产用户', width: COLUMN_WIDTHS.schedulingUser },
+  { title: '工单总数', dataIndex: '工单总数', key: '工单总数', width: COLUMN_WIDTHS.total, align: 'center' },
+  { title: '已入库数', dataIndex: '已入库数', key: '已入库数', width: COLUMN_WIDTHS.stored, align: 'center' },
+  { title: '在产数量', dataIndex: '在产数量', key: '在产数量', width: COLUMN_WIDTHS.inProd, align: 'center' },
+  { title: '齐套', dataIndex: '齐套', key: '齐套', width: COLUMN_WIDTHS.kitting, align: 'center' },
+  { title: '配料', dataIndex: '配料', key: '配料', width: COLUMN_WIDTHS.feeding, align: 'center' },
+  { title: '分析日期', dataIndex: '分析日期', key: '分析日期', width: COLUMN_WIDTHS.analysisDate, align: 'center' },
+  { title: '生产完成率', dataIndex: '生产完成率', key: '生产完成率', width: COLUMN_WIDTHS.progress, align: 'center' },
 ]
 
 const storageKey = 'work-order-tracking-column-settings'
@@ -725,6 +725,7 @@ function generateWorkOrderDetail(record: TableRowData) {
   return matched.map((d, idx) => ({
     id: idx + 1,
     工单单号: d.工单单号 || '-',
+    排产用户: d.排产用户 || '-',
     交货日期: d.交货日期 || '-',
     生产数: Number(d.生产数) || 0,
     入库数: Number(d.入库数) || 0,

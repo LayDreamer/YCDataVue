@@ -139,7 +139,7 @@
 
     <!-- 新增弹窗 -->
     <a-modal
-      v-model:visible="addVisible"
+      v-model:open="addVisible"
       :title="addType === 'pick' ? '新增外产领料' : '新增外产入库'"
       @ok="handleAdd"
       @cancel="addVisible = false"
@@ -157,7 +157,7 @@
 
     <!-- 删除弹窗 -->
     <a-modal
-      v-model:visible="deleteVisible"
+      v-model:open="deleteVisible"
       :title="deleteType === 'pick' ? '删除外产领料' : deleteType === 'warehousing' ? '删除外产入库' : deleteType === 'workOrder' ? '删除工单销控表' : '删除工单销控表明细'"
       @ok="handleDelete"
       @cancel="deleteVisible = false"

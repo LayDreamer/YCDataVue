@@ -130,7 +130,7 @@ export const columns: TableColumnsType = [
   { title: '层', key: 'level', width: 60, align: 'center' },
   { title: '产品属性', dataIndex: 'attr', width: 100 },
   { title: '品名', key: 'name', width: 220 },
-  { title: '规格', dataIndex: 'spec', width: 120 },
+  { title: '规格', dataIndex: 'spec', width: 300, ellipsis: true },
   { title: '来源', key: 'source', width: 80, align: 'center' },
   { title: '用量', dataIndex: 'usage', width: 70, align: 'center' },
   { title: '需求量', dataIndex: 'needQty', width: 90, align: 'center' },

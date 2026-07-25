@@ -1,14 +1,16 @@
 <template>
   <a-auto-complete
-    v-model:value="inputValue"
+    v-bind="rootAttrs"
+    :value="inputValue"
     :options="options"
     :filter-option="false"
     :placeholder="placeholder"
     :disabled="disabled"
-    :dropdown-class-name="dropdownClassName"
+    :popup-class-name="popupClassName"
     :dropdown-style="dropdownStyle"
     :dropdown-match-select-width="false"
     :get-popup-container="getPopupContainer"
+    @update:value="onAutoCompleteUpdate"
     @search="onSearch"
     @select="onSelect"
   >
@@ -58,9 +60,23 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onUnmounted } from 'vue';
+import { ref, computed, watch, onUnmounted, useAttrs } from 'vue';
 import { debounce } from 'lodash';
 import { LoadingOutlined } from '@ant-design/icons-vue';
+
+// 关键：禁止 Vue 自动把父组件传入的 attrs 透传到根元素 <a-auto-complete>，
+// 否则父组件的 v-model:value 产生的 onUpdate:value 会与本组件显式绑定的 @update:value
+// 合并成数组，触发 a-auto-complete -> a-select 内部的 prop 类型校验失败：
+//   "Invalid prop: type check failed for prop 'onUpdate:value'. Expected Function, got Array."
+defineOptions({ inheritAttrs: false });
+
+// 兜底：即便未来误改 inheritAttrs，也手动剥离 onUpdate:value 后再回绑给根元素
+const attrs = useAttrs();
+const rootAttrs = computed(() => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { 'onUpdate:value': _drop1, onUpdateValue: _drop2, ...rest } = attrs as Record<string, any>;
+  return rest;
+});
 
 export interface SearchSelectColumn {
   /** 列标题（下拉表头显示） */
@@ -76,8 +92,8 @@ export interface SearchSelectColumn {
 }
 
 const props = defineProps<{
-  /** 当前选中值（v-model） */
-  modelValue?: string;
+  /** 当前选中值（v-model:value） */
+  value?: string;
   /** 列定义 */
   columns: SearchSelectColumn[];
   /** 远程搜索函数：传入关键字，返回数据源数组（对象 key 对应 columns.dataIndex） */
@@ -96,13 +112,13 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: string): void;
+  (e: 'update:value', val: string): void;
   (e: 'select', record: Record<string, any>): void;
 }>();
 
-const inputValue = ref(props.modelValue ?? '');
+const inputValue = ref(props.value ?? '');
 watch(
-  () => props.modelValue,
+  () => props.value,
   (v) => {
     if (v !== inputValue.value) inputValue.value = v ?? '';
   }
@@ -121,7 +137,7 @@ const options = computed(() =>
   }))
 );
 
-const dropdownClassName = 'ss-search-dropdown';
+const popupClassName = 'ss-search-dropdown';
 const dropdownStyle = computed(() => ({ width: `${props.dropdownWidth ?? 560}px` }));
 const scrollStyle = computed(() => ({
   width: `${props.dropdownWidth ?? 560}px`,
@@ -160,8 +176,24 @@ async function doSearch(kw: string) {
 const debouncedSearch = debounce(doSearch, props.debounceTime ?? 300);
 
 function onSearch(kw: string) {
-  emit('update:modelValue', kw);
+  emit('update:value', kw);
   debouncedSearch(kw);
+}
+
+/**
+ * a-auto-complete 的 update:value 事件处理：
+ * 1. 同步更新内部 inputValue（受控值）
+ * 2. 向外 emit update:value 让父组件的 v-model:value 拿到值
+ * 3. 触发防抖搜索
+ *
+ * 不能在这里用 v-model:value="inputValue"，因为父组件的 v-model:value 会被 SearchSelect 的 $attrs
+ * 自动继承到根 a-auto-complete，导致 onUpdate:value 被合并为数组，触发 Vue prop 类型校验失败：
+ *   "Invalid prop: type check failed for prop 'onUpdate:value'. Expected Function, got Array."
+ */
+function onAutoCompleteUpdate(v: string) {
+  inputValue.value = v;
+  emit('update:value', v);
+  debouncedSearch(v);
 }
 
 function getPopupContainer() {
@@ -176,7 +208,7 @@ function onScroll(e: Event) {
 function applySelect(row: Record<string, any>) {
   const val = String(row[valueField.value] ?? '');
   inputValue.value = val;
-  emit('update:modelValue', val);
+  emit('update:value', val);
   emit('select', row);
   // 选中后清空下拉数据，关闭面板
   displayData.value = [];

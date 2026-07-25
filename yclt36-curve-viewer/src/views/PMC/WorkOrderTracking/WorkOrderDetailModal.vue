@@ -70,6 +70,7 @@ import { computed } from 'vue'
 interface WorkOrderItem {
   id: number
   工单单号: string
+  排产用户: string
   交货日期: string
   生产数: number
   入库数: number
@@ -113,7 +114,8 @@ const productInfo = computed(() => `${props.productNo},${props.productName},${pr
 
 const workOrderColumns = [
   { title: '序号', dataIndex: 'id', key: 'id', width: 60, align: 'center' },
-  { title: '工单单号', dataIndex: '工单单号', key: '工单单号', width: 160 },
+  { title: '工单单号', dataIndex: '工单单号', key: '工单单号', width: 120 },
+  { title: '排产用户', dataIndex: '排产用户', key: '排产用户', width: 120, align: 'center' },
   { title: '交货日期', dataIndex: '交货日期', key: '交货日期', width: 120, align: 'center' },
   { title: '生产数', dataIndex: '生产数', key: '生产数', width: 100, align: 'center' },
   { title: '入库数', dataIndex: '入库数', key: '入库数', width: 100, align: 'center' },

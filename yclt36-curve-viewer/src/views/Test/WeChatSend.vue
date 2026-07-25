@@ -151,7 +151,7 @@
 
     <!-- 调试弹窗 -->
     <a-modal
-      v-model:visible="debugVisible"
+      v-model:open="debugVisible"
       title="调试面板"
       width="680px"
       :footer="null"

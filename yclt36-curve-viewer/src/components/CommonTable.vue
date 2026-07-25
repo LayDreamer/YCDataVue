@@ -42,8 +42,8 @@
           :expand-icon-column-index="expandIconColumnIndex"
           :indent-size="indentSize"
           :expanded-row-keys="expandedRowKeys"
-          :row-class-name="rowClassName"
-          :custom-row="customRow"
+          :row-class-name="mergedRowClassName"
+          :custom-row="mergedCustomRow"
           @expand="(expanded: boolean, record: any) => emit('expand', expanded, record)"
         >
           <template v-if="$slots.expandIcon" #expandIcon="slotProps">
@@ -106,8 +106,8 @@
           :expand-icon-column-index="expandIconColumnIndex"
           :indent-size="indentSize"
           :expanded-row-keys="expandedRowKeys"
-          :row-class-name="rowClassName"
-          :custom-row="customRow"
+          :row-class-name="mergedRowClassName"
+          :custom-row="mergedCustomRow"
           @expand="(expanded: boolean, record: any) => emit('expand', expanded, record)"
         >
           <template v-if="$slots.expandIcon" #expandIcon="slotProps">
@@ -179,6 +179,10 @@ interface Props {
   autoScrollX?: boolean;
   /** 是否根据容器高度自动计算纵向滚动高度 */
   autoScrollY?: boolean;
+  /** 是否开启点击行自动选中并高亮（默认 true） */
+  rowClickSelect?: boolean;
+  /** 当前选中行 key（v-model:selectedRowKey），用于高亮与控制 */
+  selectedRowKey?: string | number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -190,6 +194,7 @@ const props = withDefaults(defineProps<Props>(), {
   overlay: true,
   autoScrollX: false,
   autoScrollY: false,
+  rowClickSelect: true,
 });
 
 const emit = defineEmits<{
@@ -197,7 +202,61 @@ const emit = defineEmits<{
   (e: 'change', settings: ColumnSetting[]): void;
   (e: 'expand', expanded: boolean, record: any): void;
   (e: 'update:fullscreen', value: boolean): void;
+  (e: 'update:selectedRowKey', value: string | number | undefined): void;
 }>();
+
+// ========== 选中行高亮 ==========
+// 选中 key：支持外部 v-model:selectedRowKey 控制，未传时使用内部状态
+const internalSelectedKey = ref<string | number | undefined>(undefined);
+const selectedKey = computed<string | number | undefined>({
+  get: () => (props.selectedRowKey !== undefined ? props.selectedRowKey : internalSelectedKey.value),
+  set: (val) => {
+    internalSelectedKey.value = val;
+    emit('update:selectedRowKey', val);
+  },
+});
+
+// 取行 key（兼容 rowKey 为函数或字段名）
+function getRowKeyValue(record: any): any {
+  if (typeof props.rowKey === 'function') return props.rowKey(record);
+  return record[props.rowKey as string];
+}
+
+// 合并外部传入的 rowClassName，并在选中时追加 selected-row
+function mergedRowClassName(record: any, index: number): string {
+  const base =
+    typeof props.rowClassName === 'function'
+      ? props.rowClassName(record, index)
+      : (props.rowClassName || '');
+  const isSelected =
+    selectedKey.value !== undefined &&
+    selectedKey.value !== null &&
+    selectedKey.value !== '' &&
+    getRowKeyValue(record) === selectedKey.value;
+  if (isSelected) return base ? `${base} selected-row` : 'selected-row';
+  return base || '';
+}
+
+// 合并外部传入的 customRow，开启点击选中时包裹 onClick 实现自动选中
+// 点击交互元素（输入框、下拉、按钮等）不触发选中，避免与单元格内的编辑控件冲突
+function mergedCustomRow(record: any, index?: number) {
+  const base = props.customRow ? props.customRow(record, index) : {};
+  if (!props.rowClickSelect) return base;
+  const originalClick = base.onClick;
+  return {
+    ...base,
+    onClick: (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const inInteractive = target?.closest(
+        'input, select, textarea, button, a, [contenteditable="true"], .ant-input-number, .ant-select, .cell-input-small'
+      );
+      if (!inInteractive) {
+        selectedKey.value = getRowKeyValue(record);
+      }
+      if (originalClick) originalClick(e);
+    },
+  };
+}
 
 // ========== 列设置 ==========
 function getColKey(col: any): string {
@@ -461,6 +520,17 @@ const flatClasses = computed(() => ({
   z-index: 1000;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========== 选中行高亮（通用） ========== */
+.common-table-card :deep(.ant-table-tbody > tr.selected-row > td),
+.common-table--flat :deep(.ant-table-tbody > tr.selected-row > td) {
+  background: #e6f7ff !important;
+}
+
+.common-table-card :deep(.ant-table-tbody > tr.selected-row:hover > td),
+.common-table--flat :deep(.ant-table-tbody > tr.selected-row:hover > td) {
+  background: #bae7ff !important;
 }
 
 .common-table-card.fullscreen :deep(.ant-card-body) {

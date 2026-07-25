@@ -1,7 +1,7 @@
 <template>
   <a-drawer
-    :visible="visible"
-    @update:visible="handleVisibleUpdate"
+    :open="visible"
+    @update:open="handleVisibleUpdate"
     title="排产分析单详情"
     placement="right"
     :width="drawerWidth"

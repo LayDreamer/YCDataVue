@@ -231,9 +231,15 @@ const unreviewedCount = ref(0);
 const reviewedCount = ref(0);
 
 
+// 仅允许展示的生产类型：其他类型（维修、备货等）在列表中过滤掉
+const ALLOWED_PRODUCTION_TYPES = ['普通订单', '样品'];
+
 // 计算属性：根据当前模式及筛选条件过滤数据
 const filteredData = computed(() => {
-  let result = [...dataSource.value];
+  // 仅展示允许的生产类型（普通订单、样品），其他类型一律过滤
+  let result = dataSource.value.filter(item =>
+    ALLOWED_PRODUCTION_TYPES.includes(item.生产类型 ?? '')
+  );
   if (searchForm.contractNo) {
   
   // 两种模式都进行前端过滤合同号、分析单号
@@ -266,13 +272,8 @@ const productionUserOptions = computed(() => {
   return [...new Set(users)];
 });
 
-// 计算属性：动态生成生产类型选项（基于当前数据源，去重）
-const productionTypeOptions = computed(() => {
-  const types = dataSource.value
-    .map(item => item.生产类型)
-    .filter(t => t && t.trim() !== '');
-  return [...new Set(types)];
-});
+// 生产类型选项固定为允许展示的两种（与 ALLOWED_PRODUCTION_TYPES 保持一致）
+const productionTypeOptions = ALLOWED_PRODUCTION_TYPES;
 
 // 获取未评审数据（产品信息）
 const  fetchProductData = async () => {
@@ -298,7 +299,10 @@ const  fetchProductData = async () => {
 
     dataSource.value = mappedData;
     fullUnreviewedData.value = [...mappedData];
-    unreviewedCount.value = mappedData.length;
+    // 统计仅计允许展示的生产类型（普通订单、样品）
+    unreviewedCount.value = mappedData.filter(item =>
+      ALLOWED_PRODUCTION_TYPES.includes(item.生产类型 ?? '')
+    ).length;
   } catch (error) {
     console.error('获取产品数据失败:', error);
     message.error('加载数据失败，请稍后重试');
@@ -338,7 +342,10 @@ const mappedData: PMCDeliveryReview[]=response;
       dataSource.value = mappedData;
     }
     fullReviewedData.value = [...mappedData];
-    reviewedCount.value = mappedData.length;
+    // 统计仅计允许展示的生产类型（普通订单、样品）
+    reviewedCount.value = mappedData.filter(item =>
+      ALLOWED_PRODUCTION_TYPES.includes(item.生产类型 ?? '')
+    ).length;
   } catch (error) {
     console.error('获取已评审数据失败:', error);
     message.error('加载已评审数据失败，请稍后重试');

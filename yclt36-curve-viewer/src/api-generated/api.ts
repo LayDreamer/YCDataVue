@@ -4001,6 +4001,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
     待产数?: string | undefined;
     父级编号?: string | undefined;
     分析单号?: string | undefined;
+    排产用户?: string | undefined;
 
     constructor(data?: IWorkOrderSalesControlDetail) {
         if (data) {
@@ -4031,6 +4032,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
             this.待产数 = _data["待产数"];
             this.父级编号 = _data["父级编号"];
             this.分析单号 = _data["分析单号"];
+            this.排产用户 = _data["排产用户"];
         }
     }
 
@@ -4061,6 +4063,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
         data["待产数"] = this.待产数;
         data["父级编号"] = this.父级编号;
         data["分析单号"] = this.分析单号;
+        data["排产用户"] = this.排产用户;
         return data;
     }
 }
@@ -4085,6 +4088,7 @@ export interface IWorkOrderSalesControlDetail {
     待产数?: string | undefined;
     父级编号?: string | undefined;
     分析单号?: string | undefined;
+    排产用户?: string | undefined;
 }
 
 export class ApiException extends Error {
