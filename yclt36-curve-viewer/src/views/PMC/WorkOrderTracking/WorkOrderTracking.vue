@@ -18,7 +18,8 @@
             :type="showKittingAnalysis ? 'primary' : 'default'"
             size="small"
             class="analysis-btn"
-            @click="showKittingAnalysis = !showKittingAnalysis"
+            :loading="analyzing"
+            @click="handleAnalysisToggle"
           >
             齐套、配料分析
           </a-button>
@@ -115,7 +116,7 @@
           :data-source="tableData"
           :pagination="tablePagination"
           :scroll="{ x: tableScrollWidth, y: tableScrollY }"
-          :loading="loading"
+          :loading="loading || analyzing"
           row-key="编号"
           size="small"
         >
@@ -290,6 +291,7 @@ function updateTableHeight() {
 }
 const activeTab = ref('workOrderTracking')
 const loading = ref(false)
+const analyzing = ref(false)
 const dataSource = ref<WorkOrderSalesControl[]>([])
 
 // 工单明细列表（用于交货日期列按明细交货日期分组展示，参考成品销控表）
@@ -506,6 +508,60 @@ const isFullscreen = ref(false)
 
 function handleRefresh() {
   fetchData()
+}
+
+function handleAnalysisToggle() {
+  if (analyzing.value) return
+  if (showKittingAnalysis.value) {
+    resetAnalysis()
+    showKittingAnalysis.value = false
+  } else {
+    runKittingAnalysis()
+  }
+}
+
+/** 齐套、配料分析：根据物料需求明细中所有子件的缺料数判断状态 */
+async function runKittingAnalysis() {
+  analyzing.value = true
+  try {
+    const now = dayjs().format('YYYY-MM-DD HH:mm:ss')
+    for (const item of dataSource.value) {
+      if (!item.货号) continue
+
+      const materialRows = await generateMaterialDetail(item as TableRowData)
+      if (materialRows.length === 0) {
+        item.齐套 = '未分析'
+        item.配料 = '未配料'
+        continue
+      }
+
+      // 配料：所有子件 缺料数(需求数-已出库数) 都为 0 才算配齐
+      const allFeedingReady = materialRows.every((row: any) => Number(row.缺料数) === 0)
+      // 齐套：所有子件 仓库数-需求数 都大于 0 才算齐套，否则缺料
+      const allKittingReady = materialRows.every(
+        (row: any) => Number(row.仓库数) - Number(row.需求数) > 0
+      )
+      item.齐套 = allKittingReady ? '齐套' : '缺料'
+      item.配料 = allFeedingReady ? '配齐' : '配料中'
+      item.分析日期 = now
+    }
+    showKittingAnalysis.value = true
+    message.success('齐套、配料分析完成')
+  } catch (error) {
+    console.error('齐套、配料分析失败:', error)
+    message.error('分析失败')
+    showKittingAnalysis.value = false
+  } finally {
+    analyzing.value = false
+  }
+}
+
+function resetAnalysis() {
+  for (const item of dataSource.value) {
+    item.齐套 = '未分析'
+    item.配料 = '未配料'
+    item.分析日期 = ''
+  }
 }
 
 const columns = computed(() => {
