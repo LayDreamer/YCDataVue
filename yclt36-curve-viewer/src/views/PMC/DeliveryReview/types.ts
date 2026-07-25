@@ -1,4 +1,5 @@
 import { ERPBase } from "../types";
+import { TableColumnsType } from "ant-design-vue";
 
 
 export interface PMCProductInfo extends ERPBase {
@@ -120,3 +121,31 @@ export interface SchedulingAnalysis extends ERPBase {
     客户简称?: string;
     排产编号?: string;
 }
+
+// 排产分析表格列配置（交期评审详情弹窗使用，独立维护，不引用 SchedulingAnalysis/types）
+export const columns: TableColumnsType = [
+  { title: '序号', key: 'index', width: 60, fixed: 'left', align: 'center' },
+  { title: '层序号', dataIndex: 'levelIndex', minWidth: 150,  fixed: 'left', align: 'left' },
+  { title: '货号', dataIndex: 'partNo', width: 220, fixed: 'left' },
+  { title: '层', key: 'level', width: 60, align: 'center' },
+  { title: '产品属性', dataIndex: 'attr', width: 100 },
+  { title: '品名', key: 'name', width: 220 },
+  { title: '规格', dataIndex: 'spec', width: 120 },
+  { title: '来源', key: 'source', width: 80, align: 'center' },
+  { title: '用量', dataIndex: 'usage', width: 70, align: 'center' },
+  { title: '需求量', dataIndex: 'needQty', width: 90, align: 'center' },
+  { title: '单位', dataIndex: 'unit', width: 60, align: 'center' },
+  { title: '备注', dataIndex: 'remark', width: 100 },
+  { title: '工序名称', dataIndex: 'process', width: 100 },
+  { title: '工序车间', dataIndex: 'workshop', key: 'workshop', width: 150 },
+  { title: '仓库名称', dataIndex: 'warehouse', width: 110 },
+  { title: '仓库数', dataIndex: 'stock', width: 80, align: 'center' },
+  { title: '在途数', dataIndex: 'transit', width: 80, align: 'center' },
+  { title: '在产需求', dataIndex: 'wip', width: 90, align: 'center' },
+  { title: '库存上限', dataIndex: 'max', width: 80, align: 'center' },
+  { title: '库存下限', dataIndex: 'min', width: 80, align: 'center' },
+  { title: '仓库可用', dataIndex: 'avail', width: 90, align: 'center' },
+  { title: '生产数', key: 'produceQty', width: 100, align: 'center' },
+  { title: '采购数', key: 'purchaseQty', width: 100, align: 'center' },
+  { title: '生产损耗', key: 'loss', width: 80, align: 'center' },
+];

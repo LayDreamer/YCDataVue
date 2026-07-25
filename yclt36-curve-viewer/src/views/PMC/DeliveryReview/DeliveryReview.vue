@@ -71,69 +71,58 @@
       </a-form>
     </a-card>
 
-    <a-card class="table-card" :class="{ fullscreen: isFullscreen }" title="交期评审列表">
-      <template #extra>
-        <TableColumnSettings
-          v-model="columnSettings"
-          :columns="baseColumns"
-          :storage-key="storageKey"
-          :loading="loading"
-          v-model:fullscreen="isFullscreen"
-          @change="handleColumnSettingsChange"
-          @refresh="handleRefresh"
-        />
-      </template>
-      <div class="table-scroll">
-        <a-table
-          :columns="columns"
-          :data-source="filteredData"
-          :pagination="tablePagination"
-          row-key="id"
-          bordered
-          :loading="loading"
-          :scroll="{ x: 'max-content' }"
-          :size="tableSize"
-        >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === '状态'">           
-            <a-tag :color="record.状态 === '评审通过' ? 'green' : record.状态 === '评审驳回' ? 'red' : 'orange'">
-                 {{record.状态}}
-            </a-tag>
-          </template>
-          <template v-if="column.key === 'action'">
-            <a-button 
-              v-if="viewMode === 'unreviewed'" 
-              type="link" 
-              @click="openReview(record)"
-            >
-              评审确认
-            </a-button>
-            <span v-else class="reviewed-tag">已评审</span>
-          </template>
-          <template v-if="column.key === '特殊要求'">
-            <a-tooltip :title="record.特殊要求" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
-              {{ truncateText(record.特殊要求, 40) }}
-            </a-tooltip>
-          </template>
-          <template v-if="column.key === '货号'">
-            <a-tooltip :title="record.货号" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
-              {{ truncateText(record.货号, 40) }}
-            </a-tooltip>
-          </template>
-          <template v-if="column.key === '中文品名'">
-            <a-tooltip :title="record.中文品名" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
-              {{ truncateText(record.中文品名, 40) }}
-            </a-tooltip>
-          </template>
-          <template v-if="column.key === '备注'">
-            <a-tooltip :title="record.备注" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
-              {{ truncateText(record.备注, 40) }}
-            </a-tooltip>
-          </template>
+    <CommonTable
+      class="table-card"
+      title="交期评审列表"
+      :columns="allColumns"
+      :data-source="filteredData"
+      storage-key="delivery-review-column-settings"
+      :loading="loading"
+      :pagination="tablePagination"
+      row-key="id"
+      :scroll="{ x: 'max-content' }"
+      :size="tableSize"
+      v-model:fullscreen="isFullscreen"
+      @refresh="handleRefresh"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === '状态'">
+          <a-tag :color="record.状态 === '评审通过' ? 'green' : record.状态 === '评审驳回' ? 'red' : 'orange'">
+            {{ record.状态 }}
+          </a-tag>
         </template>
-        </a-table>
-      </div>
-    </a-card>
+        <template v-if="column.key === 'action'">
+          <a-button
+            v-if="viewMode === 'unreviewed'"
+            type="link"
+            @click="openReview(record)"
+          >
+            评审确认
+          </a-button>
+          <span v-else class="reviewed-tag">已评审</span>
+        </template>
+        <template v-if="column.key === '特殊要求'">
+          <a-tooltip :title="record.特殊要求" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+            {{ truncateText(record.特殊要求, 40) }}
+          </a-tooltip>
+        </template>
+        <template v-if="column.key === '货号'">
+          <a-tooltip :title="record.货号" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+            {{ truncateText(record.货号, 40) }}
+          </a-tooltip>
+        </template>
+        <template v-if="column.key === '中文品名'">
+          <a-tooltip :title="record.中文品名" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+            {{ truncateText(record.中文品名, 40) }}
+          </a-tooltip>
+        </template>
+        <template v-if="column.key === '备注'">
+          <a-tooltip :title="record.备注" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+            {{ truncateText(record.备注, 40) }}
+          </a-tooltip>
+        </template>
+      </template>
+    </CommonTable>
 
     <!-- 评审弹窗 -->
     <ReviewModal v-model:visible="modalVisible" :record="currentItem" @confirm="handleReviewConfirmed" @refresh="handleRefresh" />
@@ -150,7 +139,7 @@ import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { RequestDto } from '../types';
 import { PMCRequestDto,PMCDeliveryReview  } from '@/api-generated/api';
 import { truncateText } from '@/utils';
-import TableColumnSettings, { type ColumnSetting } from '@/components/TableColumnSettings.vue';
+import CommonTable from '@/components/CommonTable.vue';
 
 const baseColumns: TableColumnsType = [
   { title: '合同号', dataIndex: '合同号', key: '合同号' },
@@ -174,96 +163,20 @@ const baseColumns: TableColumnsType = [
   { title: '操作', key: 'action', width: 120, fixed: 'right' },
 ];
 
-const storageKey = 'delivery-review-column-settings';
-
-/** 根据原始列生成默认列设置 */
-function buildDefaultSettings(): ColumnSetting[] {
-  return baseColumns.map((col) => ({
-    key: col.key as string,
-    title: (col.title as string) || (col.key as string),
-    visible: true,
-    fixed: (col.fixed as 'left' | 'right' | undefined) || undefined,
-  }));
-}
-
-/** 读取本地持久化配置并与默认配置合并 */
-function loadColumnSettings(): ColumnSetting[] {
-  const defaults = buildDefaultSettings();
-  try {
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) return defaults;
-    const saved: ColumnSetting[] = JSON.parse(raw);
-    const savedMap = new Map(saved.map((s) => [s.key, s]));
-    const result: ColumnSetting[] = [];
-
-    saved.forEach((s) => {
-      const def = defaults.find((d) => d.key === s.key);
-      if (def) {
-        result.push({
-          ...def,
-          visible: s.visible !== undefined ? s.visible : def.visible,
-          fixed: s.fixed !== undefined ? s.fixed : def.fixed,
-        });
-      }
-    });
-
-    defaults.forEach((def) => {
-      if (!savedMap.has(def.key)) {
-        result.push(def);
-      }
-    });
-
-    return result;
-  } catch {
-    return defaults;
-  }
-}
-
-const columnSettings = ref<ColumnSetting[]>(loadColumnSettings());
-
-function handleColumnSettingsChange(settings: ColumnSetting[]) {
-  columnSettings.value = settings;
-}
-
-const columns = computed(() => {
-  const settings = [...columnSettings.value];
-
+/** 动态列：已评审模式追加备注列 */
+const allColumns = computed(() => {
+  const cols = [...baseColumns];
   if (viewMode.value === 'reviewed') {
-    const remarkIndex = settings.findIndex((s) => s.key === '备注');
-    if (remarkIndex === -1) {
-      const statusIndex = settings.findIndex((s) => s.key === '状态');
-      settings.splice(statusIndex >= 0 ? statusIndex : settings.length, 0, {
-        key: '备注',
-        title: '备注',
-        visible: true,
-        fixed: undefined,
-      });
-    }
-  } else {
-    const remarkIndex = settings.findIndex((s) => s.key === '备注');
-    if (remarkIndex !== -1) {
-      settings.splice(remarkIndex, 1);
-    }
-  }
-
-  const baseMap = new Map(baseColumns.map((c) => [c.key as string, c]));
-  baseMap.set('备注', { title: '备注', dataIndex: '备注', key: '备注', width: 200, ellipsis: true });
-
-  const mapped = settings
-    .filter((s) => s.visible)
-    .map((s) => {
-      const base = baseMap.get(s.key) || { title: s.title, dataIndex: s.key, key: s.key };
-      return { ...base, fixed: s.fixed };
+    const statusIndex = cols.findIndex((c) => (c.key as string) === '状态');
+    cols.splice(statusIndex >= 0 ? statusIndex : cols.length, 0, {
+      title: '备注',
+      dataIndex: '备注',
+      key: '备注',
+      width: 200,
+      ellipsis: true,
     });
-
-  // 安全兜底：如果所有列都被隐藏，则显示全部原始列，避免表格空白无法恢复
-  const effectiveColumns = mapped.length > 0 ? mapped : baseColumns;
-
-  // 固定列分组：左侧固定在前，右侧固定在后，中间列保持设置顺序
-  const left = effectiveColumns.filter((c) => c.fixed === 'left');
-  const center = effectiveColumns.filter((c) => !c.fixed);
-  const right = effectiveColumns.filter((c) => c.fixed === 'right');
-  return [...left, ...center, ...right];
+  }
+  return cols;
 });
 
 const searchForm = reactive({ contractNo: "", productionNo: '', itemNo: '', coilItemNo: '', analysisNo: '' });
@@ -594,11 +507,6 @@ onMounted(() => {
 .table-card :deep(.ant-card-extra .settings-trigger:hover) {
   color: #fff;
   background: rgba(255, 255, 255, 0.15);
-}
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 .reviewed-tag {
   color: #8c8c8c;

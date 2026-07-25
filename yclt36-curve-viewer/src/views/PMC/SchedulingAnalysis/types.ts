@@ -35,7 +35,7 @@ export interface ProductionItem {
 // 列配置
 export const columns: TableColumnsType = [
   { title: '序号', key: 'index', width: 60, fixed: 'left', align: 'center' },
-  { title: '层序号', dataIndex: 'levelIndex', minWidth: 80, fixed: 'left', align: 'center' },
+  { title: '层序号', dataIndex: 'levelIndex', minWidth: 110, width: 110, fixed: 'left', align: 'left' },
   { title: '货号', dataIndex: 'partNo', width: 220, fixed: 'left' },
   { title: '层', key: 'level', width: 60, align: 'center' },
   { title: '产品属性', dataIndex: 'attr', width: 100 },

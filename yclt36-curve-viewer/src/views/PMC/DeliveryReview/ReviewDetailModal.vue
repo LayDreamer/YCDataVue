@@ -8,7 +8,7 @@
     :mask="true"
     :mask-closable="false"
     :destroy-on-close="false"
-    class="review-detail-drawer"
+    :class="['review-detail-drawer', { 'scheduling-fullscreen-mode': isSchedulingFullscreen }]"
   >
     <template #title>
       <div class="drawer-title">
@@ -192,277 +192,229 @@
       <div class="right-panel" :class="{ expanded: showSchedulingPanel, collapsed: !showSchedulingPanel }">
       <!-- 展开态：排产分析单详情（排产分析入口已改为由提交评审结果打开） -->
       <template v-if="showSchedulingPanel || reviewSubmitted">
-        <a-card :bordered="false" class="scheduling-card">
-          <template #title>
-            <div class="sch-card-title">
-              <span class="sch-title-left">
-                <LeftOutlined v-if="!reviewSubmitted" class="sch-collapse-icon" @click="toggleSchedulingPanel" />
-                <span>排产分析单详情</span>
-              </span>
-              <span class="sch-title-right">
-                <a-tooltip :title="isSchedulingFullscreen ? '退出全屏' : '全屏'">
-                  <a-button type="link" size="small" @click="toggleFullscreen">
-                    <template #icon>
-                      <FullscreenExitOutlined v-if="isSchedulingFullscreen" />
-                      <FullscreenOutlined v-else />
-                    </template>
-                  </a-button>
-                </a-tooltip>
-                <a-button type="link" size="small" @click="loadSchedulingData" :loading="schedulingLoading">
-                  <template #icon><ReloadOutlined /></template>
-                  刷新
-                </a-button>
-              </span>
-            </div>
-          </template>
-          <a-spin :spinning="schedulingLoading" tip="加载排产分析数据...">
-            <!-- 排产分析控制区 -->
-            <div class="scheduling-controls">
-              <!-- 第一行：基础信息 -->
-              <div class="sch-row sch-input-row">
-                <div class="sch-info-item">
-                  <span class="sch-label">货号</span>
-                  <a-tooltip :title="schedulingProduct.partNo || '--'" placement="top">
-                    <span class="sch-value w-220">{{ schedulingProduct.partNo || '--' }}</span>
-                  </a-tooltip>
-                </div>
-                <div class="sch-info-item">
-                  <span class="sch-label">品名</span>
-                  <a-tooltip :title="schedulingProduct.productName || '--'" placement="top">
-                    <span class="sch-value w-300">{{ schedulingProduct.productName || '--' }}</span>
-                  </a-tooltip>
-                </div>
-                <div class="sch-info-item">
-                  <span class="sch-label">规格</span>
-                  <a-tooltip :title="schedulingProduct.spec || '--'" placement="top">
-                    <span class="sch-value w-200">{{ schedulingProduct.spec || '--' }}</span>
-                  </a-tooltip>
-                </div>
-                <div class="sch-info-item">
-                  <span class="sch-label">成品数量</span>
-                  <a-input-number
-                    v-model:value="schedulingProduct.qty"
-                    :min="0"
-                    :precision="0"
-                    style="width: 120px"
-                    @change="onSchQtyChange"
-                  />
-                </div>
-                <div class="sch-info-item">
-                  <span class="sch-label">交货日期</span>
-                  <a-date-picker
-                    v-model:value="schedulingForm.deliveryDate"
-                    placeholder="选择交期"
-                    format="YYYY-MM-DD"
-                    value-format="YYYY-MM-DD"
-                    style="width: 170px"
-                  />
-                </div>
+        <a-spin :spinning="schedulingLoading" tip="加载排产分析数据...">
+          <CommonTable
+            card-class="scheduling-card"
+            :columns="rawColumns"
+            :data-source="filteredSchDataSource"
+            storage-key="review-detail-scheduling-column-settings"
+            :loading="schedulingLoading"
+            :pagination="false"
+            row-key="key"
+            :auto-scroll-x="true"
+            :auto-scroll-y="true"
+            table-wrapper-class="scheduling-table-wrap"
+            :expand-icon-column-index="1"
+            :indent-size="20"
+            :expanded-row-keys="schExpandedKeys"
+            :row-class-name="(record: any) => record.key === selectedRowKey ? 'selected-row' : ''"
+            :custom-row="(record: any) => ({ onClick: (e: MouseEvent) => handleRowClick(record, e) })"
+            v-model:fullscreen="isSchedulingFullscreen"
+            :overlay="false"
+            @expand="(expanded: boolean, record: any) => handleSchExpand(expanded, record)"
+            @refresh="loadSchedulingData"
+          >
+            <template #title>
+              <div class="sch-card-title">
+                <span class="sch-title-left">
+                  <LeftOutlined v-if="!reviewSubmitted" class="sch-collapse-icon" @click="toggleSchedulingPanel" />
+                  <span>排产分析单详情</span>
+                </span>
               </div>
-              <!-- 操作行1：分析模式 + 核心操作按钮 -->
-            <div class="sch-card">
-              <!-- 操作行：所有控件在同一行，根据宽度自动换行 -->
-              <div class="sch-row sch-action-row">
-                <FixedColumnControl
-                  v-model="fixedColumnKeys"
-                  :columns="rawColumns"
-                />
-                <!-- 隐藏列选择 -->
-                <a-popover trigger="click" placement="bottomLeft">
-                  <a-tooltip title="隐藏列" placement="top">
-                    <a-button size="small" class="hide-column-btn">
-                      <template #icon><EyeOutlined /></template>
-                      列设置
-                      <DownOutlined style="font-size: 10px; margin-left: 2px;" />
-                    </a-button>
-                  </a-tooltip>
-                  <template #content>
-                    <div class="hide-column-dropdown">
-                      <div class="hide-column-header">选择要隐藏的列</div>
-                      <a-checkbox-group
-                        :value="hiddenColumnKeys"
-                        @change="onHiddenColumnsChange"
-                        class="hide-column-check-group"
-                      >
-                        <div
-                          v-for="opt in hideableColumnOptions"
-                          :key="opt.value"
-                          class="hide-column-item"
-                        >
-                          <a-checkbox :value="opt.value">{{ opt.label }}</a-checkbox>
-                        </div>
-                      </a-checkbox-group>
-                      <div class="hide-column-footer">
-                        <a-button
-                          type="link"
-                          size="small"
-                          @click="hideAllColumns"
-                        >
-                          {{ hiddenColumnKeys.length === hideableColumnOptions.length ? '取消全选' : '隐藏全部' }}
-                        </a-button>
-                      </div>
-                    </div>
-                  </template>
-                </a-popover>
-                <div class="sch-analysis-modes">
-                  <a-radio-group v-model:value="schedulingForm.analysisType">
-                    <a-radio value="normal">
-                      <span class="sch-radio-content"><BarChartOutlined /> 普通分析</span>
-                    </a-radio>
-                    <a-radio value="limit">
-                      <span class="sch-radio-content"><LineChartOutlined /> 库存上限分析 (减下限)</span>
-                    </a-radio>
-                  </a-radio-group>
-                </div>
-                <div class="sch-btn-group">
-                  <span class="sch-control-label">范围</span>
-                  <a-radio-group
-                    v-model:value="materialScopeAll"
-                    button-style="solid"
-                  >
-                    <a-radio-button value="current">当前数据</a-radio-button>
-                    <a-radio-button value="all">所有数据</a-radio-button>
-                  </a-radio-group>
-
-                  <a-button
-                    type="primary"
-                    :disabled="!selectedRowKey"
-                    @click="handleMaterialAnalysis"
-                  >
-                    <template #icon><SearchOutlined /></template>
-                    物料分析
-                  </a-button>
-
-                </div>
-                <div class="sch-btn-group sch-btn-group-2">
-                  <a-button type="primary" @click="handleSchExpandAll">
-                    <template #icon><FolderOpenOutlined /></template>
-                    全部展开
-                  </a-button>
-                  <a-button type="primary" @click="handleSchCollapseAll">
-                    <template #icon><FolderOutlined /></template>
-                    全部收缩
-                  </a-button>
-                  <a-button type="primary" @click="handleSchSave" :loading="schSaveLoading">
-                    <template #icon><SaveOutlined /></template>
-                    保存分析
-                  </a-button>
-                  <a-popconfirm
-                    v-if="false"
-                    title="确定要删除选中的货号吗？"
-                    :subtitle="'有子级物料将一并删除'"
-                    ok-text="确定"
-                    cancel-text="取消"
-                    @confirm="handleSchDelete"
-                  >
-                    <a-button type="primary" danger :disabled="!selectedRowKey">
-                      <template #icon><DeleteOutlined /></template>
-                      删除选中
-                    </a-button>
-                  </a-popconfirm>
-                  <a-popconfirm
-                    v-if="false"
-                    title="确定要删除选中的根节点吗？"
-                    subtitle="子级物料将自动提升一级"
-                    ok-text="确定"
-                    cancel-text="取消"
-                    @confirm="handleSchDeleteRoot"
-                  >
-                    <a-button danger :disabled="!selectedRowKey">
-                      <template #icon><DeleteOutlined /></template>
-                      删除根节点
-                    </a-button>
-                  </a-popconfirm>
-                </div>
-              </div>
-            </div>
-            </div>
-
-            <!-- 排产分析表格 -->
-            <div ref="tableWrapRef" class="scheduling-table-wrap">
-              <a-table
-                :columns="displayColumns"
-                :data-source="filteredSchDataSource"
-                :pagination="false"
-                :scroll="schTableScroll"
-                bordered
-                row-key="key"
-                :expand-icon-column-index="1"
-                :indent-size="20"
-                :expanded-row-keys="schExpandedKeys"
-                :row-class-name="(record: any) => record.key === selectedRowKey ? 'selected-row' : ''"
-                :custom-row="(record: any) => ({ onClick: (e: MouseEvent) => handleRowClick(record, e) })"
-                @expand="(expanded: boolean, record: any) => handleSchExpand(expanded, record)"
-                size="middle"
-              >
-                <template #expandIcon="{ expanded, onExpand, record }">
-                  <div class="product-symbol-wrapper">
-                    <template v-if="record.children && record.children.length">
-                      <span class="tree-icon-box" @click="e => onExpand(record, e)">
-                        <FolderOpenOutlined v-if="expanded" />
-                        <FolderOutlined v-else />
-                      </span>
-                    </template>
-                    <template v-else>
-                      <FileTextOutlined class="tree-leaf-icon" />
-                    </template>
+            </template>
+            <template #top>
+              <!-- 排产分析控制区 -->
+              <div class="scheduling-controls">
+                <!-- 第一行：基础信息 -->
+                <div class="sch-row sch-input-row">
+                  <div class="sch-info-item">
+                    <span class="sch-label">货号</span>
+                    <a-tooltip :title="schedulingProduct.partNo || '--'" placement="top">
+                      <span class="sch-value w-220">{{ schedulingProduct.partNo || '--' }}</span>
+                    </a-tooltip>
                   </div>
-                </template>
-
-                <template #bodyCell="{ column, record, index }">
-                <template v-if="column.key === 'index'">
-                  {{ index + 1 }}
-                </template>
-                  <template v-if="column.key === 'level'">
-                    <span class="level-badge">{{ record.level }}</span>
-                  </template>
-                  <template v-if="column.key === 'partNo'">
-                    <span class="partno-text">{{ record.partNo || '' }}</span>
-                  </template>
-                  <template v-if="column.key === 'name'">
-                    <span class="product-text">{{ record.name }}</span>
-                  </template>
-                  <template v-if="column.key === 'spec'">
-                    <span class="spec-text">{{ record.spec || record.unit || '' }}</span>
-                  </template>
-                  <template v-if="column.key === 'source'">
-                    <a-tag :color="getSchSourceColor(record.source)" class="m-0">{{ record.source }}</a-tag>
-                  </template>
-                  <template v-if="['produceQty', 'purchaseQty', 'loss'].includes(column.key as string)">
-                    <div @click.stop>
+                  <div class="sch-info-item">
+                    <span class="sch-label">品名</span>
+                    <a-tooltip :title="schedulingProduct.productName || '--'" placement="top">
+                      <span class="sch-value w-300">{{ schedulingProduct.productName || '--' }}</span>
+                    </a-tooltip>
+                  </div>
+                  <div class="sch-info-item">
+                    <span class="sch-label">规格</span>
+                    <a-tooltip :title="schedulingProduct.spec || '--'" placement="top">
+                      <span class="sch-value w-200">{{ schedulingProduct.spec || '--' }}</span>
+                    </a-tooltip>
+                  </div>
+                  <div class="sch-info-item">
+                    <span class="sch-label">成品数量</span>
                     <a-input-number
-                      v-model:value="record[column.key]"
-                      class="cell-input-small"
-                      :controls="false"
-                      @change="(val: any) => handleSchLossChange(record, column.key as string, val)"
+                      v-model:value="schedulingProduct.qty"
+                      :min="0"
+                      :precision="0"
+                      style="width: 120px"
+                      @change="onSchQtyChange"
                     />
-                    </div>
-                  </template>
-                  <template v-if="column.key === 'workshop'">
-                    <div @click.stop>
-                    <a-select
-                      :value="record.workshop"
-                      class="cell-input-small"
-                      :options="workshopOptions"
-                      placeholder="选择车间"
-                      allow-clear
-                      size="small"
-                      @change="(val: any) => handleSchWorkshopChange(record, val)"
+                  </div>
+                  <div class="sch-info-item">
+                    <span class="sch-label">交货日期</span>
+                    <a-date-picker
+                      v-model:value="schedulingForm.deliveryDate"
+                      placeholder="选择交期"
+                      format="YYYY-MM-DD"
+                      value-format="YYYY-MM-DD"
+                      style="width: 170px"
                     />
-                    </div>
-                  </template>
-                </template>
-              </a-table>
-              <a-empty v-if="!schedulingLoading && filteredSchDataSource.length === 0" description="暂无排产分析数据" />
-            </div>
+                  </div>
+                </div>
+                <!-- 操作行1：分析模式 + 核心操作按钮 -->
+              <div class="sch-card">
+                <!-- 操作行：所有控件在同一行，根据宽度自动换行 -->
+                <div class="sch-row sch-action-row">
+                  <div class="sch-analysis-modes">
+                    <a-radio-group v-model:value="schedulingForm.analysisType">
+                      <a-radio value="normal">
+                        <span class="sch-radio-content"><BarChartOutlined /> 普通分析</span>
+                      </a-radio>
+                      <a-radio value="limit">
+                        <span class="sch-radio-content"><LineChartOutlined /> 库存上限分析 (减下限)</span>
+                      </a-radio>
+                    </a-radio-group>
+                  </div>
+                  <div class="sch-btn-group">
+                    <span class="sch-control-label">范围</span>
+                    <a-radio-group
+                      v-model:value="materialScopeAll"
+                      button-style="solid"
+                    >
+                      <a-radio-button value="current">当前数据</a-radio-button>
+                      <a-radio-button value="all">所有数据</a-radio-button>
+                    </a-radio-group>
 
-            <!-- 公式提示 -->
-            <div class="scheduling-formula-bar">
-              <SettingOutlined />
-              <span>需求量 = 成品数量 × 累计用量 × (1+损耗)</span>
-            </div>
-          </a-spin>
-        </a-card>
+                    <a-button
+                      type="primary"
+                      :disabled="!selectedRowKey"
+                      @click="handleMaterialAnalysis"
+                    >
+                      <template #icon><SearchOutlined /></template>
+                      物料分析
+                    </a-button>
+
+                  </div>
+                  <div class="sch-btn-group sch-btn-group-2">
+                    <a-button type="primary" @click="handleSchExpandAll">
+                      <template #icon><FolderOpenOutlined /></template>
+                      全部展开
+                    </a-button>
+                    <a-button type="primary" @click="handleSchCollapseAll">
+                      <template #icon><FolderOutlined /></template>
+                      全部收缩
+                    </a-button>
+                    <a-button type="primary" @click="handleSchSave" :loading="schSaveLoading">
+                      <template #icon><SaveOutlined /></template>
+                      保存分析
+                    </a-button>
+                    <a-popconfirm
+                      v-if="false"
+                      title="确定要删除选中的货号吗？"
+                      :subtitle="'有子级物料将一并删除'"
+                      ok-text="确定"
+                      cancel-text="取消"
+                      @confirm="handleSchDelete"
+                    >
+                      <a-button type="primary" danger :disabled="!selectedRowKey">
+                        <template #icon><DeleteOutlined /></template>
+                        删除选中
+                      </a-button>
+                    </a-popconfirm>
+                    <a-popconfirm
+                      v-if="false"
+                      title="确定要删除选中的根节点吗？"
+                      subtitle="子级物料将自动提升一级"
+                      ok-text="确定"
+                      cancel-text="取消"
+                      @confirm="handleSchDeleteRoot"
+                    >
+                      <a-button danger :disabled="!selectedRowKey">
+                        <template #icon><DeleteOutlined /></template>
+                        删除根节点
+                      </a-button>
+                    </a-popconfirm>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </template>
+
+            <template #expandIcon="{ expanded, onExpand, record }">
+              <div class="product-symbol-wrapper">
+                <template v-if="record.children && record.children.length">
+                  <span class="tree-icon-box" @click="e => onExpand(record, e)">
+                    <FolderOpenOutlined v-if="expanded" />
+                    <FolderOutlined v-else />
+                  </span>
+                </template>
+                <template v-else>
+                  <FileTextOutlined class="tree-leaf-icon" />
+                </template>
+              </div>
+            </template>
+
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'index'">
+                {{ index + 1 }}
+              </template>
+              <template v-if="column.key === 'level'">
+                <span class="level-badge">{{ record.level }}</span>
+              </template>
+              <template v-if="column.dataIndex === 'levelIndex'">
+                <span class="level-index-text">{{ record.levelIndex }}</span>
+              </template>
+              <template v-if="column.key === 'partNo'">
+                <span class="partno-text">{{ record.partNo || '' }}</span>
+              </template>
+              <template v-if="column.key === 'name'">
+                <span class="product-text">{{ record.name }}</span>
+              </template>
+              <template v-if="column.key === 'spec'">
+                <span class="spec-text">{{ record.spec || record.unit || '' }}</span>
+              </template>
+              <template v-if="column.key === 'source'">
+                <a-tag :color="getSchSourceColor(record.source)" class="m-0">{{ record.source }}</a-tag>
+              </template>
+              <template v-if="['produceQty', 'purchaseQty', 'loss'].includes(column.key as string)">
+                <div @click.stop>
+                  <a-input-number
+                    v-model:value="record[column.key]"
+                    class="cell-input-small"
+                    :controls="false"
+                    @change="(val: any) => handleSchLossChange(record, column.key as string, val)"
+                  />
+                </div>
+              </template>
+              <template v-if="column.key === 'workshop'">
+                <div @click.stop>
+                  <a-select
+                    :value="record.workshop"
+                    class="cell-input-small"
+                    :options="workshopOptions"
+                    placeholder="选择车间"
+                    allow-clear
+                    size="small"
+                    @change="(val: any) => handleSchWorkshopChange(record, val)"
+                  />
+                </div>
+              </template>
+            </template>
+
+            <template #bottom>
+              <!-- 公式提示 -->
+              <div class="scheduling-formula-bar">
+                <SettingOutlined />
+                <span>需求量 = 成品数量 × 累计用量 × (1+损耗)</span>
+              </div>
+            </template>
+          </CommonTable>
+        </a-spin>
 
         <!-- 底部操作栏（提交评审后隐藏） -->
         <div v-if="!reviewSubmitted" class="footer-bar">
@@ -483,7 +435,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, watch, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, reactive, watch, computed, nextTick } from 'vue';
 import { message, Grid } from 'ant-design-vue';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -497,11 +449,8 @@ import {
   LineChartOutlined,
   SearchOutlined,
   DeleteOutlined,
-  ReloadOutlined,
   LeftOutlined,
   SwapOutlined,
-  FullscreenOutlined,
-  FullscreenExitOutlined,
 } from '@ant-design/icons-vue';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { salesControlService } from '@/services/salesControlService';
@@ -510,8 +459,8 @@ import { externalProductionService } from '@/services/externalProductionService'
 import { bomStructureProcessService } from '@/services/bomStructureProcessService';
 import { type WeChatUser } from '@/services/wechatWorkService';
 import { PMCRequestDto, PMCDeliveryReview, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail, ExternalProductionBOM, ExternalProductionPickMaterial, ExternalProductionWarehousing } from '@/api-generated/api';
-import { columns as rawColumns } from '../SchedulingAnalysis/types';
-import TableColumnSettings, { type ColumnSetting } from '@/components/TableColumnSettings.vue';
+import { columns as rawColumns } from './types';
+import CommonTable from '@/components/CommonTable.vue';
 import OrgUserSelector from '@/components/OrgUserSelector.vue';
 import SearchSelect, { type SearchSelectColumn } from '@/components/SearchSelect.vue';
 
@@ -569,11 +518,6 @@ const drawerWidth = computed(() => {
 
 // 排产分析单详情局部全屏（隐藏左侧卡片，详情占满整个页面区域）
 const isSchedulingFullscreen = ref(false);
-
-function toggleFullscreen() {
-  isSchedulingFullscreen.value = !isSchedulingFullscreen.value;
-  nextTick(() => updateTableScrollY());
-}
 
 // ========== 排产分析面板展开/折叠状态 ==========
 const showSchedulingPanel = ref(false);
@@ -1056,96 +1000,7 @@ function handleMaterialAnalysis() {
 const schSaveLoading = ref(false);
 const schSaveBomLoading = ref(false);
 
-// 固定列
-const fixedColumnKeys = ref<string[]>(['index', 'levelIndex', 'partNo']);
-
-// 隐藏列（排除 index 和 partNo，这两个始终显示）
-const hiddenColumnKeys = ref<string[]>([]);
-
-// 可供隐藏的列选项（排除 index 和 partNo）
-const hideableColumnOptions = computed(() =>
-  rawColumns
-    .map((col) => ({
-      label: (col.title as string) || '',
-      value: ((col.key || (col as any).dataIndex) as string) || '',
-    }))
-    .filter((opt) => !['index', 'partNo'].includes(opt.value))
-);
-
-const displayColumns = computed(() => {
-  const getKey = (col: any) => ((col.key || (col as any).dataIndex) as string) || '';
-
-  const visibleColumns = rawColumns.filter(
-    (col) => !hiddenColumnKeys.value.includes(getKey(col))
-  );
-
-  // 固定列按用户选择顺序提到最左侧
-  const fixedCols: typeof visibleColumns = [];
-  fixedColumnKeys.value.forEach((key) => {
-    const col = visibleColumns.find((c) => getKey(c) === key);
-    if (col) {
-      fixedCols.push({ ...col, fixed: 'left' as const });
-    }
-  });
-
-  const otherCols = visibleColumns.filter(
-    (col) => !fixedColumnKeys.value.includes(getKey(col))
-  );
-
-  return [...fixedCols, ...otherCols];
-});
-
-// 隐藏列变更处理
-function onHiddenColumnsChange(checkedValue: any) {
-  hiddenColumnKeys.value = checkedValue as string[];
-}
-
-// 隐藏/取消隐藏全部列
-function hideAllColumns() {
-  if (hiddenColumnKeys.value.length === hideableColumnOptions.value.length) {
-    // 已全选，取消全选
-    hiddenColumnKeys.value = [];
-  } else {
-    // 隐藏全部可选列
-    hiddenColumnKeys.value = hideableColumnOptions.value.map(opt => opt.value);
-  }
-}
-
-// 表格滚动高度 - 动态获取容器高度
-const tableWrapRef = ref<HTMLElement | null>(null);
-const schTableScrollY = ref(300);
-
-// 根据可见列动态计算表格滚动宽度
-const schTableScrollX = computed(() => {
-  const totalWidth = displayColumns.value.reduce((sum, col) => {
-    const w = (col.width as number) || 120;
-    return sum + w;
-  }, 0);
-  // 如果总宽度较小，不需要横向滚动，返回 undefined 让表格自适应
-  return totalWidth > 600 ? totalWidth : undefined;
-});
-
-const schTableScroll = computed(() => ({
-  x: schTableScrollX.value,
-  y: schTableScrollY.value,
-}));
-
-function updateTableScrollY() {
-  if (tableWrapRef.value) {
-    schTableScrollY.value = tableWrapRef.value.clientHeight;
-  }
-}
-
-onMounted(() => {
-  nextTick(() => {
-    updateTableScrollY();
-    window.addEventListener('resize', updateTableScrollY);
-  });
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateTableScrollY);
-});
+// 排产分析表格由 CommonTable 组件统一处理列设置、滚动及全屏
 
 // ========== 来源颜色 ==========
 function getSchSourceColor(src: string) {
@@ -1997,7 +1852,7 @@ async function loadSchedulingData() {
     message.error('加载排产分析数据失败，请稍后重试');
   } finally {
     schedulingLoading.value = false;
-    nextTick(() => updateTableScrollY());
+
   }
 }
 
@@ -2041,7 +1896,7 @@ watch(
 
       showSchedulingPanel.value = false;
       loadWorkshopOptions();
-      nextTick(() => updateTableScrollY());
+  
 
       // 加载企业微信部门列表（重新加载，确保每次打开都刷新最新部门/用户数据）
       schedulingSelectedUserIds.value = [];
@@ -2133,30 +1988,20 @@ watch(
   display: none;
 }
 
-/* 排产分析单详情全屏占满，整页覆盖半透明黑色遮罩（放大图片的灯箱效果） */
-.drawer-body.scheduling-fullscreen {
-  position: relative;
-}
-
+/* 排产分析单详情全屏：隐藏左侧面板，右侧面板占满 */
 .drawer-body.scheduling-fullscreen .left-panel {
   display: none;
 }
 
-.drawer-body.scheduling-fullscreen::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(2px);
-  z-index: 10;
-  pointer-events: none;
-}
-
 .drawer-body.scheduling-fullscreen .right-panel {
-  position: relative;
-  z-index: 20;
   flex: 1;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* 全屏时给抽屉遮罩加背景模糊，与交期评审页全屏效果保持一致 */
+.review-detail-drawer.scheduling-fullscreen-mode :deep(.ant-drawer-mask) {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
 }
 
 /* 全屏时隐藏底部操作栏（提示文字、取消/提交按钮）和公式提示 */
@@ -2358,6 +2203,15 @@ watch(
   padding: 11px 0;
 }
 
+.scheduling-card :deep(.ant-card-extra .settings-trigger) {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.scheduling-card :deep(.ant-card-extra .settings-trigger:hover) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* 排产分析单标题栏（标题+刷新按钮） */
 .sch-card-title {
   display: flex;
@@ -2370,12 +2224,6 @@ watch(
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.sch-title-right {
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .sch-collapse-icon {
@@ -2445,64 +2293,6 @@ watch(
   gap: 20px;
   flex-wrap: wrap;
   align-items: center;
-}
-
-/* 隐藏列按钮 */
-.hide-column-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #f0f5ff;
-  border-color: #b3d8ff;
-  color: #1890ff;
-  font-size: 13px;
-}
-
-.hide-column-btn:hover {
-  background: #e6f0ff !important;
-  border-color: #69b1ff !important;
-  color: #0958d9 !important;
-}
-
-/* 隐藏列下拉面板 */
-.hide-column-dropdown {
-  padding: 10px 12px;
-  min-width: 180px;
-  max-height: 360px;
-  overflow-y: auto;
-  background: #fff;
-}
-
-.hide-column-header {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1f1f1f;
-  padding-bottom: 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.hide-column-check-group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hide-column-item {
-  padding: 3px 0;
-}
-
-.hide-column-item :deep(.ant-checkbox-wrapper) {
-  font-size: 13px;
-  color: #434343;
-}
-
-.hide-column-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 8px;
-  margin-top: 8px;
-  border-top: 1px solid #f0f0f0;
 }
 
 .sch-info-item {
