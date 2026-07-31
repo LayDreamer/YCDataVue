@@ -82,28 +82,73 @@
               </a-tag>
             </div>
             <div class="preset-user-action">
-              <a-button type="link" size="small" @click="showUserSelector = true">
+              <a-button
+                v-if="canChangeSchedulingUser"
+                type="link"
+                size="small"
+                @click="showUserSelector = true"
+              >
                 <SwapOutlined /> 更换用户
               </a-button>
+              <a-tooltip v-else title="已提交评审，排产用户不可再修改">
+                <span class="readonly-hint">
+                  <LockOutlined /> 已锁定
+                </span>
+              </a-tooltip>
+            </div>
+          </div>
+
+          <!-- 无预设用户 且 组织架构加载失败：显示手动输入框 -->
+          <div v-else-if="!hasPresetSchedulingUser && orgLoadFailed" class="manual-user-input-wrap">
+            <a-alert
+              class="manual-user-alert"
+              type="warning"
+              show-icon
+              :message="orgLoadErrorMessage || '组织架构加载失败'"
+              description="无法从企业微信拉取部门/人员信息，请手动输入排产用户名（提交后将以该用户名作为排产用户）。"
+            />
+            <a-input
+              v-model:value="manualSchedulingUser"
+              placeholder="请输入排产用户名"
+              allow-clear
+              :maxlength="50"
+              :disabled="!canChangeSchedulingUser"
+            />
+            <div v-if="!canChangeSchedulingUser" class="readonly-hint-inline">
+              <LockOutlined /> 已提交评审，排产用户已锁定
             </div>
           </div>
 
           <!-- 无预设用户 或 点击更换后：显示选择器 -->
           <div v-else class="user-selector-wrap">
-            <div v-if="hasPresetSchedulingUser && showUserSelector" class="user-selector-header">
+            <div
+              v-if="hasPresetSchedulingUser && showUserSelector && canChangeSchedulingUser"
+              class="user-selector-header"
+            >
               <a-button type="text" size="small" class="back-btn" @click="cancelUserChange">
                 <LeftOutlined /> 返回
               </a-button>
               <span class="header-title">重新选择排产用户</span>
             </div>
-            <OrgUserSelector
-              ref="orgSelectorRef"
-              v-model:selectedUserIds="schedulingSelectedUserIds"
-              :multiple="false"
-              :maxTableHeight="'260px'"
-              @userSelect="onSchedulingUserSelect"
-            />
-            <div v-if="hasPresetSchedulingUser && showUserSelector" class="cancel-change-hint">
+            <div class="user-selector-inner" :class="{ 'is-readonly': !canChangeSchedulingUser }">
+              <OrgUserSelector
+                ref="orgSelectorRef"
+                v-model:selectedUserIds="schedulingSelectedUserIds"
+                :multiple="false"
+                :maxTableHeight="'260px'"
+                @userSelect="onSchedulingUserSelect"
+                @deptLoadFailed="onOrgDeptLoadFailed"
+                @deptLoadSuccess="onOrgDeptLoadSuccess"
+              />
+              <div v-if="!canChangeSchedulingUser" class="user-selector-mask">
+                <LockOutlined class="user-selector-mask-icon" />
+                <span>已提交评审，排产用户已锁定</span>
+              </div>
+            </div>
+            <div
+              v-if="hasPresetSchedulingUser && showUserSelector && canChangeSchedulingUser"
+              class="cancel-change-hint"
+            >
               <a-button type="text" size="small" @click="cancelUserChange">
                 恢复默认用户
               </a-button>
@@ -113,65 +158,90 @@
 
         <!-- 核心要素校验 -->
         <a-card title="核心要素校验" :bordered="false" class="info-card verify-card-compact left-card">
-          <div class="coil-search-row">
-            <SearchSelect
-              v-model:value="reviewForm.coilItemNo"
-              :columns="coilColumns"
-              :search="searchCoils"
-              value-field="value"
-              :dropdown-width="560"
-              :max-height="380"
-              placeholder="线圈货号进行系统反查"
-              :disabled="validatingCoil"
-              style="flex: 1"
-              @select="onCoilSelected"
-            />
-            <a-button type="primary" :loading="validatingCoil" @click="validateCoil">校验</a-button>
-          </div>
-          <div v-if="verifyStatus !== 'none'" class="verify-result">
-            <a-alert
-              v-if="verifyStatus === 'success'"
-              message="校验通过"
-              type="success"
-              show-icon
-              size="small"
-            />
-            <a-alert
-              v-if="verifyStatus === 'error'"
-              message="匹配失败"
-              type="error"
-              show-icon
-              size="small"
-            />
+          <div class="verify-card-inner" :class="{ 'is-readonly': !canChangeSchedulingUser }">
+            <div class="coil-search-row">
+              <SearchSelect
+                v-model:value="reviewForm.coilItemNo"
+                :columns="coilColumns"
+                :search="searchCoils"
+                value-field="value"
+                :dropdown-width="560"
+                :max-height="380"
+                placeholder="线圈货号进行系统反查"
+                :disabled="validatingCoil || !canChangeSchedulingUser"
+                style="flex: 1"
+                @select="onCoilSelected"
+              />
+            </div>
+            <div v-if="verifyStatus !== 'none'" class="verify-result">
+              <a-alert
+                v-if="verifyStatus === 'success'"
+                message="校验通过"
+                type="success"
+                show-icon
+                size="small"
+              />
+              <a-alert
+                v-if="verifyStatus === 'error'"
+                message="匹配失败"
+                type="error"
+                show-icon
+                size="small"
+              />
+            </div>
+            <!-- 提交评审后整卡锁定：遮罩覆盖在卡片内容上，统一表达锁定状态 -->
+            <div v-if="!canChangeSchedulingUser" class="user-selector-mask">
+              <LockOutlined class="user-selector-mask-icon" />
+              <span>已提交评审，核心要素校验已锁定</span>
+            </div>
           </div>
         </a-card>
 
         <!-- 评审结论 -->
         <a-card title="评审结论" :bordered="false" class="info-card review-conclusion-card left-card">
-          <a-form layout="vertical" class="review-form-compact review-form-fill">
-            <a-row :gutter="16">
-              <a-col :xs="24" :sm="12">
-                <a-form-item label="最终生产交期" required>
-                  <a-date-picker v-model:value="reviewForm.finalDate" style="width: 100%" />
-                </a-form-item>
-              </a-col>
-              <a-col :xs="24" :sm="12">
-                <a-form-item label="评审结果">
-                  <a-radio-group v-model:value="reviewForm.resultStatus" button-style="solid" class="w-full">
-                    <a-radio-button value="pass" class="half-width pass-radio">通过</a-radio-button>
-                    <a-radio-button value="reject" class="half-width reject-radio">驳回</a-radio-button>
-                  </a-radio-group>
-                </a-form-item>
-              </a-col>
-            </a-row>
-            <a-form-item label="评审备注" class="remark-item" :required="reviewForm.resultStatus === 'reject'">
-              <a-textarea
-                v-model:value="reviewForm.remark"
-                :placeholder="reviewForm.resultStatus === 'reject' ? '驳回时评审备注为必填项，请说明驳回原因...' : '请输入评审意见或异常说明...'"
-                :auto-size="{ minRows: 3, maxRows: 8 }"
-              />
-            </a-form-item>
-          </a-form>
+          <div class="review-conclusion-inner" :class="{ 'is-readonly': !canChangeSchedulingUser }">
+            <a-form layout="vertical" class="review-form-compact review-form-fill">
+              <a-row :gutter="16">
+                <a-col :xs="24" :sm="12">
+                  <a-form-item label="最终生产交期" required>
+                    <a-date-picker
+                      v-model:value="reviewForm.finalDate"
+                      style="width: 100%"
+                      :disabled="showSchedulingPanel || reviewSubmitted"
+                    />
+                  </a-form-item>
+                </a-col>
+                <a-col :xs="24" :sm="12">
+                  <a-form-item label="评审结果">
+                    <a-radio-group
+                      v-model:value="reviewForm.resultStatus"
+                      button-style="solid"
+                      class="w-full"
+                      :disabled="showSchedulingPanel || reviewSubmitted"
+                    >
+                      <a-radio-button value="pass" class="half-width pass-radio">通过</a-radio-button>
+                      <a-radio-button value="reject" class="half-width reject-radio">驳回</a-radio-button>
+                    </a-radio-group>
+                  </a-form-item>
+                </a-col>
+              </a-row>
+              <a-form-item label="评审备注" class="remark-item" :required="reviewForm.resultStatus === 'reject'">
+                <a-textarea
+                  v-model:value="reviewForm.remark"
+                  :placeholder="reviewForm.resultStatus === 'reject' ? '驳回时评审备注为必填项，请说明驳回原因...' : '请输入评审意见或异常说明...'"
+                  :auto-size="{ minRows: 3, maxRows: 8 }"
+                  :disabled="showSchedulingPanel || reviewSubmitted"
+                />
+              </a-form-item>
+            </a-form>
+            <!-- 提交评审后整卡锁定：遮罩覆盖在 form 上方，
+                 让\"最终生产交期/评审结果/评审备注\"控件不再依赖单独的灰显样式，
+                 视觉上整卡片被锁定标识统一表达 -->
+            <div v-if="!canChangeSchedulingUser" class="user-selector-mask">
+              <LockOutlined class="user-selector-mask-icon" />
+              <span>已提交评审，评审结论已锁定</span>
+            </div>
+          </div>
         </a-card>
 
         <!-- 左侧折叠态底部操作栏（提交评审后隐藏） -->
@@ -188,8 +258,8 @@
         </div>
       </div>
 
-      <!-- 右侧：排产分析单详情（默认不显示切换按钮，改由提交评审结果打开） -->
-      <div class="right-panel" :class="{ expanded: showSchedulingPanel, collapsed: !showSchedulingPanel }">
+      <!-- 右侧：排产分析单详情（未展开时不渲染，避免右侧出现空白占位条） -->
+      <div v-if="showSchedulingPanel || reviewSubmitted" class="right-panel" :class="{ expanded: showSchedulingPanel }">
       <!-- 展开态：排产分析单详情（排产分析入口已改为由提交评审结果打开） -->
       <template v-if="showSchedulingPanel || reviewSubmitted">
         <a-spin :spinning="schedulingLoading" tip="加载排产分析数据...">
@@ -209,7 +279,10 @@
             :expanded-row-keys="schExpandedKeys"
             v-model:selected-row-key="selectedRowKey"
             :row-click-select="false"
-            :custom-row="(record: any) => ({ onClick: (e: MouseEvent) => handleRowClick(record, e) })"
+            :custom-row="(record: any) => ({
+              onClick: (e: MouseEvent) => handleRowClick(record, e),
+              onContextmenu: (e: MouseEvent) => handleRowContextMenu(record, e)
+            })"
             v-model:fullscreen="isSchedulingFullscreen"
             :overlay="false"
             @expand="(expanded: boolean, record: any) => handleSchExpand(expanded, record)"
@@ -314,32 +387,6 @@
                       <template #icon><SaveOutlined /></template>
                       保存分析
                     </a-button>
-                    <a-popconfirm
-                      v-if="false"
-                      title="确定要删除选中的货号吗？"
-                      :subtitle="'有子级物料将一并删除'"
-                      ok-text="确定"
-                      cancel-text="取消"
-                      @confirm="handleSchDelete"
-                    >
-                      <a-button type="primary" danger :disabled="!selectedRowKey">
-                        <template #icon><DeleteOutlined /></template>
-                        删除选中
-                      </a-button>
-                    </a-popconfirm>
-                    <a-popconfirm
-                      v-if="false"
-                      title="确定要删除选中的根节点吗？"
-                      subtitle="子级物料将自动提升一级"
-                      ok-text="确定"
-                      cancel-text="取消"
-                      @confirm="handleSchDeleteRoot"
-                    >
-                      <a-button danger :disabled="!selectedRowKey">
-                        <template #icon><DeleteOutlined /></template>
-                        删除根节点
-                      </a-button>
-                    </a-popconfirm>
                   </div>
                 </div>
               </div>
@@ -417,6 +464,36 @@
               </div>
             </template>
           </CommonTable>
+
+          <!-- 右键菜单（原生定位，稳定可靠） -->
+          <div
+            v-if="contextMenuVisible"
+            class="sch-row-context-menu"
+            :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+            @click.stop
+          >
+            <div
+              class="ctx-menu-item"
+              :class="{ 'is-disabled': !rightClickRowKey }"
+              @click="onCtxDelete"
+            >
+              <DeleteOutlined /> 删除选中
+            </div>
+            <div
+              class="ctx-menu-item"
+              :class="{ 'is-disabled': !rightClickRowKey }"
+              @click="onCtxDeleteRoot"
+            >
+              <DeleteOutlined /> 删除根节点
+            </div>
+          </div>
+          <!-- 右键菜单关闭遮罩 -->
+          <div
+            v-if="contextMenuVisible"
+            class="ctx-menu-mask"
+            @click="closeContextMenu"
+            @contextmenu.prevent="closeContextMenu"
+          ></div>
         </a-spin>
 
         <!-- 底部操作栏（提交评审后隐藏） -->
@@ -439,7 +516,7 @@
 
 <script lang="ts" setup>
 import { ref, reactive, watch, computed, nextTick } from 'vue';
-import { message, Grid } from 'ant-design-vue';
+import { message, Modal, Grid } from 'ant-design-vue';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import {
@@ -454,6 +531,7 @@ import {
   DeleteOutlined,
   LeftOutlined,
   SwapOutlined,
+  LockOutlined,
 } from '@ant-design/icons-vue';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { salesControlService } from '@/services/salesControlService';
@@ -461,7 +539,7 @@ import { workOrderSalesControlService } from '@/services/workOrderSalesControlSe
 import { externalProductionService } from '@/services/externalProductionService';
 import { bomStructureProcessService } from '@/services/bomStructureProcessService';
 import { type WeChatUser } from '@/services/wechatWorkService';
-import { PMCRequestDto, PMCDeliveryReview, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail, ExternalProductionBOM, ExternalProductionPickMaterial, ExternalProductionWarehousing } from '@/api-generated/api';
+import { PMCRequestDto, PMCDeliveryReview, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail, ExternalProductionBOM, ExternalProductionPickMaterial, ExternalProductionWarehousing, ExternalProductionShipment } from '@/api-generated/api';
 import { columns as rawColumns } from './types';
 import CommonTable from '@/components/CommonTable.vue';
 import OrgUserSelector from '@/components/OrgUserSelector.vue';
@@ -494,7 +572,10 @@ interface ProductionItem {
   avail?: number;
   attr?: string;
   needQty?: number;
+  pickedQty?: number;
   remark?: string;
+  /** 中间件（0/1 标记） */
+  mid?: number | string;
 }
 
 const props = defineProps<{
@@ -614,10 +695,22 @@ const schedulingSelectedUserIds = ref<string[]>([]);
 const schedulingSelectedUsers = ref<WeChatUser[]>([]);
 const orgSelectorRef = ref<InstanceType<typeof OrgUserSelector>>();
 const showUserSelector = ref(false);
+// 组织架构（部门列表）是否加载失败：true 时在无默认用户场景下显示手动输入框
+const orgLoadFailed = ref(false);
+const orgLoadErrorMessage = ref<string>('');
+// 手动输入的排产用户名（仅在 orgLoadFailed 且无默认用户时使用）
+const manualSchedulingUser = ref<string>('');
 
 // 是否有预设排产用户（来自主表 record）
 const hasPresetSchedulingUser = computed(() => {
   return props.record?.排产用户 && props.record.排产用户.trim() !== '';
+});
+
+// 排产用户卡片是否仍可变更：
+// 一旦点击"提交评审结果"进入排产分析流程（showSchedulingPanel 或 reviewSubmitted）即锁定，
+// 与"评审结论"中最终生产交期 / 评审结果的 disabled 逻辑保持一致。
+const canChangeSchedulingUser = computed(() => {
+  return !showSchedulingPanel.value && !reviewSubmitted.value;
 });
 
 // 预设排产用户名称列表
@@ -626,12 +719,33 @@ const presetUserNames = computed(() => {
   return props.record?.排产用户?.split(/[,，]/).map(n => n.trim()).filter(Boolean) ?? [];
 });
 
-// 计算当前评审对应的排产用户（已手动选择优先，否则取主表预设）
+// 计算当前评审对应的排产用户（已手动选择优先，否则取主表预设；无默认且加载失败时取手动输入）
 function getSchedulingUserName(): string {
-  const names = schedulingSelectedUsers.value.length > 0
-    ? schedulingSelectedUsers.value.map(u => u.name)
-    : presetUserNames.value;
-  return names.join(',');
+  // 1. 优先：手动从组织架构选中的用户
+  if (schedulingSelectedUsers.value.length > 0) {
+    return schedulingSelectedUsers.value.map(u => u.name).join(',');
+  }
+  // 2. 次之：主表预设的排产用户
+  if (hasPresetSchedulingUser.value) {
+    return presetUserNames.value.join(',');
+  }
+  // 3. 组织架构加载失败时的手动输入
+  if (orgLoadFailed.value && manualSchedulingUser.value.trim()) {
+    return manualSchedulingUser.value.trim();
+  }
+  return '';
+}
+
+// 组织架构部门列表加载失败的回调（由 OrgUserSelector 触发）
+function onOrgDeptLoadFailed(errorMessage: string) {
+  orgLoadFailed.value = true;
+  orgLoadErrorMessage.value = errorMessage || '加载组织架构失败';
+}
+
+// 组织架构部门列表加载成功的回调
+function onOrgDeptLoadSuccess() {
+  orgLoadFailed.value = false;
+  orgLoadErrorMessage.value = '';
 }
 
 const onSchedulingUserSelect = (userIds: string[]) => {
@@ -687,7 +801,7 @@ async function initPreselectedUsers() {
 const validateCoil = async () => {
   if (!reviewForm.coilItemNo) {
     message.warning('请输入线圈货号');
-    return;
+    return false;
   }
   validatingCoil.value = true;
   verifyStatus.value = 'none';
@@ -697,11 +811,14 @@ const validateCoil = async () => {
     );
     if (result) {
       verifyStatus.value = 'success';
+      return true;
     } else {
       verifyStatus.value = 'error';
+      return false;
     }
   } catch {
     verifyStatus.value = 'error';
+    return false;
   } finally {
     validatingCoil.value = false;
   }
@@ -749,12 +866,23 @@ const doSubmitReview = async () => {
 
 // 点击"提交评审结果"：根据评审结果分两种情况处理
 const submitReview = async () => {
-  if (verifyStatus.value !== 'success') {
+  const isCoilValid = await validateCoil();
+  if (!isCoilValid) {
     message.error('线圈货号未经验证或验证不通过，无法提交评审！');
     return;
   }
-  if (schedulingSelectedUsers.value.length === 0 && !hasPresetSchedulingUser.value) {
-    message.warning('请选择排产用户');
+  // 校验排产用户：组织架构中选择 / 主表预设 / 组织架构加载失败时手动输入 三者至少有一个
+  const hasManualUser = orgLoadFailed.value && manualSchedulingUser.value.trim().length > 0;
+  if (
+    schedulingSelectedUsers.value.length === 0
+    && !hasPresetSchedulingUser.value
+    && !hasManualUser
+  ) {
+    message.warning(
+      orgLoadFailed.value
+        ? '组织架构加载失败，请手动输入排产用户名'
+        : '请选择排产用户'
+    );
     return;
   }
   // 驳回时评审备注必填
@@ -910,6 +1038,11 @@ function getExpandedKeysForFiltered(items: ProductionItem[]): string[] {
 const selectedRowKey = ref<string>('');
 const materialScopeAll = ref<'current' | 'all'>('current');
 
+// ========== 右键菜单 ==========
+const contextMenuVisible = ref(false);
+const contextMenuPosition = reactive({ x: 0, y: 0 });
+const rightClickRowKey = ref<string>('');
+
 // 行点击选中/取消选中（点击生产数/采购数/生产损耗输入框列时不触发）
 function handleRowClick(record: ProductionItem, e?: MouseEvent) {
   // 如果点击目标在输入框或选择框内，不触发行选中
@@ -929,6 +1062,55 @@ function handleRowClick(record: ProductionItem, e?: MouseEvent) {
   } else {
     selectedRowKey.value = record.key;
   }
+}
+
+// 右键菜单处理
+function handleRowContextMenu(record: ProductionItem, e: MouseEvent) {
+  e.preventDefault();
+  // 先选中当前行
+  selectedRowKey.value = record.key;
+  rightClickRowKey.value = record.key;
+  // 设置菜单位置（使用鼠标位置，并避免超出视口）
+  const menuWidth = 160;
+  const menuHeight = 88;
+  let x = e.clientX;
+  let y = e.clientY;
+  if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 8;
+  if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 8;
+  contextMenuPosition.x = x;
+  contextMenuPosition.y = y;
+  contextMenuVisible.value = true;
+}
+
+// 关闭菜单
+function closeContextMenu() {
+  contextMenuVisible.value = false;
+}
+
+// 右键菜单：删除选中
+function onCtxDelete() {
+  if (!rightClickRowKey.value) return;
+  closeContextMenu();
+  Modal.confirm({
+    title: '确定要删除选中的货号吗？',
+    content: '有子级物料将一并删除',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => handleSchDelete(),
+  });
+}
+
+// 右键菜单：删除根节点
+function onCtxDeleteRoot() {
+  if (!rightClickRowKey.value) return;
+  closeContextMenu();
+  Modal.confirm({
+    title: '确定要删除选中的根节点吗？',
+    content: '子级物料将自动提升一级',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => handleSchDeleteRoot(),
+  });
 }
 
 // 收集节点下所有子孙的 key（用于全部展开）
@@ -1301,13 +1483,18 @@ function updateAvailInTree(items: ProductionItem[]) {
     const transit = item.transit || 0;
     const wip = item.wip || 0;
     const min = item.min || 0;
-    item.avail = schedulingForm.analysisType === 'limit' ? stock + transit - wip - min : stock + transit - wip;
-    if (item.source !== '自制') {
-      item.purchaseQty = calculateProduceQty(item.needQty || 0, item.avail || 0);
-      item.produceQty = 0;
-    } else {
-      item.produceQty = calculateProduceQty(item.needQty || 0, item.avail || 0);
-      item.purchaseQty = 0;
+    const avail = schedulingForm.analysisType === 'limit' ? stock + transit - wip - min : stock + transit - wip;
+    item.avail = Math.max(0, avail);
+    // 仅根节点（成品，无父级）随分析模式重算生产数/采购数；
+    // 子节点保留用户手动调整的值，避免切换模式时被自动重算覆盖
+    if (item.level === 0) {
+      if (item.source !== '自制') {
+        item.purchaseQty = calculateProduceQty(item.needQty || 0, item.avail || 0);
+        item.produceQty = 0;
+      } else {
+        item.produceQty = calculateProduceQty(item.needQty || 0, item.avail || 0);
+        item.purchaseQty = 0;
+      }
     }
     if (item.children && item.children.length > 0) {
       updateAvailInTree(item.children);
@@ -1319,6 +1506,8 @@ function updateAvailInTree(items: ProductionItem[]) {
 watch(() => schedulingForm.analysisType, () => {
   if (schDataSource.value.length > 0) {
     updateAvailInTree(schDataSource.value);
+    // 分析模式变化会重算父级生产数/采购数，需同步子级
+    syncAllChildrenQty(schDataSource.value);
   }
 });
 
@@ -1371,26 +1560,29 @@ function handleSchLossChange(record: ProductionItem, field: string, value: numbe
   if (field === 'loss') {
     const lossValue = value || 0;
     originalItem.loss = lossValue;
-    // 重新计算该行及子行的需求量、生产数/采购数
-    const updateItemAndChildren = (item: ProductionItem) => {
-      if (schedulingProduct.qty > 0 && (item.usage || 1)) {
-        const demandQty = calculateDemandQty(schedulingProduct.qty, item.usage || 1, item.loss || 0);
-        item.needQty = demandQty;
-        if (item.source !== '自制') {
-          item.purchaseQty = calculateProduceQty(demandQty, item.avail || 0);
-        } else {
-          item.produceQty = calculateProduceQty(demandQty, item.avail || 0);
-        }
-      }
-      if (item.children && item.children.length > 0) {
-        item.children.forEach(child => updateItemAndChildren(child));
-      }
-    };
-    updateItemAndChildren(originalItem);
+    // 损耗只影响当前行自身的需求量（needQty = 总数量 × 本行用量 × (1+本行损耗)），与子孙无关；
+    // 只需重算本行的生产数/采购数，子孙保留手动值，由下方 syncChildrenQty 按父级新值联动
+    const demandQty = calculateDemandQty(schedulingProduct.qty, originalItem.usage || 1, originalItem.loss || 0);
+    originalItem.needQty = demandQty;
+    if (originalItem.source !== '自制') {
+      originalItem.purchaseQty = calculateProduceQty(demandQty, originalItem.avail || 0);
+    } else {
+      originalItem.produceQty = calculateProduceQty(demandQty, originalItem.avail || 0);
+    }
+    // 父级生产数变化后，同步其子级（递归）的配料数与生产数/采购数
+    syncChildrenPickQty(originalItem);
+    syncChildrenQty(originalItem);
   } else if (field === 'produceQty') {
     originalItem.produceQty = value || 0;
+    // 父级生产数变化后，同步其直接子级的配料数
+    syncChildrenPickQty(originalItem);
+    syncChildrenQty(originalItem);
   } else if (field === 'purchaseQty') {
     originalItem.purchaseQty = value || 0;
+    // 父级采购数变化后，同步其直接子级的配料数
+    syncChildrenPickQty(originalItem);
+    // 父级采购数变化后，同步其直接子级的生产数/采购数
+    syncChildrenQty(originalItem);
   }
 }
 
@@ -1411,7 +1603,10 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
     const _transit = record.在途数 !== undefined && record.在途数 !== '' ? Number(record.在途数) : 0;
     const _wip = record.在产需求 !== undefined && record.在产需求 !== '' ? Number(record.在产需求) : 0;
     const _min = record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : 0;
-    const _avail = schedulingForm.analysisType === 'limit' ? _stock + _transit - _wip - _min : _stock + _transit - _wip;
+    const _avail = Math.max(0, schedulingForm.analysisType === 'limit' ? _stock + _transit - _wip - _min : _stock + _transit - _wip);
+
+    // 0 层，或 1 层且产品属性含“线圈”的节点：工序车间默认“包装车间”
+    const isPackWorkshop = level === 0 || (level === 1 && (record.产品属性 || '').includes('线圈'));
 
     const item: ProductionItem = {
       key,
@@ -1426,8 +1621,9 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
       partNo: record.货号 || '',
       usage: cumulativeUsage,
       unit: record.单位 || '',
-      process: record.工序名称 || '',
-      workshop: record.工序车间 || '',
+      // 0 层，或 1 层且产品属性包含“线圈”的节点，工序车间默认“包装车间”，工序名称取“包装”
+      process: record.工序名称 || (isPackWorkshop && !record.工序车间 ? '包装' : ''),
+      workshop: record.工序车间 || (isPackWorkshop ? '包装车间' : ''),
       warehouse: record.仓库名称 || '',
       stock: _stock,
       transit: _transit,
@@ -1437,7 +1633,9 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
       avail: _avail,
       attr: record.产品属性 || '',
       needQty: demandQty,
+      pickedQty: 0,
       remark: record.备注 || '',
+      mid: record.中间件 !== undefined && record.中间件 !== '' ? record.中间件 : '',
       children: [],
     };
 
@@ -1498,10 +1696,13 @@ function updateDemandQtyInTree(items: ProductionItem[], qty: number) {
   items.forEach(item => {
     const demandQty = calculateDemandQty(qty, item.usage || 1, item.loss || 0);
     item.needQty = demandQty;
-    if (item.source !== '自制') {
-      item.purchaseQty = calculateProduceQty(demandQty, item.avail || 0);
-    } else {
-      item.produceQty = calculateProduceQty(demandQty, item.avail || 0);
+    // 仅根节点（成品）随数量重算生产数/采购数；子节点保留用户手动值，由父子联动按需覆盖
+    if (item.level === 0) {
+      if (item.source !== '自制') {
+        item.purchaseQty = calculateProduceQty(demandQty, item.avail || 0);
+      } else {
+        item.produceQty = calculateProduceQty(demandQty, item.avail || 0);
+      }
     }
     if (item.children && item.children.length > 0) {
       updateDemandQtyInTree(item.children, qty);
@@ -1509,9 +1710,112 @@ function updateDemandQtyInTree(items: ProductionItem[], qty: number) {
   });
 }
 
+// 父级生产数/采购数变化后，同步其所有层子级的配料数（递归，与生产数联动保持一致）
+// 配料数 = 父件做货量 × 子件用量（累计用量），向上取整以避免短缺
+// 父件要做的量（生产数或采购数，取非 0 的那个）× 子件用量 = 配料数（与 syncChildrenQty 的毛需求保持一致）
+// 注意：递归时以「当前节点自身更新后的做货量」驱动其子件配料数，保证中间节点为 0 时下层配料数也归 0。
+function syncChildrenPickQty(parentItem: ProductionItem) {
+  // 用 item 自身做货量逐层驱动其子件配料数
+  const sync = (item: ProductionItem) => {
+    const qty = (item.produceQty || 0) > 0
+      ? (item.produceQty || 0)
+      : (item.purchaseQty || 0);
+    if (item.children && item.children.length > 0) {
+      item.children.forEach(child => {
+        child.pickedQty = Math.ceil(qty * (child.usage || 0));
+        sync(child);
+      });
+    }
+  };
+  // 先用 parentItem 自身做货量驱动其直接子件，再逐层递归
+  const parentQty = (parentItem.produceQty || 0) > 0
+    ? (parentItem.produceQty || 0)
+    : (parentItem.purchaseQty || 0);
+  if (parentItem.children && parentItem.children.length > 0) {
+    parentItem.children.forEach(child => {
+      child.pickedQty = Math.ceil(parentQty * (child.usage || 0));
+      sync(child);
+    });
+  }
+}
+
+// 遍历整棵树，对所有父级节点同步其直接子级的配料数（数量变化等全局联动时使用）
+function syncAllChildrenPickQty(items: ProductionItem[]) {
+  items.forEach(item => {
+    syncChildrenPickQty(item);
+    if (item.children && item.children.length > 0) {
+      syncAllChildrenPickQty(item.children);
+    }
+  });
+}
+
+// 父级的生产数/采购数为 0 时，其所有子级对应的生产数/采购数也归 0；
+// 父级"要做的量"（生产数或采购数，取非 0 的那个）变化时，所有子级按「父级量 × 子级用量」重新计算：
+//   - 自制子件 → 生成生产数
+//   - 外购/外协子件 → 生成采购数
+// 注意：递归时以「当前节点自身更新后的做货量」驱动其子级，保证中间节点为 0 时下层联动正常归 0。
+function syncChildrenQty(parentItem: ProductionItem) {
+  // 用 item 自身更新后的做货量，逐层驱动其子级（递归时始终用当前节点的量，而非顶层父级）
+  const sync = (item: ProductionItem) => {
+    const qty = (item.produceQty || 0) > 0
+      ? (item.produceQty || 0)
+      : (item.purchaseQty || 0);
+    if (item.children && item.children.length > 0) {
+      item.children.forEach(child => {
+        const usage = child.usage || 0;
+        if (qty <= 0) {
+          // 当前节点不需要生产/采购，子件的生产数与采购数都归 0
+          child.produceQty = 0;
+          child.purchaseQty = 0;
+        } else {
+          // 毛需求 = 当前节点量 × 子件用量；净需求 = 毛需求 − 子件自身可用库存
+          const gross = Math.ceil(qty * usage);
+          const net = Math.max(0, gross - (child.avail || 0));
+          child.produceQty = child.source === '自制' ? net : 0;
+          child.purchaseQty = child.source !== '自制' ? net : 0;
+        }
+        sync(child);
+      });
+    }
+  };
+  // 先用 parentItem 自身做货量驱动其直接子级，再逐层递归其子级
+  const parentQty = (parentItem.produceQty || 0) > 0
+    ? (parentItem.produceQty || 0)
+    : (parentItem.purchaseQty || 0);
+  if (parentItem.children && parentItem.children.length > 0) {
+    parentItem.children.forEach(child => {
+      const usage = child.usage || 0;
+      if (parentQty <= 0) {
+        child.produceQty = 0;
+        child.purchaseQty = 0;
+      } else {
+        const gross = Math.ceil(parentQty * usage);
+        const net = Math.max(0, gross - (child.avail || 0));
+        child.produceQty = child.source === '自制' ? net : 0;
+        child.purchaseQty = child.source !== '自制' ? net : 0;
+      }
+      sync(child);
+    });
+  }
+}
+
+// 遍历整棵树，对所有父级节点同步其直接子级的生产数/采购数（全局联动时使用）
+function syncAllChildrenQty(items: ProductionItem[]) {
+  items.forEach(item => {
+    syncChildrenQty(item);
+    if (item.children && item.children.length > 0) {
+      syncAllChildrenQty(item.children);
+    }
+  });
+}
+
 function onSchQtyChange(newQty: number) {
   if (schDataSource.value.length > 0 && newQty >= 0) {
     updateDemandQtyInTree(schDataSource.value, newQty);
+    // 数量变化会联动所有父级生产数，需重新同步各父级直接子级的配料数
+    syncAllChildrenPickQty(schDataSource.value);
+    // 同步各父级直接子级的生产数/采购数
+    syncAllChildrenQty(schDataSource.value);
   }
 }
 
@@ -1569,28 +1873,32 @@ async function handleSchSave() {
     // 当前显示模式：只收集展开可见的节点（类似保存BOM的collectVisibleItems逻辑）
     // 全部数据模式：使用全部节点（原有逻辑）
     // 只收集当前页面展开可见的节点（类似保存BOM的collectVisibleItems逻辑）
-    const flatItems: ProductionItem[] = [];
-    const collectVisibleFlat = (items: ProductionItem[]) => {
+    const productionNodes: ProductionItem[] = [];
+    const collectVisibleProductionNodes = (items: ProductionItem[], parentNeedsProduction = true) => {
       for (const item of items) {
-        flatItems.push(item);
+        // 工单只有在当前节点自身、以及从根节点到其父级的生产数都大于 0 时才保存。
+        // 任一父级生产数为 0，表示该分支不需要额外生产，其下所有子层级均跳过工单保存。
+        const currentNeedsProduction = parentNeedsProduction && Number(item.produceQty) > 0;
+        if (currentNeedsProduction) {
+          productionNodes.push(item);
+        }
         // 只有当前节点被展开时，才递归收集子节点（未展开=未显示在表格中）
         if (item.children && item.children.length > 0 && schExpandedKeys.value.includes(item.key)) {
-          collectVisibleFlat(item.children);
+          collectVisibleProductionNodes(item.children, currentNeedsProduction);
         }
       }
     };
-    collectVisibleFlat(schDataSource.value);
+    collectVisibleProductionNodes(schDataSource.value);
 
-    const productionNodes = flatItems.filter(item => item.produceQty > 0);
     if (productionNodes.length === 0) {
-      message.warning('没有生产数大于0的数据可保存');
+      message.warning('父级没有生产数大于0的数据可保存');
       schSaveLoading.value = false;
       return;
     }
 
-    // 校验：生产数>0 的节点必须选择工序车间（不能为空或"-"）
-    const missingWorkshop = flatItems.filter(
-      item => item.produceQty > 0 && (!item.workshop || item.workshop === '-' || item.workshop.trim() === '')
+    // 仅校验实际会保存工单的节点；父级生产数为 0 的分支无需选择工序车间
+    const missingWorkshop = productionNodes.filter(
+      item => !item.workshop || item.workshop === '-' || item.workshop.trim() === ''
     );
     if (missingWorkshop.length > 0) {
       const names = missingWorkshop.map(i => i.partNo || i.key).slice(0, 3).join('、');
@@ -1666,10 +1974,12 @@ async function handleSchSave() {
       if (no) detail.父级编号 = no;
       // 关联外产BOM的分析单号 + 编号（从已保存的BOM返回值中按货号匹配，不查库）
       const analysisNo = bomAnalysisNoMap.get(item.货号 || '');
-      if (analysisNo) detail.分析单号 = analysisNo;
+      if (analysisNo)       detail.分析单号 = analysisNo;
       // 明细编号直接取外产BOM对应的编号，使两表通过编号强关联
       const bomId = bomIdMap.get(item.货号 || '');
       if (bomId) detail.编号 = bomId;
+      // 将当前评审对应的排产编号写入明细，方便按排产编号关联查询
+      detail.排产编号 = props.record?.排产编号 || '';
       // 工单单号由后端在保存明细表时赋值，此处不赋值
       detail.交货日期 = schedulingForm.deliveryDate || dayjs().format('YYYY-MM-DD');
       const qty = mergedQtyMap.get(item.货号 || '') || 0;
@@ -1731,21 +2041,38 @@ async function handleSchSave() {
       await externalProductionService.addOrUpdateExternalProductionWarehousingList(warehousingList);
     }
 
-    // ========== 保存外产生产：基于外产BOM数据，编号/货号直接赋值 ==========
-    // const externalProductionList = productionNodes.map(item => {
-    //   const ep = new ExternalProduction();
-    //   ep.合同号 = schedulingProduct.orderNo || '';
-    //   ep.货号 = item.partNo || '';
-    //   ep.排产编号 = props.record?.排产编号 || '';
-    //   ep.需求量 = String(item.needQty || 0);
-    //   ep.生产数量 = String(item.produceQty || 0);
-    //   return ep;
-    // });
+    // ========== 保存外产生产：基于工单销控表明细，编号/货号/分析单号/排产编号直接赋值，需求量=生产数 ==========
+    const externalProductionList = detailList.map(item => {
+      const ep = new ExternalProduction();
+      ep.编号 = item.编号;            // 直接取明细的编号
+      ep.货号 = item.货号;            // 直接取明细的货号
+      ep.分析单号 = item.分析单号;    // 关联明细的分析单号
+      ep.排产编号 = item.排产编号;    // 关联明细的排产编号
+      ep.需求量 = item.生产数;        // 需求量 = 生产数
+      ep.生产数量 = '0';              // 生产数量默认为0
+      return ep;
+    });
+    if (externalProductionList.length > 0) {
+      await externalProductionService.addOrUpdateExternalProductionList(externalProductionList);
+    }
 
-    // await externalProductionService.addOrUpdateExternalProductionList(externalProductionList);
+    // ========== 保存外产发运：逻辑同外产生产，基于工单销控表明细，编号/货号/分析单号/排产编号直接赋值，需求量=生产数 ==========
+    const externalShipmentList = detailList.map(item => {
+      const ship = new ExternalProductionShipment();
+      ship.编号 = item.编号;            // 直接取明细的编号
+      ship.货号 = item.货号;            // 直接取明细的货号
+      ship.分析单号 = item.分析单号;    // 关联明细的分析单号
+      ship.排产编号 = item.排产编号;    // 关联明细的排产编号
+      ship.需求量 = item.生产数;        // 需求量 = 生产数
+      ship.发运数量 = '0';              // 发运数量默认为0
+      return ship;
+    });
+    if (externalShipmentList.length > 0) {
+      await externalProductionService.addOrUpdateExternalProductionShipmentList(externalShipmentList);
+    }
 
     const bomCount = savedBomList?.length || 0;
-    message.success(`已保存 ${salesControlList.length} 条到工单销控表，${detailList.length} 条明细，${bomCount} 条BOM数据，${pickMaterialList.length} 条领料，${warehousingList.length} 条入库`);
+    message.success(`已保存 ${salesControlList.length} 条到工单销控表，${detailList.length} 条明细，${bomCount} 条BOM数据，${pickMaterialList.length} 条领料，${warehousingList.length} 条入库，${externalProductionList.length} 条外产生产，${externalShipmentList.length} 条外产发运`);
 
     // 排产分析保存成功后，才真正提交评审结果
     const mappedStatus = await doSubmitReview();
@@ -1842,19 +2169,12 @@ async function loadSchedulingData() {
       货号: schedulingProduct.partNo,
       排产编号: props.record?.排产编号,
     });
+    console.log('[排产分析详情] 请求参数:', JSON.parse(JSON.stringify(requestDto)));
     const bomData = await salesControlService.getSchedulingAnalysisList(requestDto);
+    console.log('[排产分析详情] 后端返回原始数据:', bomData);
 
     // 竞态保护：若本次调用期间已有更新的 loadSchedulingData 启动，丢弃本次响应
     if (mySeq !== loadSeq) return;
-
-    // 临时排查：后端返回非空但表格空，定位哪个环节丢了数据
-    console.log('[loadSchedulingData] 后端返回', {
-      partNo: schedulingProduct.partNo,
-      scheduleNo: props.record?.排产编号,
-      bomDataLength: bomData.length,
-      firstLevel: Number(bomData[0]?.层),
-      firstPartNo: bomData[0]?.货号,
-    });
 
     if (!bomData || !bomData.length) {
       message.warning('未获取到排产分析数据');
@@ -1874,38 +2194,18 @@ async function loadSchedulingData() {
     }
 
     const treeData = buildTreeFromData(bomData, schedulingProduct.qty);
-    console.log('[loadSchedulingData] 树形转换', {
-      treeDataLength: treeData.length,
-      firstTreeLevel: treeData[0]?.level,
-      firstTreePartNo: treeData[0]?.partNo,
-    });
+    // 初始化各父级直接子级的配料数 = 父级生产数 × 子级用量
+    syncAllChildrenPickQty(treeData);
+    // 初始化各父级直接子级的生产数/采购数联动
+    syncAllChildrenQty(treeData);
 
     schDataSource.value = treeData;
     selectedLevel.value = 1;
     selectedRowKey.value = '';          // 切换数据时清空选中行
     schExpandedKeys.value = getExpandedKeysForFiltered(filteredSchDataSource.value);
 
-    console.log('[loadSchedulingData] 过滤后', {
-      filteredLength: filteredSchDataSource.value.length,
-      selectedLevel: selectedLevel.value,
-      firstFilteredLevel: filteredSchDataSource.value[0]?.level,
-      firstFilteredKey: filteredSchDataSource.value[0]?.key,
-      // 完整快照，用于判断是过滤环节丢数据还是表格渲染丢数据
-      filteredSnapshot: filteredSchDataSource.value.map((i: ProductionItem) => ({
-        key: i.key,
-        level: i.level,
-        partNo: i.partNo,
-        childrenLen: i.children?.length ?? 0,
-      })),
-    });
-
     // 在 schExpandedKeys 设置之后再计算层序号（依赖 schExpandedKeys）
     reassignLevelIndex(schDataSource.value);
-
-    console.log('[loadSchedulingData] 层序号计算后', {
-      finalDataSourceLength: schDataSource.value.length,
-      finalFilteredLength: filteredSchDataSource.value.length,
-    });
   } catch (error) {
     console.error('加载排产分析数据失败:', error);
     message.error('加载排产分析数据失败，请稍后重试');
@@ -1970,6 +2270,10 @@ watch(
       schedulingSelectedUserIds.value = [];
       schedulingSelectedUsers.value = [];
       showUserSelector.value = false;
+      // 重置组织架构加载失败状态与手动输入（每次重新打开都重新判定）
+      orgLoadFailed.value = false;
+      orgLoadErrorMessage.value = '';
+      manualSchedulingUser.value = '';
       orgSelectorRef.value?.clearSelection();
       orgSelectorRef.value?.loadDepartments();
       orgSelectorRef.value?.loadAllUsers();
@@ -2025,10 +2329,6 @@ watch(
   background: #f5f7fa;
   gap: 12px;
   padding: 14px 20px 16px;
-}
-
-.drawer-body:has(.right-panel.collapsed) {
-  justify-content: center;
 }
 
 /* ========== 左侧面板 ========== */
@@ -2094,18 +2394,6 @@ watch(
   min-height: 0;
   overflow: hidden;
   transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.right-panel.collapsed {
-  flex: 0 0 60px;
-  min-width: 60px;
-  max-width: 64px;
-  background: linear-gradient(135deg, #f8fafc 0%, #e8eef5 100%);
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(30, 58, 95, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
 }
 
 /* 右侧 Spin 容器撑满高度：让 a-spin 在 flex column 的 right-panel 内成为弹性容器，
@@ -2625,17 +2913,130 @@ watch(
 }
 
 .user-selector-wrap {
-  height: 320px;
-  overflow: hidden;
+  /* 不再使用固定高度，避免遮住分页；让选择器随内容自适应高度，
+     当左侧卡片过高时由 .left-panel 的 overflow-y: auto 整体滚动 */
+  min-height: 300px;
 }
 
 .user-selector-wrap :deep(.org-user-selector) {
-  height: 100%;
+  min-height: 300px;
 }
 
 .user-selector-wrap :deep(.dept-sidebar) {
-  max-height: 100%;
+  max-height: 420px;
   overflow-y: auto;
+}
+
+.user-selector-wrap :deep(.user-table) {
+  /* 表格区自身允许在内容多时滚动，但保留分页可见 */
+  overflow: visible;
+}
+
+/* 组织架构加载失败时的手动输入区域 */
+.manual-user-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.manual-user-alert {
+  margin-bottom: 0;
+}
+
+.manual-user-input-wrap :deep(.ant-input) {
+  border-radius: 6px;
+}
+
+.readonly-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #8c8c8c;
+  padding: 2px 4px;
+  cursor: not-allowed;
+}
+
+.readonly-hint-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #8c8c8c;
+  padding: 2px 0;
+}
+
+/* 排产用户已锁定时的遮罩：覆盖整个 OrgUserSelector，阻断交互 */
+.user-selector-inner {
+  position: relative;
+}
+
+.user-selector-inner.is-readonly {
+  pointer-events: none;
+  user-select: none;
+}
+
+.user-selector-inner.is-readonly :deep(.org-user-selector) {
+  filter: grayscale(0.4);
+  opacity: 0.85;
+}
+
+.user-selector-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  color: #595959;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 2;
+  /* 即使 .is-readonly 用 pointer-events:none 屏蔽了内层，
+     遮罩自身需要保持可点击以承载 tooltip（外层父元素未设 pointer-events）。 */
+  pointer-events: auto;
+}
+
+.user-selector-mask-icon {
+  font-size: 14px;
+  color: #fa8c16;
+}
+
+/* 评审结论卡片锁定：与排产用户卡片共用 .user-selector-mask 样式，
+   这里只需要保证内层容器为相对定位并提供 pointer-events 屏蔽 */
+.review-conclusion-inner {
+  position: relative;
+}
+
+.review-conclusion-inner.is-readonly {
+  /* 让遮罩拦截内层控件的点击/键盘交互，禁用 .ant-form 的默认行为 */
+  pointer-events: none;
+  user-select: none;
+}
+
+.review-conclusion-inner.is-readonly :deep(.ant-form) {
+  /* 视觉上稍微淡化，使遮罩中的\"已锁定\"提示更突出 */
+  filter: grayscale(0.25);
+  opacity: 0.92;
+}
+
+/* 核心要素校验卡片锁定：与评审结论、排产用户卡片共用 .user-selector-mask 样式 */
+.verify-card-inner {
+  position: relative;
+}
+
+.verify-card-inner.is-readonly {
+  pointer-events: none;
+  user-select: none;
+}
+
+.verify-card-inner.is-readonly :deep(.coil-search-row),
+.verify-card-inner.is-readonly :deep(.verify-result) {
+  filter: grayscale(0.25);
+  opacity: 0.92;
 }
 
 /* 预设排产用户展示区 */
@@ -2756,5 +3157,47 @@ watch(
 
 .coil-search-row :deep(.ant-input) {
   border-radius: 6px;
+}
+
+/* 表格行右键菜单：使用固定定位，避免被表格滚动容器裁剪。 */
+.sch-row-context-menu {
+  position: fixed;
+  z-index: 2001;
+  min-width: 160px;
+  padding: 4px 0;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+}
+
+.ctx-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  color: #262626;
+  cursor: pointer;
+}
+
+.ctx-menu-item:hover {
+  background: #f5f5f5;
+}
+
+.ctx-menu-item.is-disabled {
+  color: #bfbfbf;
+  cursor: not-allowed;
+}
+
+.ctx-menu-item.is-disabled:hover {
+  background: transparent;
+}
+
+/* 点击菜单外区域关闭菜单，同时不遮挡菜单本身。 */
+.ctx-menu-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
 }
 </style>

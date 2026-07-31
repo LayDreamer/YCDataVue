@@ -5,6 +5,7 @@ import {
   ExternalProductionPickMaterial,
   ExternalProductionWarehousing,
   ExternalProductionBOM,
+  ExternalProductionShipment,
 } from '@/api-generated/api';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -201,6 +202,49 @@ export const externalProductionService = {
         errorMessage = responseData;
       }
       throw new Error('删除外产入库数据失败:' + errorMessage);
+    }
+  },
+
+  // ==================== 外产_发运 ====================
+  async getExternalProductionShipmentList(requestDto?: PMCRequestDto): Promise<any[]> {
+    try {
+      const response = await service.getExternalProductionShipmentList(requestDto || new PMCRequestDto());
+      return response.data || [];
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('查询外产发运列表失败:' + errorMessage);
+    }
+  },
+
+  async addOrUpdateExternalProductionShipmentList(list: ExternalProductionShipment[]): Promise<any> {
+    try {
+      const response = await service.addOrUpdateExternalProductionShipmentList(list);
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('新增或更新外产发运数据失败:' + errorMessage);
+    }
+  },
+
+  async deleteExternalProductionShipmentList(ids: string[]): Promise<any> {
+    try {
+      const response = await service.deleteExternalProductionShipmentList(ids);
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('删除外产发运数据失败:' + errorMessage);
     }
   },
 };

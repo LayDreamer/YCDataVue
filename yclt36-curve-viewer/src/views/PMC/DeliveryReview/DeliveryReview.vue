@@ -21,55 +21,22 @@
           <a-statistic title="交期预警" :value="0" :value-style="{ color: '#cf1322' }" />
         </a-card>
       </a-col>
-      
+
     </a-row>
 
-    <a-card class="search-card" size="small">
-      <a-form :layout="searchFormLayout" :model="searchForm" class="search-form">
-        <div class="search-controls">
-          <a-form-item label="合同号">
-            <a-input v-model:value="searchForm.contractNo" placeholder="请输入" allow-clear class="search-field" />
-          </a-form-item>
-          <a-form-item label="货号">
-            <a-input v-model:value="searchForm.itemNo" placeholder="请输入" allow-clear class="search-field" />
-          </a-form-item>
-          <a-form-item label="生产类型">
-            <a-select
-              v-model:value="selectedProductionType"
-              placeholder="全部"
-              allow-clear
-              class="search-field search-select"
-            >
-              <a-select-option v-for="type in productionTypeOptions" :key="type" :value="type">
-                {{ type }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item label="排产用户">
-            <a-select
-              v-model:value="selectedProductionUser"
-              placeholder="全部"
-              allow-clear
-              class="search-field search-select"
-            >
-              <a-select-option v-for="user in productionUserOptions" :key="user" :value="user">
-                {{ user }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item class="search-actions">
-            <!-- <a-button type="primary" @click="handleSearch">查询</a-button> -->
-            <a-button class="btn-reset" @click="resetSearch">重置</a-button>
-          </a-form-item>
-        </div>
-        <a-form-item label="数据范围" class="data-range-item">
-          <a-radio-group v-model:value="viewMode" button-style="solid" class="view-mode-group">
-            <a-radio-button value="unreviewed">待评审</a-radio-button>
-            <a-radio-button value="reviewed">已评审</a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
-    </a-card>
+    <!-- 生产类型 tab 切换：卡片下方、表格上方 -->
+    <div class="dr-type-tab-bar">
+      <a-tabs
+        v-model:active-key="selectedProductionType"
+        class="dr-type-tabs"
+      >
+        <a-tab-pane
+          v-for="type in productionTypeOptions"
+          :key="type"
+          :tab="type"
+        />
+      </a-tabs>
+    </div>
 
     <CommonTable
       class="table-card"
@@ -85,6 +52,55 @@
       v-model:fullscreen="isFullscreen"
       @refresh="handleRefresh"
     >
+      <template #top>
+        <!-- 筛选过滤区：放在表格卡片内部，头部下方、数据栏上方 -->
+        <div class="dr-filter-controls">
+          <!-- 筛选输入行 -->
+          <div class="dr-filter-row">
+            <div class="dr-filter-item">
+              <span class="dr-filter-label">合同号</span>
+              <a-input
+                v-model:value="searchForm.contractNo"
+                placeholder="请输入"
+                allow-clear
+                class="dr-filter-field"
+              />
+            </div>
+            <div class="dr-filter-item">
+              <span class="dr-filter-label">货号</span>
+              <a-input
+                v-model:value="searchForm.itemNo"
+                placeholder="请输入"
+                allow-clear
+                class="dr-filter-field"
+              />
+            </div>
+            <div class="dr-filter-item">
+              <span class="dr-filter-label">排产用户</span>
+              <a-select
+                v-model:value="selectedProductionUser"
+                placeholder="全部"
+                allow-clear
+                class="dr-filter-field dr-filter-select"
+              >
+                <a-select-option v-for="user in productionUserOptions" :key="user" :value="user">
+                  {{ user }}
+                </a-select-option>
+              </a-select>
+            </div>
+            <div class="dr-filter-actions">
+              <a-button class="dr-btn-reset" @click="resetSearch">重置</a-button>
+            </div>
+            <div class="dr-filter-data-range">
+              <span class="dr-filter-label">数据范围</span>
+              <a-radio-group v-model:value="viewMode" button-style="solid" class="dr-view-mode-group">
+                <a-radio-button value="unreviewed">待评审</a-radio-button>
+                <a-radio-button value="reviewed">已评审</a-radio-button>
+              </a-radio-group>
+            </div>
+          </div>
+        </div>
+      </template>
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === '状态'">
           <a-tag :color="record.状态 === '评审通过' ? 'green' : record.状态 === '评审驳回' ? 'red' : 'orange'">
@@ -182,7 +198,7 @@ const allColumns = computed(() => {
 const searchForm = reactive({ contractNo: "", productionNo: '', itemNo: '', coilItemNo: '', analysisNo: '' });
 const dataSource = ref<PMCDeliveryReview[]>([]);
 const selectedProductionUser = ref<string | null>(null);
-const selectedProductionType = ref<string | null>(null);
+const selectedProductionType = ref<string>('普通订单');
 const modalVisible = ref(false);
 const currentItem = ref<PMCDeliveryReview | null>(null);
 const pagination = reactive({
@@ -193,7 +209,6 @@ const pagination = reactive({
 });
 
 const screens = Grid.useBreakpoint();
-const searchFormLayout = computed(() => (screens.value?.md ? 'inline' : 'vertical'));
 const tableSize = computed(() => (screens.value?.md ? 'middle' : 'small'));
 const tablePagination = computed(() => ({
   pageSize: pagination.pageSize,
@@ -231,15 +246,13 @@ const unreviewedCount = ref(0);
 const reviewedCount = ref(0);
 
 
-// 仅允许展示的生产类型：其他类型（维修、备货等）在列表中过滤掉
+// 生产类型 tab 选项（后端已按这些类型过滤，此处仅用于定义 tab）
 const ALLOWED_PRODUCTION_TYPES = ['普通订单', '样品'];
 
 // 计算属性：根据当前模式及筛选条件过滤数据
 const filteredData = computed(() => {
-  // 仅展示允许的生产类型（普通订单、样品），其他类型一律过滤
-  let result = dataSource.value.filter(item =>
-    ALLOWED_PRODUCTION_TYPES.includes(item.生产类型 ?? '')
-  );
+  // 后端已按生产类型过滤，前端不再做全局类型过滤
+  let result = [...dataSource.value];
   if (searchForm.contractNo) {
   
   // 两种模式都进行前端过滤合同号、分析单号
@@ -272,7 +285,7 @@ const productionUserOptions = computed(() => {
   return [...new Set(users)];
 });
 
-// 生产类型选项固定为允许展示的两种（与 ALLOWED_PRODUCTION_TYPES 保持一致）
+// 生产类型 tab 选项（与 ALLOWED_PRODUCTION_TYPES 保持一致）
 const productionTypeOptions = ALLOWED_PRODUCTION_TYPES;
 
 // 获取未评审数据（产品信息）
@@ -299,10 +312,8 @@ const  fetchProductData = async () => {
 
     dataSource.value = mappedData;
     fullUnreviewedData.value = [...mappedData];
-    // 统计仅计允许展示的生产类型（普通订单、样品）
-    unreviewedCount.value = mappedData.filter(item =>
-      ALLOWED_PRODUCTION_TYPES.includes(item.生产类型 ?? '')
-    ).length;
+    // 后端已过滤生产类型，直接统计返回结果
+    unreviewedCount.value = mappedData.length;
   } catch (error) {
     console.error('获取产品数据失败:', error);
     message.error('加载数据失败，请稍后重试');
@@ -342,10 +353,8 @@ const mappedData: PMCDeliveryReview[]=response;
       dataSource.value = mappedData;
     }
     fullReviewedData.value = [...mappedData];
-    // 统计仅计允许展示的生产类型（普通订单、样品）
-    reviewedCount.value = mappedData.filter(item =>
-      ALLOWED_PRODUCTION_TYPES.includes(item.生产类型 ?? '')
-    ).length;
+    // 后端已过滤生产类型，直接统计返回结果
+    reviewedCount.value = mappedData.length;
   } catch (error) {
     console.error('获取已评审数据失败:', error);
     message.error('加载已评审数据失败，请稍后重试');
@@ -361,7 +370,7 @@ watch(viewMode, (newMode, oldMode) => {
   searchForm.contractNo = '';
   searchForm.itemNo = '';
   selectedProductionUser.value = null;
-  selectedProductionType.value = null;
+  selectedProductionType.value = productionTypeOptions[0];
   
   if (newMode === 'unreviewed') {
     fetchProductData();
@@ -396,7 +405,7 @@ const resetSearch = () => {
   searchForm.itemNo = '';
   searchForm.coilItemNo = '';
   selectedProductionUser.value = null;
-  selectedProductionType.value = null;
+  selectedProductionType.value = productionTypeOptions[0];
   
   if (viewMode.value === 'reviewed') {
     if (fullReviewedData.value.length) {
@@ -520,48 +529,72 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.search-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px;
+/* ========== 表格顶部筛选过滤区（参考排产分析详情 scheduling-controls 风格） ========== */
+.dr-filter-controls {
+  flex-shrink: 0;
+  padding: 20px 4px 20px 4px;
 }
-.search-controls {
+/* 生产类型 tab 行：放在卡片下方、表格卡片上方 */
+.dr-type-tab-bar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
-  flex: 1 1 auto;
-  min-width: 0;
+  margin: 20px 0;
+  padding-left: 2px;
 }
-.search-field {
-  width: 100%;
-  min-width: 200px;
-  max-width: 280px;
+.dr-type-tabs {
+  width: fit-content;
 }
-.search-select {
-  width: 100%;
-  min-width: 200px;
-  max-width: 280px;
+.dr-type-tabs :deep(.ant-tabs-nav) {
+  margin: 0;
 }
-.search-actions {
-  margin-bottom: 0;
-  display: flex;
-  gap: 8px;
+.dr-type-tabs :deep(.ant-tabs-tab) {
+  padding: 10px 6px;
+  margin: 0 20px 0 0;
+  font-size: 16px;
 }
-.btn-reset {
+.dr-type-tabs :deep(.ant-tabs-tab + .ant-tabs-tab) {
   margin-left: 0;
 }
-.data-range-item {
-  margin-left: auto;
-  margin-right: 0;
-  margin-bottom: 0;
+.dr-type-tabs :deep(.ant-tabs-ink-bar) {
+  height: 3px;
+}
+.dr-filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 20px;
+}
+.dr-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dr-filter-label {
+  font-size: 13px;
+  color: #8c8c8c;
+  white-space: nowrap;
+}
+.dr-filter-field {
+  width: 200px;
+}
+.dr-filter-select {
+  width: 200px;
+}
+.dr-filter-actions {
   display: flex;
   align-items: center;
 }
-.view-mode-group {
+.dr-btn-reset {
+  margin-left: 0;
+}
+.dr-filter-data-range {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dr-view-mode-group {
   display: flex;
   flex-wrap: wrap;
   gap: 0;
@@ -569,19 +602,19 @@ onMounted(() => {
   border-radius: 4px;
   overflow: hidden;
 }
-.view-mode-group :deep(.ant-radio-button-wrapper) {
+.dr-view-mode-group :deep(.ant-radio-button-wrapper) {
   border-radius: 0;
   margin-right: 0;
   border-left: none !important;
 }
-.view-mode-group :deep(.ant-radio-button-wrapper:first-child) {
+.dr-view-mode-group :deep(.ant-radio-button-wrapper:first-child) {
   border-radius: 4px 0 0 4px;
   border-left: 1px solid #d9d9d9 !important;
 }
-.view-mode-group :deep(.ant-radio-button-wrapper:last-child) {
+.dr-view-mode-group :deep(.ant-radio-button-wrapper:last-child) {
   border-radius: 0 4px 4px 0;
 }
-.view-mode-group :deep(.ant-radio-button-wrapper:not(:first-child)) {
+.dr-view-mode-group :deep(.ant-radio-button-wrapper:not(:first-child)) {
   border-left: none !important;
 }
 
@@ -589,51 +622,35 @@ onMounted(() => {
   .page-container {
     padding: 12px;
   }
-  .search-form {
+  .dr-filter-row {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
-    padding: 12px;
   }
-  .search-field,
-  .search-select {
-    max-width: none;
+  .dr-filter-field,
+  .dr-filter-select {
+    width: 100%;
   }
-  .data-range-item {
+  .dr-filter-data-range {
     margin-left: 0;
     width: 100%;
     justify-content: flex-start;
   }
-  .search-controls {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  .search-actions {
-    display: flex;
-    gap: 8px;
-  }
-  .search-actions :deep(.ant-btn) {
-    flex: 1;
-  }
-  .btn-reset {
-    margin-left: 0;
-  }
-  .view-mode-group {
+  .dr-view-mode-group {
     width: 100%;
   }
-  .view-mode-group :deep(.ant-radio-button-wrapper) {
+  .dr-view-mode-group :deep(.ant-radio-button-wrapper) {
     flex: 1;
     text-align: center;
     margin-right: 0;
     border-radius: 0;
     border-left: none !important;
   }
-  .view-mode-group :deep(.ant-radio-button-wrapper:first-child) {
+  .dr-view-mode-group :deep(.ant-radio-button-wrapper:first-child) {
     border-radius: 4px 0 0 4px;
     border-left: 1px solid #d9d9d9 !important;
   }
-  .view-mode-group :deep(.ant-radio-button-wrapper:last-child) {
+  .dr-view-mode-group :deep(.ant-radio-button-wrapper:last-child) {
     border-radius: 0 4px 4px 0;
   }
 }

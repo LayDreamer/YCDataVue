@@ -10,23 +10,33 @@
 
     <!-- 筛选栏 -->
     <div class="filter-bar">
-      <!-- 第一行：快捷筛选 + tab -->
+      <!-- 第一行：行排序 + 日期 + 分析 + tab -->
       <div class="filter-row">
-        <div class="quick-filters">
-          <a-checkbox-group v-model:value="quickFilters" :options="quickFilterOptions" />
-          <a-button
-            :type="showKittingAnalysis ? 'primary' : 'default'"
-            size="small"
-            class="analysis-btn"
-            :loading="analyzing"
-            @click="handleAnalysisToggle"
-          >
-            齐套、配料分析
-          </a-button>
+        <div class="filter-actions">
+          <span class="sort-label">行排序：</span>
+          <a-button size="small" type="primary">交期升序</a-button>
         </div>
+
+        <span class="sort-label">交货日期范围：</span>
+        <a-range-picker
+          v-model:value="dateRange"
+          :format="dateFormat"
+          :placeholder="['开始日期', '结束日期']"
+          size="small"
+        />
+
+        <a-button
+          :type="showKittingAnalysis ? 'primary' : 'default'"
+          size="small"
+          class="analysis-btn"
+          :loading="analyzing"
+          @click="handleAnalysisToggle"
+        >
+          齐套、配料分析
+        </a-button>
+
         <div class="tab-bar">
-          <a-tabs v-model:activeKey="activeTab" size="small" @change="handleTabChange">
-            <a-tab-pane key="salesControl" tab="成品销控表" />
+          <a-tabs v-model:activeKey="activeTab" size="small">
             <a-tab-pane key="workOrderTracking" tab="工单销控表" />
           </a-tabs>
         </div>
@@ -59,9 +69,6 @@
             </a-select-option>
           </a-select>
 
-          <a-checkbox v-model:checked="hasProductionDate">在产日期</a-checkbox>
-          <a-date-picker v-if="hasProductionDate" v-model:value="productionDate" size="small" />
-
           <a-select
             v-model:value="workshop"
             placeholder="全部车间"
@@ -81,18 +88,6 @@
             class="filter-search"
             style="width: 200px"
           />
-
-          <a-range-picker
-            v-model:value="dateRange"
-            :format="dateFormat"
-            :placeholder="['开始日期', '结束日期']"
-            size="small"
-          />
-
-          <div class="filter-actions">
-            <span class="sort-label">行排序：</span>
-            <a-button size="small" type="primary">交期升序</a-button>
-          </div>
         </div>
       </div>
     </div>
@@ -158,6 +153,7 @@
               <span
                 class="delivery-cell"
                 :style="getDeliveryStyle(record.deliveryMap[column.key].status)"
+                @click="handleDeliveryClick(record, column.key)"
               >
                 {{ record.deliveryMap[column.key].quantity }}
               </span>
@@ -188,6 +184,7 @@
       :work-order-data="currentWorkOrderData"
       :material-data="currentMaterialData"
       :loading="materialLoading"
+      :show-material="showMaterialDetail"
     />
   </div>
 </template>
@@ -197,7 +194,6 @@ import { ref, computed, onMounted, onActivated, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import { useRouter } from 'vue-router'
 import {
   ContainerOutlined
 } from '@ant-design/icons-vue'
@@ -208,7 +204,6 @@ import {
   feedingStatusOptions
 } from './data'
 import { workOrderSalesControlService } from '@/services/workOrderSalesControlService'
-import { salesControlService } from '@/services/salesControlService'
 import { externalProductionService } from '@/services/externalProductionService'
 import { WorkOrderSalesControl, PMCRequestDto } from '@/api-generated/api'
 import TableColumnSettings, { type ColumnSetting } from '@/components/TableColumnSettings.vue'
@@ -227,7 +222,6 @@ const COLUMN_WIDTHS = {
   productNo: 110,
   productName: 140,
   spec: 150,
-  schedulingUser: 110,
   total: 90,
   stored: 90,
   inProd: 90,
@@ -279,8 +273,6 @@ function dateColumnKeyToIso(key: string) {
 }
 
 // ==================== 响应式状态 ====================
-const router = useRouter()
-
 // 表格高度：至少保证能显示 10 行（约 920px），并随窗口自适应
 const tableScrollY = ref(920)
 function updateTableHeight() {
@@ -307,28 +299,15 @@ const currentProductSpec = ref('')
 const currentWorkOrderData = ref<any[]>([])
 const currentMaterialData = ref<any[]>([])
 const materialLoading = ref(false)
+const showMaterialDetail = ref(true)
 
 // 筛选条件
-const quickFilters = ref<string[]>([])
-const quickFilterOptions = [
-  { label: '配齐/齐套', value: '配齐/齐套' },
-  { label: '配料中/缺料', value: '配料中/缺料' },
-  { label: '未分析', value: '未分析' }
-]
 const showKittingAnalysis = ref(false)
 const kittingStatus = ref<string | undefined>(undefined)
 const feedingStatus = ref<string | undefined>(undefined)
-const hasProductionDate = ref(false)
-const productionDate = ref<Dayjs | null>(null)
 const workshop = ref<string | undefined>(undefined)
 const searchKeyword = ref('')
 const dateRange = ref<[Dayjs, Dayjs] | null>([dayjs('2026-01-01'), dayjs('2026-01-10')])
-
-function handleTabChange(key: string) {
-  if (key === 'salesControl') {
-    router.push({ name: 'SalesControl' })
-  }
-}
 
 // ==================== 计算属性 ====================
 const workshopOptions = computed(() => {
@@ -384,7 +363,6 @@ const tableScrollWidth = computed(() => {
     COLUMN_WIDTHS.productNo +
     COLUMN_WIDTHS.productName +
     COLUMN_WIDTHS.spec +
-    COLUMN_WIDTHS.schedulingUser +
     COLUMN_WIDTHS.total +
     COLUMN_WIDTHS.stored +
     COLUMN_WIDTHS.inProd +
@@ -399,17 +377,6 @@ const tableScrollWidth = computed(() => {
 const filteredData = computed(() => {
   // 只显示没有父级编号的顶层节点
   let result = dataSource.value;
-
-  // 快捷筛选
-  if (quickFilters.value.length > 0) {
-    result = result.filter(item => {
-      const filters = quickFilters.value
-      const matchKitting = filters.includes('配齐/齐套') && item.齐套 === '齐套'
-      const matchFeeding = filters.includes('配料中/缺料') && (item.配料 === '配料中' || item.齐套 === '缺料')
-      const matchUnanalysis = filters.includes('未分析') && item.齐套 === '未分析'
-      return matchKitting || matchFeeding || matchUnanalysis
-    })
-  }
 
   // 齐套状态筛选
   if (kittingStatus.value) {
@@ -448,7 +415,6 @@ const baseColumns: TableColumnsType = [
   { title: '品名', dataIndex: '品名', key: '品名', width: COLUMN_WIDTHS.productName, fixed: 'left' },
   { title: '规格', dataIndex: '规格', key: '规格', width: COLUMN_WIDTHS.spec, fixed: 'left' },
   { title: '商品属性', dataIndex: '商品属性', key: '商品属性', width: COLUMN_WIDTHS.attribute },
-  { title: '排产用户', dataIndex: '排产用户', key: '排产用户', width: COLUMN_WIDTHS.schedulingUser },
   { title: '工单总数', dataIndex: '工单总数', key: '工单总数', width: COLUMN_WIDTHS.total, align: 'center' },
   { title: '已入库数', dataIndex: '已入库数', key: '已入库数', width: COLUMN_WIDTHS.stored, align: 'center' },
   { title: '在产数量', dataIndex: '在产数量', key: '在产数量', width: COLUMN_WIDTHS.inProd, align: 'center' },
@@ -524,7 +490,6 @@ function handleAnalysisToggle() {
 async function runKittingAnalysis() {
   analyzing.value = true
   try {
-    const now = dayjs().format('YYYY-MM-DD HH:mm:ss')
     for (const item of dataSource.value) {
       if (!item.货号) continue
 
@@ -543,7 +508,6 @@ async function runKittingAnalysis() {
       )
       item.齐套 = allKittingReady ? '齐套' : '缺料'
       item.配料 = allFeedingReady ? '配齐' : '配料中'
-      item.分析日期 = now
     }
     showKittingAnalysis.value = true
     message.success('齐套、配料分析完成')
@@ -560,7 +524,6 @@ function resetAnalysis() {
   for (const item of dataSource.value) {
     item.齐套 = '未分析'
     item.配料 = '未配料'
-    item.分析日期 = ''
   }
 }
 
@@ -705,6 +668,7 @@ async function handleTotalClick(record: TableRowData) {
   currentProductNo.value = record.货号 || ''
   currentProductName.value = record.品名 || ''
   currentProductSpec.value = record.规格 || ''
+  showMaterialDetail.value = true
   currentWorkOrderData.value = generateWorkOrderDetail(record)
   currentMaterialData.value = []   // 先清空，避免显示上一次的数据
   detailModalVisible.value = true  // 先弹窗
@@ -725,6 +689,27 @@ function generateWorkOrderDetail(record: TableRowData) {
   return matched.map((d, idx) => ({
     id: idx + 1,
     工单单号: d.工单单号 || '-',
+    排产编号: d.排产编号 || '-',
+    排产用户: d.排产用户 || '-',
+    交货日期: d.交货日期 || '-',
+    生产数: Number(d.生产数) || 0,
+    入库数: Number(d.入库数) || 0,
+    待产数: Number(d.待产数) || 0,
+  }))
+}
+
+// 按指定交货日期过滤工单总需求
+function generateWorkOrderDetailForDate(record: TableRowData, targetDate: string) {
+  const matched = workOrderDetailList.value.filter(
+    (d) =>
+      String(d.货号 || '') === String(record.货号 || '') &&
+      (d.交货日期 || '').substring(0, 10) === targetDate
+  )
+  if (matched.length === 0) return []
+  return matched.map((d, idx) => ({
+    id: idx + 1,
+    工单单号: d.工单单号 || '-',
+    排产编号: d.排产编号 || '-',
     排产用户: d.排产用户 || '-',
     交货日期: d.交货日期 || '-',
     生产数: Number(d.生产数) || 0,
@@ -789,7 +774,7 @@ function buildBomTree(bomData: any[], qty: number): BomItem[] {
     const _wip = record.在产需求 !== undefined && record.在产需求 !== '' ? Number(record.在产需求) : 0
     const _min = record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : 0
     // 与排产分析默认 analysisType='normal' 保持一致
-    const _avail = _stock + _transit - _wip - _min
+    const _avail = Math.max(0, _stock + _transit - _wip - _min)
 
     const item: BomItem = {
       key,
@@ -960,7 +945,14 @@ function handleDeliveryClick(record: TableRowData, dateKey: string) {
   const targetDate = dateColumnKeyToIso(dateKey)
   const planInfo = record.deliveryMap[dateKey]
   if (!planInfo) return
-  message.info(`交货详情：${record.货号}，日期 ${targetDate}，数量 ${planInfo.quantity}`)
+
+  currentProductNo.value = record.货号 || ''
+  currentProductName.value = record.品名 || ''
+  currentProductSpec.value = record.规格 || ''
+  showMaterialDetail.value = false
+  currentMaterialData.value = []
+  currentWorkOrderData.value = generateWorkOrderDetailForDate(record, targetDate)
+  detailModalVisible.value = true
 }
 
 function mapApiItemToTableItem(item: any): WorkOrderSalesControl {
@@ -972,7 +964,6 @@ function mapApiItemToTableItem(item: any): WorkOrderSalesControl {
   record.货号 = item['货号'] || ''
   record.品名 = item['品名'] || ''
   record.规格 = item['规格'] || ''
-  record.排产用户 = item['排产用户'] || ''
   record.工单总数 = item['工单总数'] || '0'
   record.已入库数 = item['已入库数'] || '0'
   record.在产数量 = item['在产数量'] || '0'
@@ -1087,7 +1078,7 @@ onUnmounted(() => {
 .filter-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
@@ -1107,6 +1098,7 @@ onUnmounted(() => {
 .analysis-btn {
   border-radius: 20px;
   font-weight: 500;
+  margin-left: 24px;
 }
 
 .filter-controls {
@@ -1125,7 +1117,6 @@ onUnmounted(() => {
 .filter-actions {
   display: flex;
   gap: 8px;
-  margin-left: auto;
   align-items: center;
 }
 
@@ -1242,15 +1233,17 @@ onUnmounted(() => {
 }
 
 .link-number {
-  color: #1e3a5f;
+  color: #1890ff;
   cursor: pointer;
-  border-bottom: 1px dashed transparent;
+  font-weight: 600;
+  border-bottom: 1px solid #1890ff;
   transition: all 0.2s;
 }
 
 .link-number:hover {
-  border-bottom-color: #2b4b78;
-  color: #2b4b78;
+  color: #40a9ff;
+  border-bottom-color: #40a9ff;
+  background-color: #e6f4ff;
 }
 
 /* 状态标签 */

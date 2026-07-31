@@ -72,6 +72,8 @@ export interface ProductDataAssemblyList extends ERPBase {
   单位?: string;
   /** 来源 */
   来源?: string;
+  /** 中间件（0/1 标记） */
+  中间件?: string;
 }
 
 export interface PMCDeliveryReview extends ERPBase {
@@ -125,7 +127,7 @@ export interface SchedulingAnalysis extends ERPBase {
 // 排产分析表格列配置（交期评审详情弹窗使用，独立维护，不引用 SchedulingAnalysis/types）
 export const columns: TableColumnsType = [
   { title: '序号', key: 'index', width: 60, fixed: 'left', align: 'center' },
-  { title: '层序号', dataIndex: 'levelIndex', minWidth: 150,  fixed: 'left', align: 'left' },
+  { title: '层序号', dataIndex: 'levelIndex', width: 150, fixed: 'left', align: 'left' },
   { title: '货号', dataIndex: 'partNo', width: 220, fixed: 'left' },
   { title: '层', key: 'level', width: 60, align: 'center' },
   { title: '产品属性', dataIndex: 'attr', width: 100 },
@@ -135,7 +137,8 @@ export const columns: TableColumnsType = [
   { title: '用量', dataIndex: 'usage', width: 70, align: 'center' },
   { title: '需求量', dataIndex: 'needQty', width: 90, align: 'center' },
   { title: '单位', dataIndex: 'unit', width: 60, align: 'center' },
-  { title: '备注', dataIndex: 'remark', width: 100 },
+  // { title: '备注', dataIndex: 'remark', width: 100,align: 'center'  },
+  { title: '中间件', dataIndex: 'mid', width: 80, align: 'center' },
   { title: '工序名称', dataIndex: 'process', width: 100 },
   { title: '工序车间', dataIndex: 'workshop', key: 'workshop', width: 150 },
   { title: '仓库名称', dataIndex: 'warehouse', width: 110 },
@@ -145,6 +148,7 @@ export const columns: TableColumnsType = [
   { title: '库存上限', dataIndex: 'max', width: 80, align: 'center' },
   { title: '库存下限', dataIndex: 'min', width: 80, align: 'center' },
   { title: '仓库可用', dataIndex: 'avail', width: 90, align: 'center' },
+  { title: '配料数', dataIndex: 'pickedQty', width: 90, align: 'center' },
   { title: '生产数', key: 'produceQty', width: 100, align: 'center' },
   { title: '采购数', key: 'purchaseQty', width: 100, align: 'center' },
   { title: '生产损耗', key: 'loss', width: 80, align: 'center' },

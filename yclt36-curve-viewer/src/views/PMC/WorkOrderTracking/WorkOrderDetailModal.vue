@@ -5,13 +5,12 @@
     :mask-closable="false"
     width="1400px"
     class="work-order-detail-modal"
+    :body-style="{ minHeight: '550px' }"
     @cancel="handleClose"
   >
     <!-- 自定义标题栏 -->
     <template #title>
-      <div class="custom-modal-header">
-        <span class="modal-title-product-info" :title="productInfo">{{ productInfo }}</span>
-      </div>
+      <div class="custom-modal-header"></div>
     </template>
 
     <!-- 工单总需求表格 -->
@@ -38,7 +37,7 @@
     </div>
 
     <!-- 物料需求明细表格 -->
-    <div class="table-section">
+    <div v-if="showMaterial !== false" class="table-section">
       <div class="section-header">
         <span class="section-title">物料需求明细</span>
         <!-- <span class="section-product-info">{{ productInfo }}</span> -->
@@ -70,6 +69,7 @@ import { computed } from 'vue'
 interface WorkOrderItem {
   id: number
   工单单号: string
+  排产编号: string
   排产用户: string
   交货日期: string
   生产数: number
@@ -99,6 +99,7 @@ const props = defineProps<{
   workOrderData: WorkOrderItem[]
   materialData: MaterialItem[]
   loading?: boolean
+  showMaterial?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -115,6 +116,7 @@ const productInfo = computed(() => `${props.productNo},${props.productName},${pr
 const workOrderColumns = [
   { title: '序号', dataIndex: 'id', key: 'id', width: 60, align: 'center' },
   { title: '工单单号', dataIndex: '工单单号', key: '工单单号', width: 120 },
+  { title: '排产编号', dataIndex: '排产编号', key: '排产编号', width: 120, align: 'center' },
   { title: '排产用户', dataIndex: '排产用户', key: '排产用户', width: 120, align: 'center' },
   { title: '交货日期', dataIndex: '交货日期', key: '交货日期', width: 120, align: 'center' },
   { title: '生产数', dataIndex: '生产数', key: '生产数', width: 100, align: 'center' },
@@ -176,15 +178,19 @@ function handleClose() {
 }
 
 /* body 区域 */
-.work-order-detail-modal :deep(.ant-modal-body) {
-  padding: 20px;
-  max-height: 72vh;
-  overflow-y: auto;
-}
-
 .work-order-detail-modal :deep(.ant-modal-content) {
   border-radius: 8px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 550px;
+  max-height: 80vh;
+}
+
+.work-order-detail-modal :deep(.ant-modal-body) {
+  flex: 1;
+  padding: 48px 20px 20px;
+  overflow-y: auto;
 }
 
 /* 关闭按钮 */
@@ -218,7 +224,7 @@ function handleClose() {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
-  padding: 0 4px;
+  padding: 0 56px 0 4px;
 }
 
 .section-title {

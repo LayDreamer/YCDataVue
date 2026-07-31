@@ -1,14 +1,16 @@
-import { createRouter, createWebHashHistory  } from 'vue-router'
-import Products from '../views/Products.vue'   
+import { createRouter, createWebHashHistory } from 'vue-router'
+import Products from '../views/Products.vue'
 import CurveDetail from '../views/CurveDetail.vue'
 import NotFound from '../views/NotFound.vue'
 import Dashboard from '../views/Dashboard.vue'
 import Home from '../views/Home.vue'
-import SalesControl from '@/views/PMC/SalesControl/SalesControl.vue'
+import Login from '../views/Login.vue'
+import Register from '../views/Register.vue'
+import ErpLogin from '../views/ErpLogin.vue'
 import WorkOrderManagement from '@/views/PMC/WorkOrderManagement/WorkOrderManagement.vue'
 import WorkOrderTracking from '@/views/PMC/WorkOrderTracking/WorkOrderTracking.vue'
 import SchedulingAnalysis from '@/views/PMC/SchedulingAnalysis/SchedulingAnalysis.vue'
-import DeliveryReview from '@/views/PMC/DeliveryReview/DeliveryReview.vue' 
+import DeliveryReview from '@/views/PMC/DeliveryReview/DeliveryReview.vue'
 import ReviewDetail from '@/views/PMC/DeliveryReview/ReviewDetail.vue'
 import Users from '@/views/System/UserManagement.vue'
 import Config from '@/views/System/Config.vue'
@@ -18,14 +20,13 @@ import Workflow from '@/views/Test/Workflow.vue'
 import ProfitAnalysis from '@/views/Test/ProfitAnalysis.vue'
 import WeChatSend from '@/views/Test/WeChatSend.vue'
 import ExternalProductionTest from '@/views/Test/ExternalProductionTest.vue'
-import { 
-  DashboardOutlined, 
-  ShoppingOutlined, 
+import {
+  DashboardOutlined,
+  ShoppingOutlined,
   SettingOutlined,
   TeamOutlined,
-  ToolOutlined, 
+  ToolOutlined,
   FileDoneOutlined,
-  ScheduleOutlined,
   LineChartOutlined,
   ContainerOutlined,
   FunnelPlotOutlined,
@@ -37,29 +38,37 @@ import {
   ApartmentOutlined
 } from '@ant-design/icons-vue'
 
+// 登录/注册页在路由切换时强制重新渲染（避免动画残留）
+const LoginRoute = { path: '/login', name: 'Login', component: Login, meta: { title: '登录', skipAuth: true } }
+const ErpLoginRoute = { path: '/erp-login', name: 'ErpLogin', component: ErpLogin, meta: { title: 'ERP 登录', skipAuth: true } }
+const RegisterRoute = { path: '/register', name: 'Register', component: Register, meta: { title: '注册', skipAuth: true } }
+
 const routes = [
- {
+  LoginRoute,
+  ErpLoginRoute,
+  RegisterRoute,
+  {
     path: '/',
     component: Home,
+    redirect: '/dashboard',
     children: [
-      { path: '', redirect: 'dashboard' },
       {
-        path: 'dashboard', 
+        path: 'dashboard',
         name: 'Dashboard',
         component: Dashboard,
         meta: { title: '仪表盘', icon: DashboardOutlined }
-      },      
+      },
       {
         path: 'products',
         name: 'Products',
         component: Products,
         meta: { title: '比例阀管理', icon: ShoppingOutlined, order: 1 }
       },
-      { 
+      {
         path: 'products/detail',
         name: 'CurveDetail',
-        component: CurveDetail 
-      },  
+        component: CurveDetail
+      },
       {
         path: 'pmc',
         name: 'PMC',
@@ -70,12 +79,6 @@ const routes = [
             name: 'DeliveryReview',
             component: DeliveryReview,
             meta: { title: '交期评审', icon: FileDoneOutlined }
-          },
-          {
-            path: 'salesControl',
-            name: 'SalesControl',
-            component: SalesControl,
-            meta: { title: '成品销控表', icon: ScheduleOutlined }
           },
           {
             path: 'workOrder',
@@ -124,7 +127,7 @@ const routes = [
             path: 'profitAnalysis',
             name: 'profitAnalysis',
             component: ProfitAnalysis,
-            meta: { title: '利润分红分析', icon: DollarCircleOutlined ,hidden: true}  
+            meta: { title: '利润分红分析', icon: DollarCircleOutlined, hidden: true }
           },
           {
             path: 'externalProduction',
@@ -167,6 +170,29 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes
+})
+
+// ========== 路由守卫：未登录跳转到登录页 ==========
+const TOKEN_KEY = 'V_AUTH_TOKEN'
+router.beforeEach((to, _from, next) => {
+  // 登录/注册页直接放行
+  if (to.meta?.skipAuth) {
+    // 已登录访问登录页：直接跳到首页
+    if (to.name === 'Login' && localStorage.getItem(TOKEN_KEY)) {
+      next({ path: '/' })
+      return
+    }
+    next()
+    return
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY)
+  if (!token) {
+    // 未登录，记录来源页后跳转到登录
+    next({ path: '/login', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
 })
 
 export default router

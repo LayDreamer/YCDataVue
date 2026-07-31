@@ -60,7 +60,7 @@ class WeChatWorkService {
   // 获取用户列表
   async getUserList(deptId: number): Promise<WeChatUser[]> {
     try {
-      const response = await service.users(new DepartmentRequestDto({
+      const response = await service.usersPOST(new DepartmentRequestDto({
         departmentId: deptId }));
       if (!response.success) {
         throw new Error(response.message || '请求失败')

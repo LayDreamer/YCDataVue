@@ -44,6 +44,8 @@ export function toCamelCase(obj: any, depth = 0, maxDepth = 50): any {
       if (!Object.prototype.hasOwnProperty.call(obj, key)) {
         continue
       }
+
+      
       
       // 跳过函数和 Symbol
       if (typeof obj[key] === 'function' || typeof obj[key] === 'symbol') {

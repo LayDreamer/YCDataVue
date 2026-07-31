@@ -44,7 +44,7 @@
           :expanded-row-keys="expandedRowKeys"
           :row-class-name="mergedRowClassName"
           :custom-row="mergedCustomRow"
-          @expand="(expanded: boolean, record: any) => emit('expand', expanded, record)"
+          @expand="handleExpand"
         >
           <template v-if="$slots.expandIcon" #expandIcon="slotProps">
             <slot name="expandIcon" v-bind="slotProps" />
@@ -108,7 +108,7 @@
           :expanded-row-keys="expandedRowKeys"
           :row-class-name="mergedRowClassName"
           :custom-row="mergedCustomRow"
-          @expand="(expanded: boolean, record: any) => emit('expand', expanded, record)"
+          @expand="handleExpand"
         >
           <template v-if="$slots.expandIcon" #expandIcon="slotProps">
             <slot name="expandIcon" v-bind="slotProps" />
@@ -398,38 +398,90 @@ function handleRefresh() {
 // ========== 自动滚动宽高 ==========
 const tableWrapperRef = ref<HTMLElement | null>(null);
 const internalScrollY = ref<number | undefined>(undefined);
+const scrollVersion = ref(0);
+let resizeObserver: ResizeObserver | null = null;
 
 const computedScrollX = computed(() => {
   if (!props.autoScrollX) return undefined;
   const total = displayColumns.value.reduce((sum, col) => {
-    const w = (col?.width as number) || 120;
+    const w = (col?.width as number) || (col?.minWidth as number) || 120;
     return sum + w;
   }, 0);
   return total > 600 ? total : undefined;
 });
 
+let cachedScrollbarHeight: number | null = null;
+function getScrollbarHeight(): number {
+  if (cachedScrollbarHeight !== null) return cachedScrollbarHeight;
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;overflow:scroll;height:100px;width:100px;visibility:hidden;z-index:-1;';
+  document.body.appendChild(probe);
+  cachedScrollbarHeight = probe.offsetHeight - probe.clientHeight;
+  document.body.removeChild(probe);
+  return cachedScrollbarHeight;
+}
+
 function updateScrollY() {
   if (props.autoScrollY && tableWrapperRef.value) {
-    internalScrollY.value = tableWrapperRef.value.clientHeight;
+    const wrapper = tableWrapperRef.value;
+    let height = wrapper.clientHeight;
+
+    // 扣除表头高度：Ant Design Vue 的 scroll.y 指 tbody 高度，
+    // 直接拿容器高度会导致整个表格（header + body）超出容器，底部被截断
+    const headerEl = wrapper.querySelector('.ant-table-header, .ant-table-thead') as HTMLElement | null;
+    if (headerEl) {
+      height -= headerEl.getBoundingClientRect().height;
+    }
+
+    // 当内容宽度超过容器宽度时，预留水平滚动条高度，避免其遮挡最后一行
+    if (props.autoScrollX && computedScrollX.value && computedScrollX.value > wrapper.clientWidth) {
+      height -= getScrollbarHeight();
+    }
+
+    internalScrollY.value = Math.max(height, 120);
   }
 }
 
-const effectiveScroll = computed(() => ({
-  x: props.autoScrollX ? computedScrollX.value : props.scroll?.x,
-  y: props.autoScrollY ? internalScrollY.value : props.scroll?.y,
-}));
+function handleExpand(expanded: boolean, record: any) {
+  // 树形展开/收起会改变表格可视内容，需要重新计算滚动尺寸
+  nextTick(() => {
+    scrollVersion.value++;
+    updateScrollY();
+  });
+  emit('expand', expanded, record);
+}
+
+const effectiveScroll = computed(() => {
+  // 读取 scrollVersion 使其成为依赖，展开/收起时强制生成新的 scroll 对象引用，
+  // 触发 Ant Design Vue 表格重新应用滚动设置
+  scrollVersion.value;
+  return {
+    x: props.autoScrollX ? computedScrollX.value : props.scroll?.x,
+    y: props.autoScrollY ? internalScrollY.value : props.scroll?.y,
+  };
+});
 
 onMounted(() => {
   nextTick(updateScrollY);
   window.addEventListener('resize', updateScrollY);
+  if (tableWrapperRef.value && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      nextTick(updateScrollY);
+    });
+    resizeObserver.observe(tableWrapperRef.value);
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateScrollY);
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
 });
 
 watch(
-  () => [props.dataSource, props.fullscreen, displayColumns.value],
+  () => [props.dataSource, props.fullscreen, displayColumns.value, props.expandedRowKeys],
   () => nextTick(updateScrollY),
   { deep: true }
 );
@@ -516,7 +568,7 @@ const flatClasses = computed(() => ({
 /* 全屏模式：默认占满视口，可被业务侧样式覆盖 */
 .common-table-card.fullscreen {
   position: fixed;
-  inset: 24px;
+  inset: 4px;
   z-index: 1000;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);

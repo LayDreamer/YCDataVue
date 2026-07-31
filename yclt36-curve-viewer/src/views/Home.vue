@@ -81,8 +81,7 @@
               </a-button>
               <template #overlay>
                 <a-menu @click="handleUserMenu">
-                  <a-menu-item key="profile"><UserOutlined /> 个人中心</a-menu-item>
-                  <a-menu-item key="settings"><SettingOutlined /> 账户设置</a-menu-item>
+                  <a-menu-item key="settings"><SettingOutlined /> 个人信息</a-menu-item>
                   <a-menu-divider />
                   <a-menu-item key="logout"><LogoutOutlined /> 退出登录</a-menu-item>
                 </a-menu>
@@ -146,6 +145,9 @@
 
   <WeChatSendModal v-model:visible="wechatModalVisible" />
 
+  <!-- 我的账户弹窗 -->
+  <AccountModal v-model:open="accountModalOpen" />
+
   <!-- 通知抽屉 -->
   <a-drawer
     v-model:open="showNotifications"
@@ -185,7 +187,9 @@
 import { ref, computed, watch, provide, h } from 'vue'
 import { Grid, Modal } from 'ant-design-vue'
 import WeChatSendModal from '@/views/WeChatWork/WeChatSendModal.vue'
+import AccountModal from '@/components/AccountModal.vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 import {
   MenuFoldOutlined, MenuUnfoldOutlined, WechatOutlined, ReloadOutlined,
   CloseOutlined, VerticalRightOutlined, VerticalLeftOutlined,
@@ -237,10 +241,13 @@ const isNarrowLayout = computed(() => !screens.value?.lg)
 const collapsedSiderWidth = computed(() => (isNarrowLayout.value ? 0 : 80))
 const selectedKeys = ref<string[]>([])
 const wechatModalVisible = ref(false)
+const accountModalOpen = ref(false)
 
 // --- 通知与管理员 ---
 const notificationCount = ref(3)
-const currentUser = ref('管理员')
+// 顶栏展示的用户名（从登录态读取）
+const { displayName, logout: doLogout } = useAuth()
+const currentUser = computed(() => displayName.value || '未登录')
 const showNotifications = ref(false)
 const notifTabKey = ref('all')
 const notifications = ref([
@@ -251,8 +258,21 @@ const notifications = ref([
 const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
 
 const handleUserMenu = ({ key }: { key: string }) => {
-  if (key === 'logout') {
-    Modal.confirm({ title: '确认退出？', onOk: () => {} })
+  if (key === 'settings') {
+    accountModalOpen.value = true
+  } else if (key === 'logout') {
+    Modal.confirm({
+      title: '确认退出登录？',
+      content: '退出后需要重新登录才能使用系统',
+      okText: '退出',
+      cancelText: '取消',
+      onOk: () => {
+        doLogout()
+        // 清理掉多标签页缓存，避免下个用户继承
+        localStorage.removeItem(TABS_KEY)
+        router.replace('/login')
+      }
+    })
   }
 }
 

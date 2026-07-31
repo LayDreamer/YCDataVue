@@ -104,6 +104,10 @@ const emit = defineEmits<{
   'update:selectedUserIds': [ids: string[]]
   'deptChange': [deptId: string]
   'userSelect': [userIds: string[]]
+  /** 部门列表加载失败（含空数据） */
+  'deptLoadFailed': [errorMessage: string]
+  /** 部门列表加载成功 */
+  'deptLoadSuccess': []
 }>()
 
 // ==================== 部门数据 ====================
@@ -115,9 +119,18 @@ const deptLoading = ref(false)
 async function loadDepartments() {
   deptLoading.value = true
   try {
-    departments.value = await weChatWorkService.getDepartmentList()
+    const list = await weChatWorkService.getDepartmentList()
+    departments.value = list
+    if (!list || list.length === 0) {
+      // 后端可能返回空数据但未抛错，也视为加载失败
+      emit('deptLoadFailed', '未获取到组织架构数据')
+    } else {
+      emit('deptLoadSuccess')
+    }
   } catch (error: any) {
-    message.error(error?.message || '加载部门列表失败')
+    const msg = error?.message || '加载部门列表失败'
+    emit('deptLoadFailed', msg)
+    message.error(msg)
   } finally {
     deptLoading.value = false
   }
@@ -195,9 +208,9 @@ const rowSelectionConfig = computed<TableProps['rowSelection']>(() => ({
 
 const paginationConfig = reactive({
   current: 1,
-  pageSize: 10,
+  pageSize: 5,
   showSizeChanger: true,
-  pageSizeOptions: ['10', '20', '50'],
+  pageSizeOptions: ['5', '10', '20'],
   showTotal: (total: number) => `共 ${total} 条`,
   size: 'small' as const,
 })

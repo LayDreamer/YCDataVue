@@ -425,7 +425,8 @@ const updateAvailInTree = (items: ProductionItem[], analysisType: string) => {
     const transit = item.transit || 0;
     const wip = item.wip || 0;
     const min = item.min || 0;
-    item.avail = analysisType === 'limit' ? stock + transit - wip - min : stock + transit - wip;
+    const avail = analysisType === 'limit' ? stock + transit - wip - min : stock + transit - wip;
+    item.avail = Math.max(0, avail);
     if (item.source !== '自制') {
       item.purchaseQty = (item.needQty || 0) + (item.avail || 0);
       item.produceQty = 0;
@@ -558,7 +559,7 @@ const buildTreeFromData = (bomData: any[], qty: number, analysisType: string): P
     const _transit = record.在途数 !== undefined && record.在途数 !== '' ? Number(record.在途数) : 0;
     const _wip = record.在产需求 !== undefined && record.在产需求 !== '' ? Number(record.在产需求) : 0;
     const _min = record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : 0;
-    const _avail = analysisType === 'limit' ? _stock + _transit - _wip - _min : _stock + _transit - _wip;
+    const _avail = Math.max(0, analysisType === 'limit' ? _stock + _transit - _wip - _min : _stock + _transit - _wip);
 
     const item: ProductionItem = {
       key,

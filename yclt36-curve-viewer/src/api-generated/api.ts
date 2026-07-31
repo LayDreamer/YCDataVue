@@ -18,6 +18,178 @@ export class Service {
     }
 
     /**
+     * 用户登录
+     * @param body (optional) 
+     * @return OK
+     */
+    login(body: LoginRequestDto | undefined): Promise<LoginResultDtoApiResponse> {
+        let url_ = this.baseUrl + "/api/Auth/login";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processLogin(_response);
+        });
+    }
+
+    protected processLogin(response: Response): Promise<LoginResultDtoApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = LoginResultDtoApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<LoginResultDtoApiResponse>(null as any);
+    }
+
+    /**
+     * 注册新用户
+     * @param body (optional) 
+     * @return OK
+     */
+    register(body: RegisterUserDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/Auth/register";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRegister(_response);
+        });
+    }
+
+    protected processRegister(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 修改密码（需携带登录令牌，身份从令牌获取）
+     * @param body (optional) 
+     * @return OK
+     */
+    changePassword(body: ChangePasswordDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/Auth/change-password";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processChangePassword(_response);
+        });
+    }
+
+    protected processChangePassword(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 更新个人资料（显示名 / 邮箱 / 手机号，需携带登录令牌）
+     * @param body (optional) 
+     * @return OK
+     */
+    updateProfile(body: UpdateProfileDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/Auth/update-profile";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateProfile(_response);
+        });
+    }
+
+    protected processUpdateProfile(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
      * @return OK
      */
     list(): Promise<BLFParameter[]> {
@@ -214,6 +386,88 @@ export class Service {
     }
 
     /**
+     * 获取 tb_control_user 表中所有用户的 username 列表。
+     * @return OK
+     */
+    usersGET(): Promise<StringListApiResponse> {
+        let url_ = this.baseUrl + "/api/ERP/users";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUsersGET(_response);
+        });
+    }
+
+    protected processUsersGET(response: Response): Promise<StringListApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = StringListApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<StringListApiResponse>(null as any);
+    }
+
+    /**
+     * 校验 ERP 用户（tb_control_user）：用户名不存在返回“用户名错误”，
+    密码不匹配返回“密码错误”，均通过返回校验成功及用户信息。
+     * @param body (optional) 
+     * @return OK
+     */
+    validate(body: ERPUserLoginDto | undefined): Promise<ERPUserApiResponse> {
+        let url_ = this.baseUrl + "/api/ERP/validate";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processValidate(_response);
+        });
+    }
+
+    protected processValidate(response: Response): Promise<ERPUserApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ERPUserApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ERPUserApiResponse>(null as any);
+    }
+
+    /**
      * 转换交期评审列表(根据外销合同客户产品表)
      * @param body (optional) 
      * @return OK
@@ -325,6 +579,49 @@ export class Service {
     }
 
     protected processProductDataAssemblyList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 根据货号获取产品资料装配清单中中间件等于 0 的记录
+     * @param body (optional) 
+     * @return OK
+     */
+    productDataAssemblyListByItemNo(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/ProductDataAssemblyListByItemNo";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processProductDataAssemblyListByItemNo(_response);
+        });
+    }
+
+    protected processProductDataAssemblyListByItemNo(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -1892,7 +2189,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    users(body: DepartmentRequestDto | undefined): Promise<ObjectApiResponse> {
+    usersPOST(body: DepartmentRequestDto | undefined): Promise<ObjectApiResponse> {
         let url_ = this.baseUrl + "/api/WechatWork/users";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1908,11 +2205,11 @@ export class Service {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processUsers(_response);
+            return this.processUsersPOST(_response);
         });
     }
 
-    protected processUsers(response: Response): Promise<ObjectApiResponse> {
+    protected processUsersPOST(response: Response): Promise<ObjectApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -2521,6 +2818,48 @@ export interface IBLFParameter {
     modifyDate?: Date;
 }
 
+/** 修改密码请求（身份从登录令牌获取） */
+export class ChangePasswordDto implements IChangePasswordDto {
+    oldPassword?: string | undefined;
+    newPassword?: string | undefined;
+
+    constructor(data?: IChangePasswordDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.oldPassword = _data["OldPassword"];
+            this.newPassword = _data["NewPassword"];
+        }
+    }
+
+    static fromJS(data: any): ChangePasswordDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ChangePasswordDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["OldPassword"] = this.oldPassword;
+        data["NewPassword"] = this.newPassword;
+        return data;
+    }
+}
+
+/** 修改密码请求（身份从登录令牌获取） */
+export interface IChangePasswordDto {
+    oldPassword?: string | undefined;
+    newPassword?: string | undefined;
+}
+
 export class CreateAndNotifyDto implements ICreateAndNotifyDto {
     title?: string | undefined;
     adminUserIds?: string[] | undefined;
@@ -2711,6 +3050,144 @@ export interface IDepartmentRequestDto {
     departmentId?: number;
 }
 
+export class ERPUser implements IERPUser {
+    iD?: string | undefined;
+    username?: string | undefined;
+    usercode?: string | undefined;
+    upwd?: string | undefined;
+
+    constructor(data?: IERPUser) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.iD = _data["ID"];
+            this.username = _data["username"];
+            this.usercode = _data["usercode"];
+            this.upwd = _data["upwd"];
+        }
+    }
+
+    static fromJS(data: any): ERPUser {
+        data = typeof data === 'object' ? data : {};
+        let result = new ERPUser();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["ID"] = this.iD;
+        data["username"] = this.username;
+        data["usercode"] = this.usercode;
+        data["upwd"] = this.upwd;
+        return data;
+    }
+}
+
+export interface IERPUser {
+    iD?: string | undefined;
+    username?: string | undefined;
+    usercode?: string | undefined;
+    upwd?: string | undefined;
+}
+
+export class ERPUserApiResponse implements IERPUserApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ERPUser;
+    timestamp?: Date;
+
+    constructor(data?: IERPUserApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? ERPUser.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ERPUserApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ERPUserApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IERPUserApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ERPUser;
+    timestamp?: Date;
+}
+
+/** ERP 用户登录校验请求（tb_control_user） */
+export class ERPUserLoginDto implements IERPUserLoginDto {
+    username?: string | undefined;
+    upwd?: string | undefined;
+
+    constructor(data?: IERPUserLoginDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.username = _data["Username"];
+            this.upwd = _data["Upwd"];
+        }
+    }
+
+    static fromJS(data: any): ERPUserLoginDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ERPUserLoginDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Username"] = this.username;
+        data["Upwd"] = this.upwd;
+        return data;
+    }
+}
+
+/** ERP 用户登录校验请求（tb_control_user） */
+export interface IERPUserLoginDto {
+    username?: string | undefined;
+    upwd?: string | undefined;
+}
+
 /** 外产_生产 */
 export class ExternalProduction implements IExternalProduction {
     编号?: string | undefined;
@@ -2721,12 +3198,12 @@ export class ExternalProduction implements IExternalProduction {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
-    合同号?: string | undefined;
     货号?: string | undefined;
     排产编号?: string | undefined;
     需求量?: string | undefined;
     生产数量?: string | undefined;
-    关联编号?: string | undefined;
+    分析单号?: string | undefined;
+    工单单号?: string | undefined;
 
     constructor(data?: IExternalProduction) {
         if (data) {
@@ -2747,12 +3224,12 @@ export class ExternalProduction implements IExternalProduction {
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
-            this.合同号 = _data["合同号"];
             this.货号 = _data["货号"];
             this.排产编号 = _data["排产编号"];
             this.需求量 = _data["需求量"];
             this.生产数量 = _data["生产数量"];
-            this.关联编号 = _data["关联编号"];
+            this.分析单号 = _data["分析单号"];
+            this.工单单号 = _data["工单单号"];
         }
     }
 
@@ -2773,12 +3250,12 @@ export class ExternalProduction implements IExternalProduction {
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
-        data["合同号"] = this.合同号;
         data["货号"] = this.货号;
         data["排产编号"] = this.排产编号;
         data["需求量"] = this.需求量;
         data["生产数量"] = this.生产数量;
-        data["关联编号"] = this.关联编号;
+        data["分析单号"] = this.分析单号;
+        data["工单单号"] = this.工单单号;
         return data;
     }
 }
@@ -2793,12 +3270,12 @@ export interface IExternalProduction {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
-    合同号?: string | undefined;
     货号?: string | undefined;
     排产编号?: string | undefined;
     需求量?: string | undefined;
     生产数量?: string | undefined;
-    关联编号?: string | undefined;
+    分析单号?: string | undefined;
+    工单单号?: string | undefined;
 }
 
 /** 外产_BOM */
@@ -3015,12 +3492,11 @@ export class ExternalProductionShipment implements IExternalProductionShipment {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
-    合同号?: string | undefined;
     货号?: string | undefined;
     排产编号?: string | undefined;
     需求量?: string | undefined;
     发运数量?: string | undefined;
-    关联编号?: string | undefined;
+    分析单号?: string | undefined;
 
     constructor(data?: IExternalProductionShipment) {
         if (data) {
@@ -3041,12 +3517,11 @@ export class ExternalProductionShipment implements IExternalProductionShipment {
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
-            this.合同号 = _data["合同号"];
             this.货号 = _data["货号"];
             this.排产编号 = _data["排产编号"];
             this.需求量 = _data["需求量"];
             this.发运数量 = _data["发运数量"];
-            this.关联编号 = _data["关联编号"];
+            this.分析单号 = _data["分析单号"];
         }
     }
 
@@ -3067,12 +3542,11 @@ export class ExternalProductionShipment implements IExternalProductionShipment {
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
-        data["合同号"] = this.合同号;
         data["货号"] = this.货号;
         data["排产编号"] = this.排产编号;
         data["需求量"] = this.需求量;
         data["发运数量"] = this.发运数量;
-        data["关联编号"] = this.关联编号;
+        data["分析单号"] = this.分析单号;
         return data;
     }
 }
@@ -3087,12 +3561,11 @@ export interface IExternalProductionShipment {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
-    合同号?: string | undefined;
     货号?: string | undefined;
     排产编号?: string | undefined;
     需求量?: string | undefined;
     发运数量?: string | undefined;
-    关联编号?: string | undefined;
+    分析单号?: string | undefined;
 }
 
 /** 外产_入库 */
@@ -3315,6 +3788,150 @@ export interface IGroupChatMessageDto {
     url?: string | undefined;
     /** 卡片按钮文字，仅在 MsgType 为 Card 时有效，默认"查看详情" */
     buttonText?: string | undefined;
+}
+
+/** 登录请求（登录页表单提交内容） */
+export class LoginRequestDto implements ILoginRequestDto {
+    userName?: string | undefined;
+    password?: string | undefined;
+    rememberMe?: boolean;
+
+    constructor(data?: ILoginRequestDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.userName = _data["UserName"];
+            this.password = _data["Password"];
+            this.rememberMe = _data["RememberMe"];
+        }
+    }
+
+    static fromJS(data: any): LoginRequestDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new LoginRequestDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["UserName"] = this.userName;
+        data["Password"] = this.password;
+        data["RememberMe"] = this.rememberMe;
+        return data;
+    }
+}
+
+/** 登录请求（登录页表单提交内容） */
+export interface ILoginRequestDto {
+    userName?: string | undefined;
+    password?: string | undefined;
+    rememberMe?: boolean;
+}
+
+/** 登录结果 */
+export class LoginResultDto implements ILoginResultDto {
+    success?: boolean;
+    message?: string | undefined;
+    token?: string | undefined;
+    user?: UserInfoDto;
+
+    constructor(data?: ILoginResultDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.token = _data["Token"];
+            this.user = _data["User"] ? UserInfoDto.fromJS(_data["User"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): LoginResultDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new LoginResultDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Token"] = this.token;
+        data["User"] = this.user ? this.user.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+/** 登录结果 */
+export interface ILoginResultDto {
+    success?: boolean;
+    message?: string | undefined;
+    token?: string | undefined;
+    user?: UserInfoDto;
+}
+
+export class LoginResultDtoApiResponse implements ILoginResultDtoApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: LoginResultDto;
+    timestamp?: Date;
+
+    constructor(data?: ILoginResultDtoApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? LoginResultDto.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): LoginResultDtoApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new LoginResultDtoApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface ILoginResultDtoApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: LoginResultDto;
+    timestamp?: Date;
 }
 
 export class ObjectApiResponse implements IObjectApiResponse {
@@ -3777,6 +4394,64 @@ export interface IProductSalesControlDetail {
     父级编号?: string | undefined;
 }
 
+/** 注册请求 */
+export class RegisterUserDto implements IRegisterUserDto {
+    userName?: string | undefined;
+    password?: string | undefined;
+    displayName?: string | undefined;
+    email?: string | undefined;
+    phoneNumber?: string | undefined;
+    role?: string | undefined;
+
+    constructor(data?: IRegisterUserDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.userName = _data["UserName"];
+            this.password = _data["Password"];
+            this.displayName = _data["DisplayName"];
+            this.email = _data["Email"];
+            this.phoneNumber = _data["PhoneNumber"];
+            this.role = _data["Role"];
+        }
+    }
+
+    static fromJS(data: any): RegisterUserDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new RegisterUserDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["UserName"] = this.userName;
+        data["Password"] = this.password;
+        data["DisplayName"] = this.displayName;
+        data["Email"] = this.email;
+        data["PhoneNumber"] = this.phoneNumber;
+        data["Role"] = this.role;
+        return data;
+    }
+}
+
+/** 注册请求 */
+export interface IRegisterUserDto {
+    userName?: string | undefined;
+    password?: string | undefined;
+    displayName?: string | undefined;
+    email?: string | undefined;
+    phoneNumber?: string | undefined;
+    role?: string | undefined;
+}
+
 export class SendMessageDto implements ISendMessageDto {
     users?: string[] | undefined;
     content?: string | undefined;
@@ -3839,6 +4514,162 @@ export interface ISendMessageDto {
     description?: string | undefined;
     url?: string | undefined;
     msgType?: WechatWorkMessageType;
+}
+
+export class StringListApiResponse implements IStringListApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: string[] | undefined;
+    timestamp?: Date;
+
+    constructor(data?: IStringListApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            if (Array.isArray(_data["Data"])) {
+                this.data = [] as any;
+                for (let item of _data["Data"])
+                    this.data!.push(item);
+            }
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): StringListApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new StringListApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        if (Array.isArray(this.data)) {
+            data["Data"] = [];
+            for (let item of this.data)
+                data["Data"].push(item);
+        }
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IStringListApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: string[] | undefined;
+    timestamp?: Date;
+}
+
+/** 更新个人资料请求（显示名 / 邮箱 / 手机号） */
+export class UpdateProfileDto implements IUpdateProfileDto {
+    displayName?: string | undefined;
+    email?: string | undefined;
+    phoneNumber?: string | undefined;
+
+    constructor(data?: IUpdateProfileDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.displayName = _data["DisplayName"];
+            this.email = _data["Email"];
+            this.phoneNumber = _data["PhoneNumber"];
+        }
+    }
+
+    static fromJS(data: any): UpdateProfileDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateProfileDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["DisplayName"] = this.displayName;
+        data["Email"] = this.email;
+        data["PhoneNumber"] = this.phoneNumber;
+        return data;
+    }
+}
+
+/** 更新个人资料请求（显示名 / 邮箱 / 手机号） */
+export interface IUpdateProfileDto {
+    displayName?: string | undefined;
+    email?: string | undefined;
+    phoneNumber?: string | undefined;
+}
+
+/** 登录成功后返回的用户信息（不含敏感字段） */
+export class UserInfoDto implements IUserInfoDto {
+    id?: string | undefined;
+    userName?: string | undefined;
+    displayName?: string | undefined;
+    role?: string | undefined;
+    email?: string | undefined;
+
+    constructor(data?: IUserInfoDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["Id"];
+            this.userName = _data["UserName"];
+            this.displayName = _data["DisplayName"];
+            this.role = _data["Role"];
+            this.email = _data["Email"];
+        }
+    }
+
+    static fromJS(data: any): UserInfoDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new UserInfoDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Id"] = this.id;
+        data["UserName"] = this.userName;
+        data["DisplayName"] = this.displayName;
+        data["Role"] = this.role;
+        data["Email"] = this.email;
+        return data;
+    }
+}
+
+/** 登录成功后返回的用户信息（不含敏感字段） */
+export interface IUserInfoDto {
+    id?: string | undefined;
+    userName?: string | undefined;
+    displayName?: string | undefined;
+    role?: string | undefined;
+    email?: string | undefined;
 }
 
 /** 企业微信消息类型枚举 */
@@ -3995,6 +4826,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
     品名?: string | undefined;
     规格?: string | undefined;
     工单单号?: string | undefined;
+    排产编号?: string | undefined;
     交货日期?: string | undefined;
     生产数?: string | undefined;
     入库数?: string | undefined;
@@ -4026,6 +4858,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
             this.品名 = _data["品名"];
             this.规格 = _data["规格"];
             this.工单单号 = _data["工单单号"];
+            this.排产编号 = _data["排产编号"];
             this.交货日期 = _data["交货日期"];
             this.生产数 = _data["生产数"];
             this.入库数 = _data["入库数"];
@@ -4057,6 +4890,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
         data["品名"] = this.品名;
         data["规格"] = this.规格;
         data["工单单号"] = this.工单单号;
+        data["排产编号"] = this.排产编号;
         data["交货日期"] = this.交货日期;
         data["生产数"] = this.生产数;
         data["入库数"] = this.入库数;
@@ -4082,6 +4916,7 @@ export interface IWorkOrderSalesControlDetail {
     品名?: string | undefined;
     规格?: string | undefined;
     工单单号?: string | undefined;
+    排产编号?: string | undefined;
     交货日期?: string | undefined;
     生产数?: string | undefined;
     入库数?: string | undefined;

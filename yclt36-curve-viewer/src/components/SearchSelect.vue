@@ -4,7 +4,6 @@
     :value="inputValue"
     :options="options"
     :filter-option="false"
-    :placeholder="placeholder"
     :disabled="disabled"
     :popup-class-name="popupClassName"
     :dropdown-style="dropdownStyle"
@@ -38,7 +37,7 @@
             >{{ col.title }}</span>
           </div>
           <div
-            v-for="(row, i) in displayData"
+            v-for="(row, i) in displayData"1
             :key="rowKey(row, i)"
             class="ss-option-row"
             @click="selectRow(row)"
