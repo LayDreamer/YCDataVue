@@ -507,6 +507,8 @@
             title="新增子级物料"
             ok-text="新增"
             cancel-text="取消"
+            :mask-closable="false"
+            :confirm-loading="addChildLoading"
             @ok="handleAddChild"
           >
             <a-form layout="vertical">
@@ -531,7 +533,7 @@
               <a-row :gutter="12">
                 <a-col :span="12">
                   <a-form-item label="来源">
-                    <a-select v-model:value="addChildForm.source" :options="materialSourceOptions" />
+                    <div class="add-child-source-text">{{ addChildForm.source || '--' }}</div>
                   </a-form-item>
                 </a-col>
                 <a-col :span="12">
@@ -757,7 +759,8 @@ async function searchProductData(keyword: string): Promise<Record<string, any>[]
     const partNo = item?.货号 || item?.value || '';
     const name = item?.中文品名 || item?.name || item?.产品名称 || '';
     const spec = item?.中文规格 || item?.spec || item?.规格 || '';
-    return { value: partNo, 中文品名: name, 中文规格: spec };
+    const source = item?.制造方式 || item?.来源 || '';
+    return { value: partNo, 中文品名: name, 中文规格: spec, 制造方式: source };
   });
 }
 
@@ -776,6 +779,7 @@ function onChildProductSelected(row: Record<string, any>) {
   addChildForm.partNo = partNo;
   addChildForm.name = String(row.中文品名 ?? '');
   addChildForm.spec = String(row.中文规格 ?? '');
+  addChildForm.source = String(row.制造方式 ?? '');
 }
 
 // ========== 排产用户选择（企业微信） ==========
@@ -1131,27 +1135,23 @@ const contextMenuVisible = ref(false);
 const contextMenuPosition = reactive({ x: 0, y: 0 });
 const rightClickRowKey = ref<string>('');
 const addChildModalVisible = ref(false);
+const addChildLoading = ref(false);
 const addChildParentKey = ref<string>('');
 const addChildForm = reactive({
   partNo: '',
   name: '',
   spec: '',
-  source: '自制',
+  source: '',
   usage: 1,
   unit: '',
 });
-const materialSourceOptions = [
-  { label: '自制', value: '自制' },
-  { label: '外购', value: '外购' },
-  { label: '外协', value: '外协' },
-];
-
-// 用户编辑或清空货号时，不保留上一条产品资料的品名、规格；仅在下拉选中后由 onChildProductSelected 回填。
+// 用户编辑或清空货号时，不保留上一条产品资料的基础字段；仅在下拉选中后由 onChildProductSelected 回填。
 watch(
   () => addChildForm.partNo,
   () => {
     addChildForm.name = '';
     addChildForm.spec = '';
+    addChildForm.source = '';
   },
   { flush: 'sync' }
 );
@@ -1214,14 +1214,14 @@ function onCtxAddChild() {
     partNo: '',
     name: '',
     spec: '',
-    source: '自制',
+    source: '',
     usage: 1,
     unit: parent.unit || '',
   });
   addChildModalVisible.value = true;
 }
 
-function handleAddChild() {
+async function handleAddChild() {
   const parent = findItemByKey(schDataSource.value, addChildParentKey.value);
   const partNo = addChildForm.partNo.trim();
   const usage = Number(addChildForm.usage);
@@ -1231,6 +1231,10 @@ function handleAddChild() {
   }
   if (!partNo) {
     message.warning('请输入子级货号');
+    return;
+  }
+  if (!addChildForm.source) {
+    message.warning('请从下拉列表选择货号，以自动带出制造方式');
     return;
   }
   if (!Number.isFinite(usage) || usage <= 0) {
@@ -1245,56 +1249,81 @@ function handleAddChild() {
     return;
   }
 
-  const parentWorkQty = parent.produceQty > 0 ? parent.produceQty : parent.purchaseQty;
-  const needQty = Math.ceil(Math.max(0, parentWorkQty || 0) * usage);
-  let maxRowNum = 0;
-  const findMaxRowNum = (items: ProductionItem[]) => {
-    items.forEach(item => {
-      maxRowNum = Math.max(maxRowNum, item.rowNum || 0);
-      if (item.children?.length) findMaxRowNum(item.children);
-    });
-  };
-  findMaxRowNum(schDataSource.value);
-  const child: ProductionItem = {
-    key: generateKey('manual-child', keyCounter),
-    level: parent.level + 1,
-    name: addChildForm.name.trim(),
-    source: addChildForm.source,
-    produceQty: addChildForm.source === '自制' ? needQty : 0,
-    purchaseQty: addChildForm.source === '自制' ? 0 : needQty,
-    loss: 0,
-    rowNum: maxRowNum + 1,
-    spec: addChildForm.spec.trim(),
-    partNo,
-    usage,
-    unit: addChildForm.unit.trim(),
-    process: '',
-    workshop: '',
-    warehouse: '',
-    stock: 0,
-    transit: 0,
-    wip: 0,
-    max: 0,
-    min: 0,
-    avail: 0,
-    attr: '',
-    needQty,
-    pickedQty: needQty,
-    remark: '',
-    mid: '',
-    children: [],
-  };
-  if (!parent.children) parent.children = [];
-  parent.children.push(child);
-  if (!schExpandedKeys.value.includes(parent.key)) {
-    schExpandedKeys.value.push(parent.key);
+  addChildLoading.value = true;
+  try {
+    // 新增产品资料仅提供基础字段；库存相关字段以排产分析根节点返回的数据为准。
+    const analysisList = await salesControlService.getSchedulingAnalysisList(
+      new PMCRequestDto({ 货号: partNo })
+    );
+    const inventoryData = (analysisList || []).find(item => Number(item?.层) === 0)
+      || (analysisList || [])[0]
+      || {};
+    const toNumber = (value: unknown) => {
+      const result = Number(value);
+      return Number.isFinite(result) ? result : 0;
+    };
+
+    const parentWorkQty = parent.produceQty > 0 ? parent.produceQty : parent.purchaseQty;
+    const needQty = Math.ceil(Math.max(0, parentWorkQty || 0) * usage);
+    let maxRowNum = 0;
+    const findMaxRowNum = (items: ProductionItem[]) => {
+      items.forEach(item => {
+        maxRowNum = Math.max(maxRowNum, item.rowNum || 0);
+        if (item.children?.length) findMaxRowNum(item.children);
+      });
+    };
+    findMaxRowNum(schDataSource.value);
+    const child: ProductionItem = {
+      key: generateKey('manual-child', keyCounter),
+      level: parent.level + 1,
+      name: addChildForm.name.trim(),
+      source: addChildForm.source,
+      produceQty: addChildForm.source === '自制' ? needQty : 0,
+      purchaseQty: addChildForm.source === '自制' ? 0 : needQty,
+      loss: 0,
+      rowNum: maxRowNum + 1,
+      spec: addChildForm.spec.trim(),
+      partNo,
+      usage,
+      unit: addChildForm.unit.trim(),
+      process: '',
+      workshop: '',
+      warehouse: String(inventoryData.仓库名称 || ''),
+      stock: toNumber(inventoryData.仓库数),
+      transit: toNumber(inventoryData.在途数),
+      wip: toNumber(inventoryData.在产需求),
+      max: 0,
+      min: 0,
+      avail: 0,
+      attr: '',
+      needQty,
+      pickedQty: needQty,
+      remark: '',
+      // 中间件标识由排产分析接口按货号返回，表格“中间件”列会直接显示该值。
+      mid: inventoryData.中间件 !== undefined && inventoryData.中间件 !== ''
+        ? inventoryData.中间件
+        : '',
+      children: [],
+    };
+    if (!parent.children) parent.children = [];
+    parent.children.push(child);
+    if (!schExpandedKeys.value.includes(parent.key)) {
+      schExpandedKeys.value.push(parent.key);
+    }
+    selectedRowKey.value = child.key;
+    // 先重算仓库可用，再依据父级做货量计算新增子级的生产/采购数与配料数。
+    updateAvailInTree(schDataSource.value);
+    syncChildrenQty(parent);
+    syncChildrenPickQty(parent);
+    reassignLevelIndex(schDataSource.value);
+    addChildModalVisible.value = false;
+    message.success('已新增子级物料，并同步库存数据');
+  } catch (error) {
+    console.error('新增子级时获取库存数据失败:', error);
+    message.error('库存数据获取失败，未新增子级物料');
+  } finally {
+    addChildLoading.value = false;
   }
-  selectedRowKey.value = child.key;
-  syncChildrenQty(parent);
-  syncChildrenPickQty(parent);
-  reassignLevelIndex(schDataSource.value);
-  addChildModalVisible.value = false;
-  message.success('已新增子级物料');
 }
 
 // 右键菜单：删除选中
@@ -3372,6 +3401,19 @@ watch(
 
 .coil-search-row :deep(.ant-input) {
   border-radius: 6px;
+}
+
+/* 新增子级的来源由产品资料自动带出，仅作正常文本展示，不使用禁用下拉样式。 */
+.add-child-source-text {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 11px;
+  color: #262626;
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  box-sizing: border-box;
 }
 
 /* 表格行右键菜单：使用固定定位，避免被表格滚动容器裁剪。 */

@@ -3,6 +3,7 @@
     v-bind="rootAttrs"
     :value="inputValue"
     :options="options"
+    :open="dropdownOpen"
     :filter-option="false"
     :disabled="disabled"
     :popup-class-name="popupClassName"
@@ -12,6 +13,7 @@
     @update:value="onAutoCompleteUpdate"
     @search="onSearch"
     @select="onSelect"
+    @blur="onBlur"
   >
     <a-input :placeholder="placeholder" :disabled="disabled">
       <template #suffix>
@@ -127,6 +129,8 @@ const valueField = computed(() => props.valueField || props.columns[0]?.dataInde
 const displayData = ref<Record<string, any>[]>([]);
 const loading = ref(false);
 const scrolledX = ref(false);
+// 远程数据异步返回后主动展开面板，避免 options 初始为空时自动完成组件不再打开下拉。
+const dropdownOpen = ref(false);
 
 // a-auto-complete 需要非空 options 才会渲染下拉，这里用显示数据同步生成
 const options = computed(() =>
@@ -158,6 +162,7 @@ async function doSearch(kw: string) {
   if (!kw || !kw.trim()) {
     displayData.value = [];
     scrolledX.value = false;
+    dropdownOpen.value = false;
     return;
   }
   loading.value = true;
@@ -165,8 +170,10 @@ async function doSearch(kw: string) {
   try {
     const data = await props.search(kw.trim());
     displayData.value = Array.isArray(data) ? data : [];
+    dropdownOpen.value = displayData.value.length > 0;
   } catch {
     displayData.value = [];
+    dropdownOpen.value = false;
   } finally {
     loading.value = false;
   }
@@ -176,6 +183,7 @@ const debouncedSearch = debounce(doSearch, props.debounceTime ?? 300);
 
 function onSearch(kw: string) {
   emit('update:value', kw);
+  dropdownOpen.value = false;
   debouncedSearch(kw);
 }
 
@@ -192,7 +200,12 @@ function onSearch(kw: string) {
 function onAutoCompleteUpdate(v: string) {
   inputValue.value = v;
   emit('update:value', v);
+  dropdownOpen.value = false;
   debouncedSearch(v);
+}
+
+function onBlur() {
+  dropdownOpen.value = false;
 }
 
 function getPopupContainer() {
@@ -212,6 +225,7 @@ function applySelect(row: Record<string, any>) {
   // 选中后清空下拉数据，关闭面板
   displayData.value = [];
   scrolledX.value = false;
+  dropdownOpen.value = false;
 }
 
 function onSelect(value: string) {
