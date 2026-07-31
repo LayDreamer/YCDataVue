@@ -40,7 +40,7 @@
             v-for="(row, i) in displayData"1
             :key="rowKey(row, i)"
             class="ss-option-row"
-            @click="selectRow(row)"
+            @mousedown.prevent.stop="selectRow(row)"
           >
             <span
               v-for="col in columns"

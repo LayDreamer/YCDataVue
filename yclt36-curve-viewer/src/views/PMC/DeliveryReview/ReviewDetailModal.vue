@@ -165,8 +165,8 @@
                 :columns="coilColumns"
                 :search="searchCoils"
                 value-field="value"
-                :dropdown-width="560"
-                :max-height="380"
+                :dropdown-width="650"
+                :max-height="220"
                 placeholder="线圈货号进行系统反查"
                 :disabled="validatingCoil || !canChangeSchedulingUser"
                 style="flex: 1"
@@ -475,6 +475,13 @@
             <div
               class="ctx-menu-item"
               :class="{ 'is-disabled': !rightClickRowKey }"
+              @click="onCtxAddChild"
+            >
+              <PlusOutlined /> 新增子级
+            </div>
+            <div
+              class="ctx-menu-item"
+              :class="{ 'is-disabled': !rightClickRowKey }"
               @click="onCtxDelete"
             >
               <DeleteOutlined /> 删除选中
@@ -494,6 +501,50 @@
             @click="closeContextMenu"
             @contextmenu.prevent="closeContextMenu"
           ></div>
+
+          <a-modal
+            v-model:open="addChildModalVisible"
+            title="新增子级物料"
+            ok-text="新增"
+            cancel-text="取消"
+            @ok="handleAddChild"
+          >
+            <a-form layout="vertical">
+              <a-form-item label="货号" required>
+                <SearchSelect
+                  v-model:value="addChildForm.partNo"
+                  :columns="productDataColumns"
+                  :search="searchProductData"
+                  value-field="value"
+                  :dropdown-width="560"
+                  :max-height="380"
+                  placeholder="输入货号模糊查询产品资料"
+                  @select="onChildProductSelected"
+                />
+              </a-form-item>
+              <a-form-item label="品名">
+                <a-input v-model:value="addChildForm.name" placeholder="请输入品名" />
+              </a-form-item>
+              <a-form-item label="规格">
+                <a-input v-model:value="addChildForm.spec" placeholder="请输入规格" />
+              </a-form-item>
+              <a-row :gutter="12">
+                <a-col :span="12">
+                  <a-form-item label="来源">
+                    <a-select v-model:value="addChildForm.source" :options="materialSourceOptions" />
+                  </a-form-item>
+                </a-col>
+                <a-col :span="12">
+                  <a-form-item label="用量" required>
+                    <a-input-number v-model:value="addChildForm.usage" :min="0" :precision="4" style="width: 100%" />
+                  </a-form-item>
+                </a-col>
+              </a-row>
+              <a-form-item label="单位">
+                <a-input v-model:value="addChildForm.unit" placeholder="例如：个、件、米" />
+              </a-form-item>
+            </a-form>
+          </a-modal>
         </a-spin>
 
         <!-- 底部操作栏（提交评审后隐藏） -->
@@ -529,6 +580,7 @@ import {
   LineChartOutlined,
   SearchOutlined,
   DeleteOutlined,
+  PlusOutlined,
   LeftOutlined,
   SwapOutlined,
   LockOutlined,
@@ -669,6 +721,11 @@ const coilColumns: SearchSelectColumn[] = [
   { title: '中文品名', dataIndex: '中文品名', width: 220 },
   { title: '中文规格', dataIndex: '中文规格', width: 260 },
 ];
+const productDataColumns: SearchSelectColumn[] = [
+  { title: '货号', dataIndex: 'value', width: 160, fixed: true, color: '#1e3a5f' },
+  { title: '中文品名', dataIndex: '中文品名', width: 220 },
+  { title: '中文规格', dataIndex: '中文规格', width: 260 },
+];
 
 // 远程搜索：传入关键字，返回下拉所需的数据源
 async function searchCoils(keyword: string): Promise<Record<string, any>[]> {
@@ -688,6 +745,37 @@ async function searchCoils(keyword: string): Promise<Record<string, any>[]> {
 function onCoilSelected(row: Record<string, any>) {
   reviewForm.coilItemNo = String(row.value ?? '');
   validateCoil();
+}
+
+// 新增子级时的产品资料模糊查询（复用线圈查询的下拉控件）
+async function searchProductData(keyword: string): Promise<Record<string, any>[]> {
+  const data = await deliveryReviewService.searchProductDataByKeyword(
+    new PMCRequestDto({ 货号: keyword.trim() })
+  );
+  const list = Array.isArray(data) ? data : [];
+  return list.map((item: any) => {
+    const partNo = item?.货号 || item?.value || '';
+    const name = item?.中文品名 || item?.name || item?.产品名称 || '';
+    const spec = item?.中文规格 || item?.spec || item?.规格 || '';
+    return { value: partNo, 中文品名: name, 中文规格: spec };
+  });
+}
+
+// 选中产品资料后回填子级基础信息
+function onChildProductSelected(row: Record<string, any>) {
+  const partNo = String(row.value ?? '');
+  const parent = findItemByKey(schDataSource.value, addChildParentKey.value);
+  if (parent && hasDirectChildPartNo(parent.children || [], partNo)) {
+    addChildForm.partNo = '';
+    Modal.warning({
+      title: '货号已存在',
+      content: `货号“${partNo}”已存在于当前节点的直接子级中，请选择其他货号。`,
+    });
+    return;
+  }
+  addChildForm.partNo = partNo;
+  addChildForm.name = String(row.中文品名 ?? '');
+  addChildForm.spec = String(row.中文规格 ?? '');
 }
 
 // ========== 排产用户选择（企业微信） ==========
@@ -1042,6 +1130,31 @@ const materialScopeAll = ref<'current' | 'all'>('current');
 const contextMenuVisible = ref(false);
 const contextMenuPosition = reactive({ x: 0, y: 0 });
 const rightClickRowKey = ref<string>('');
+const addChildModalVisible = ref(false);
+const addChildParentKey = ref<string>('');
+const addChildForm = reactive({
+  partNo: '',
+  name: '',
+  spec: '',
+  source: '自制',
+  usage: 1,
+  unit: '',
+});
+const materialSourceOptions = [
+  { label: '自制', value: '自制' },
+  { label: '外购', value: '外购' },
+  { label: '外协', value: '外协' },
+];
+
+// 用户编辑或清空货号时，不保留上一条产品资料的品名、规格；仅在下拉选中后由 onChildProductSelected 回填。
+watch(
+  () => addChildForm.partNo,
+  () => {
+    addChildForm.name = '';
+    addChildForm.spec = '';
+  },
+  { flush: 'sync' }
+);
 
 // 行点击选中/取消选中（点击生产数/采购数/生产损耗输入框列时不触发）
 function handleRowClick(record: ProductionItem, e?: MouseEvent) {
@@ -1072,7 +1185,7 @@ function handleRowContextMenu(record: ProductionItem, e: MouseEvent) {
   rightClickRowKey.value = record.key;
   // 设置菜单位置（使用鼠标位置，并避免超出视口）
   const menuWidth = 160;
-  const menuHeight = 88;
+  const menuHeight = 124;
   let x = e.clientX;
   let y = e.clientY;
   if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 8;
@@ -1085,6 +1198,103 @@ function handleRowContextMenu(record: ProductionItem, e: MouseEvent) {
 // 关闭菜单
 function closeContextMenu() {
   contextMenuVisible.value = false;
+}
+
+// 右键菜单：新增子级
+function onCtxAddChild() {
+  if (!rightClickRowKey.value) return;
+  const parent = findItemByKey(schDataSource.value, rightClickRowKey.value);
+  if (!parent) {
+    message.error('未找到新增子级的父节点');
+    return;
+  }
+  closeContextMenu();
+  addChildParentKey.value = parent.key;
+  Object.assign(addChildForm, {
+    partNo: '',
+    name: '',
+    spec: '',
+    source: '自制',
+    usage: 1,
+    unit: parent.unit || '',
+  });
+  addChildModalVisible.value = true;
+}
+
+function handleAddChild() {
+  const parent = findItemByKey(schDataSource.value, addChildParentKey.value);
+  const partNo = addChildForm.partNo.trim();
+  const usage = Number(addChildForm.usage);
+  if (!parent) {
+    message.error('未找到新增子级的父节点');
+    return;
+  }
+  if (!partNo) {
+    message.warning('请输入子级货号');
+    return;
+  }
+  if (!Number.isFinite(usage) || usage <= 0) {
+    message.warning('用量必须大于 0');
+    return;
+  }
+  if (hasDirectChildPartNo(parent.children || [], partNo)) {
+    Modal.warning({
+      title: '货号已存在',
+      content: `货号“${partNo}”已存在于当前节点的直接子级中，请选择其他货号。`,
+    });
+    return;
+  }
+
+  const parentWorkQty = parent.produceQty > 0 ? parent.produceQty : parent.purchaseQty;
+  const needQty = Math.ceil(Math.max(0, parentWorkQty || 0) * usage);
+  let maxRowNum = 0;
+  const findMaxRowNum = (items: ProductionItem[]) => {
+    items.forEach(item => {
+      maxRowNum = Math.max(maxRowNum, item.rowNum || 0);
+      if (item.children?.length) findMaxRowNum(item.children);
+    });
+  };
+  findMaxRowNum(schDataSource.value);
+  const child: ProductionItem = {
+    key: generateKey('manual-child', keyCounter),
+    level: parent.level + 1,
+    name: addChildForm.name.trim(),
+    source: addChildForm.source,
+    produceQty: addChildForm.source === '自制' ? needQty : 0,
+    purchaseQty: addChildForm.source === '自制' ? 0 : needQty,
+    loss: 0,
+    rowNum: maxRowNum + 1,
+    spec: addChildForm.spec.trim(),
+    partNo,
+    usage,
+    unit: addChildForm.unit.trim(),
+    process: '',
+    workshop: '',
+    warehouse: '',
+    stock: 0,
+    transit: 0,
+    wip: 0,
+    max: 0,
+    min: 0,
+    avail: 0,
+    attr: '',
+    needQty,
+    pickedQty: needQty,
+    remark: '',
+    mid: '',
+    children: [],
+  };
+  if (!parent.children) parent.children = [];
+  parent.children.push(child);
+  if (!schExpandedKeys.value.includes(parent.key)) {
+    schExpandedKeys.value.push(parent.key);
+  }
+  selectedRowKey.value = child.key;
+  syncChildrenQty(parent);
+  syncChildrenPickQty(parent);
+  reassignLevelIndex(schDataSource.value);
+  addChildModalVisible.value = false;
+  message.success('已新增子级物料');
 }
 
 // 右键菜单：删除选中
@@ -1531,6 +1741,11 @@ function findItemByKey(items: ProductionItem[], key: string): ProductionItem | n
     }
   }
   return null;
+}
+
+// 仅检查当前节点的直接子级；孙级及更深层存在相同货号时仍允许新增。
+function hasDirectChildPartNo(children: ProductionItem[], partNo: string): boolean {
+  return children.some(item => item.partNo === partNo);
 }
 
 // ========== 处理工序车间变化 ==========

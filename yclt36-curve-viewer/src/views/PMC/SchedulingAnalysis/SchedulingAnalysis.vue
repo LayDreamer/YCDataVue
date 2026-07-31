@@ -896,7 +896,6 @@ const handleSave = async () => {
     const productNo = route.query.productNo as string;
     const externalProductionList = productionNodes.map(item => {
       const ep = new ExternalProduction();
-      ep.合同号 = form.orderNo || '';
       ep.货号 = item.partNo || '';
       ep.排产编号 = productNo || '';
       ep.需求量 = String(item.needQty || 0);

@@ -97,5 +97,20 @@ export const deliveryReviewService = {
       }
       throw new Error('模糊查询线圈货号失败:' + errorMessage);
     }
+  },
+
+  // 根据关键字模糊查询产品资料（不限线圈）
+  async searchProductDataByKeyword(requestDto: PMCRequestDto): Promise<any> {
+    try {
+      const response = await service.searchProductDataByKeyword(requestDto);
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('模糊查询产品资料失败:' + errorMessage);
+    }
   }
 }
