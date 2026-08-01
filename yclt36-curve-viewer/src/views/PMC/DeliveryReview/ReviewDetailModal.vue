@@ -2583,7 +2583,7 @@ watch(
   min-width: 340px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 16px;
   overflow-y: auto;
   padding-right: 4px;
   transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
@@ -3127,10 +3127,52 @@ watch(
   white-space: nowrap;
 }
 
+.scheduling-table-wrap :deep(.ant-table-thead > tr > th.sch-col-group-identity) {
+  box-shadow: inset 0 3px 0 #91caff;
+}
+
+.scheduling-table-wrap :deep(.ant-table-thead > tr > th.sch-col-group-material) {
+  background: #24456d !important;
+  box-shadow: inset 0 3px 0 #69b1ff;
+}
+
+.scheduling-table-wrap :deep(.ant-table-thead > tr > th.sch-col-group-process) {
+  background: #28515f !important;
+  box-shadow: inset 0 3px 0 #5cdbd3;
+}
+
+.scheduling-table-wrap :deep(.ant-table-thead > tr > th.sch-col-group-inventory) {
+  background: #3a4e6c !important;
+  box-shadow: inset 0 3px 0 #b7eb8f;
+}
+
+.scheduling-table-wrap :deep(.ant-table-thead > tr > th.sch-col-group-planning) {
+  background: #4b4b70 !important;
+  box-shadow: inset 0 3px 0 #d3adf7;
+}
+
 .scheduling-table-wrap :deep(.ant-table-tbody > tr > td) {
   padding: 4px 6px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 物料、工艺、库存、计划量四个业务区块的起始分隔线。 */
+.scheduling-table-wrap :deep(.ant-table-thead > tr > th.sch-col-group-start),
+.scheduling-table-wrap :deep(.ant-table-tbody > tr > td.sch-col-group-start) {
+  border-left: 2px solid #91a8c2 !important;
+}
+
+/* 数量统一右对齐，便于横向比较数量级；录入框中的数字也与展示列保持一致。 */
+.scheduling-table-wrap :deep(.ant-table-tbody > tr > td.sch-col-group-material),
+.scheduling-table-wrap :deep(.ant-table-tbody > tr > td.sch-col-group-inventory),
+.scheduling-table-wrap :deep(.ant-table-tbody > tr > td.sch-col-group-planning) {
+  font-variant-numeric: tabular-nums;
+}
+
+.scheduling-table-wrap :deep(.sch-col-group-planning .ant-input-number-input) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .scheduling-table-wrap :deep(.ant-table-tbody > tr:hover > td) {
@@ -3356,7 +3398,7 @@ watch(
 
 /* ========== 左侧卡片通用样式 ========== */
 .left-card :deep(.ant-card-head) {
-  min-height: 40px;
+  min-height: 36px;
   padding: 0 14px;
   background: linear-gradient(135deg, #1e3a5f 0%, #2b4b78 100%);
   border-bottom: none;
@@ -3366,11 +3408,53 @@ watch(
   font-size: 13px;
   font-weight: 600;
   color: #fff;
-  padding: 8px 0;
+  padding: 7px 0;
 }
 
 .left-card :deep(.ant-card-body) {
-  padding: 12px 14px;
+  padding: 10px 14px;
+}
+
+.left-card .info-grid {
+  gap: 8px 14px;
+}
+
+.left-card .info-item {
+  gap: 2px;
+}
+
+.left-card .info-label {
+  font-size: 12px;
+}
+
+.left-card .info-value {
+  line-height: 1.4;
+}
+
+.left-panel .review-form-compact :deep(.ant-form-item) {
+  margin-bottom: 10px;
+}
+
+.left-panel .review-form-compact :deep(.ant-form-item-label) {
+  padding-bottom: 4px;
+}
+
+.left-panel .preset-user-display {
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.left-panel .preset-user-tags {
+  gap: 6px;
+}
+
+.left-panel .preset-user-tags .ant-tag {
+  padding: 2px 10px;
+}
+
+.left-footer {
+  margin-top: 4px;
+  padding-top: 6px;
 }
 
 /* 响应式：小屏幕恢复为上下布局 */

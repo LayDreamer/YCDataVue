@@ -5,6 +5,7 @@
         type="text"
         size="small"
         class="settings-trigger"
+        aria-label="刷新表格"
         :loading="loading"
         @click="handleRefresh"
       >
@@ -18,6 +19,7 @@
         type="text"
         size="small"
         class="settings-trigger"
+        :aria-label="fullscreenTooltip"
         @click="handleFullscreen"
       >
         <template #icon>
@@ -143,7 +145,7 @@ const emit = defineEmits<{
   (e: 'update:fullscreen', value: boolean): void;
 }>();
 
-const fullscreenTooltip = computed(() => (props.fullscreen ? '退出全屏' : '全屏'));
+const fullscreenTooltip = computed(() => (props.fullscreen ? '退出全屏（Esc）' : '全屏'));
 
 const visible = ref(false);
 const draftList = ref<ColumnSetting[]>([]);

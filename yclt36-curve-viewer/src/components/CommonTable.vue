@@ -390,6 +390,13 @@ function handleFullscreenChange(value: boolean) {
   }
 }
 
+function handleGlobalKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && isFullscreen.value) {
+    event.preventDefault();
+    handleFullscreenChange(false);
+  }
+}
+
 // ========== 刷新 ==========
 function handleRefresh() {
   emit('refresh');
@@ -464,6 +471,7 @@ const effectiveScroll = computed(() => {
 onMounted(() => {
   nextTick(updateScrollY);
   window.addEventListener('resize', updateScrollY);
+  window.addEventListener('keydown', handleGlobalKeydown);
   if (tableWrapperRef.value && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
       nextTick(updateScrollY);
@@ -474,6 +482,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateScrollY);
+  window.removeEventListener('keydown', handleGlobalKeydown);
   if (resizeObserver) {
     resizeObserver.disconnect();
     resizeObserver = null;
@@ -565,13 +574,28 @@ const flatClasses = computed(() => ({
   width: 100%;
 }
 
-/* 全屏模式：默认占满视口，可被业务侧样式覆盖 */
-.common-table-card.fullscreen {
+/* 全屏模式：覆盖整个工作区，统一卡片与扁平表格的沉浸式表现。 */
+.common-table-card.fullscreen,
+.common-table--flat.fullscreen {
   position: fixed;
-  inset: 4px;
+  inset: 0;
   z-index: 1000;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  border-radius: 0;
+  background: #f5f7fa;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+  animation: common-table-fullscreen-in 0.18s ease-out;
+}
+
+@keyframes common-table-fullscreen-in {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* ========== 选中行高亮（通用） ========== */
@@ -585,13 +609,61 @@ const flatClasses = computed(() => ({
   background: #bae7ff !important;
 }
 
+.common-table-card.fullscreen :deep(.ant-card-head) {
+  min-height: 52px;
+  padding: 0 20px;
+  border-radius: 0;
+}
+
 .common-table-card.fullscreen :deep(.ant-card-body) {
   flex: 1;
   overflow: hidden;
+  padding: 14px 20px 20px;
 }
 
-.common-table-card.fullscreen .table-scroll {
+.common-table-card.fullscreen .table-scroll,
+.common-table--flat.fullscreen .table-scroll {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e6edf5;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(30, 58, 95, 0.05);
+}
+
+.common-table--flat.fullscreen .common-table__header {
+  min-height: 52px;
+  padding: 0 20px;
+  border-radius: 0;
+}
+
+.common-table--flat.fullscreen .common-table__body {
+  padding: 14px 20px 20px;
+  background: #f5f7fa;
+}
+
+/* 工具栏始终独立于表格滚动区；表头在长表格中保持清晰的边界。 */
+.fullscreen .common-table__top {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 10px;
+}
+
+.fullscreen :deep(.ant-table-header) {
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(30, 58, 95, 0.1);
+}
+
+.fullscreen :deep(.ant-table-body) {
+  scrollbar-gutter: stable;
+  background: #f8fafc;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .common-table-card.fullscreen,
+  .common-table--flat.fullscreen {
+    animation: none;
+  }
 }
 </style>
