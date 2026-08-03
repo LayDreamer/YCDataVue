@@ -7,9 +7,7 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import ErpLogin from '../views/ErpLogin.vue'
-import WorkOrderManagement from '@/views/PMC/WorkOrderManagement/WorkOrderManagement.vue'
 import WorkOrderTracking from '@/views/PMC/WorkOrderTracking/WorkOrderTracking.vue'
-import SchedulingAnalysis from '@/views/PMC/SchedulingAnalysis/SchedulingAnalysis.vue'
 import DeliveryReview from '@/views/PMC/DeliveryReview/DeliveryReview.vue'
 import ReviewDetail from '@/views/PMC/DeliveryReview/ReviewDetail.vue'
 import Users from '@/views/System/UserManagement.vue'
@@ -81,23 +79,12 @@ const routes = [
             meta: { title: '交期评审', icon: FileDoneOutlined }
           },
           {
-            path: 'workOrder',
-            name: 'WorkOrderManagement',
-            component: WorkOrderManagement,
-            meta: { title: '工单管理', icon: ContainerOutlined, hidden: true }
-          },
-          {
             path: 'workOrderTracking',
             name: 'WorkOrderTracking',
             component: WorkOrderTracking,
             meta: { title: '工单销控表', icon: ContainerOutlined }
           }
         ]
-      },
-      {
-        path: 'pmc/detail',
-        name: 'PMCDetail',
-        component: SchedulingAnalysis
       },
       {
         path: 'test',

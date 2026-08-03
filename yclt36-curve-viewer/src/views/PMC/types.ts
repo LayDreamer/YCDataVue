@@ -60,23 +60,6 @@ export interface StatusLegendItem {
   borderColor: string
 }
 
-export interface PMCSalesControl extends ERPBase {
-  合同号: string
-  排产编号: string
-  货号: string 
-  父级货号:string
-  物料货号:string
-  中文品名: string 
-  中文规格: string 
-  缺量:string
-  订单总需求: string 
-  仓库数: string 
-  在产数: string 
-  初始可用量: string 
-  商品属性: string 
-  交货计划: string
-}
-
 export interface RequestDto {   
     合同号?: string;
     分析单号?: string;

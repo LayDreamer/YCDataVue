@@ -589,7 +589,7 @@ import {
   LockOutlined,
 } from '@ant-design/icons-vue';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
-import { salesControlService } from '@/services/salesControlService';
+import { schedulingAnalysisService } from '@/services/schedulingAnalysisService';
 import { workOrderSalesControlService } from '@/services/workOrderSalesControlService';
 import { externalProductionService } from '@/services/externalProductionService';
 import { bomStructureProcessService } from '@/services/bomStructureProcessService';
@@ -1253,7 +1253,7 @@ async function handleAddChild() {
   addChildLoading.value = true;
   try {
     // 新增产品资料仅提供基础字段；库存相关字段以排产分析根节点返回的数据为准。
-    const analysisList = await salesControlService.getSchedulingAnalysisList(
+    const analysisList = await schedulingAnalysisService.getSchedulingAnalysisList(
       new PMCRequestDto({ 货号: partNo })
     );
     const inventoryData = (analysisList || []).find(item => Number(item?.层) === 0)
@@ -2415,7 +2415,7 @@ async function loadSchedulingData() {
       排产编号: props.record?.排产编号,
     });
     console.log('[排产分析详情] 请求参数:', JSON.parse(JSON.stringify(requestDto)));
-    const bomData = await salesControlService.getSchedulingAnalysisList(requestDto);
+    const bomData = await schedulingAnalysisService.getSchedulingAnalysisList(requestDto);
     console.log('[排产分析详情] 后端返回原始数据:', bomData);
 
     // 竞态保护：若本次调用期间已有更新的 loadSchedulingData 启动，丢弃本次响应
