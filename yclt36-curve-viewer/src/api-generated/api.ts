@@ -855,6 +855,92 @@ export class Service {
     }
 
     /**
+     * 新增或修改生产类型覆盖（交期评审生产类型手动覆盖，按合同号+排产编号+货号匹配）
+     * @param body (optional) 
+     * @return OK
+     */
+    saveProductionTypeOverride(body: ProductionTypeOverride | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/SaveProductionTypeOverride";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSaveProductionTypeOverride(_response);
+        });
+    }
+
+    protected processSaveProductionTypeOverride(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 将已通过的交期评审退回待评审，并删除本次分析关联数据
+     * @param body (optional) 
+     * @return OK
+     */
+    returnDeliveryReview(body: ReturnDeliveryReviewRequestDto | undefined): Promise<ReturnDeliveryReviewResultDtoApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/ReturnDeliveryReview";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReturnDeliveryReview(_response);
+        });
+    }
+
+    protected processReturnDeliveryReview(response: Response): Promise<ReturnDeliveryReviewResultDtoApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ReturnDeliveryReviewResultDtoApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ReturnDeliveryReviewResultDtoApiResponse>(null as any);
+    }
+
+    /**
      * 新增成品销控表主表数据
      * @return OK
      */
@@ -4437,6 +4523,96 @@ export interface IProductSalesControlDetail {
     父级编号?: string | undefined;
 }
 
+/** 生产类型覆盖（交期评审生产类型手动覆盖） */
+export class ProductionTypeOverride implements IProductionTypeOverride {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    排产编号?: string | undefined;
+    货号?: string | undefined;
+    生产类型?: string | undefined;
+    修改人?: string | undefined;
+    修改时间?: string | undefined;
+
+    constructor(data?: IProductionTypeOverride) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.合同号 = _data["合同号"];
+            this.排产编号 = _data["排产编号"];
+            this.货号 = _data["货号"];
+            this.生产类型 = _data["生产类型"];
+            this.修改人 = _data["修改人"];
+            this.修改时间 = _data["修改时间"];
+        }
+    }
+
+    static fromJS(data: any): ProductionTypeOverride {
+        data = typeof data === 'object' ? data : {};
+        let result = new ProductionTypeOverride();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["合同号"] = this.合同号;
+        data["排产编号"] = this.排产编号;
+        data["货号"] = this.货号;
+        data["生产类型"] = this.生产类型;
+        data["修改人"] = this.修改人;
+        data["修改时间"] = this.修改时间;
+        return data;
+    }
+}
+
+/** 生产类型覆盖（交期评审生产类型手动覆盖） */
+export interface IProductionTypeOverride {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    排产编号?: string | undefined;
+    货号?: string | undefined;
+    生产类型?: string | undefined;
+    修改人?: string | undefined;
+    修改时间?: string | undefined;
+}
+
 /** 注册请求 */
 export class RegisterUserDto implements IRegisterUserDto {
     userName?: string | undefined;
@@ -4493,6 +4669,182 @@ export interface IRegisterUserDto {
     email?: string | undefined;
     phoneNumber?: string | undefined;
     role?: string | undefined;
+}
+
+export class ReturnDeliveryReviewRequestDto implements IReturnDeliveryReviewRequestDto {
+    reviewId?: string | undefined;
+
+    constructor(data?: IReturnDeliveryReviewRequestDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.reviewId = _data["ReviewId"];
+        }
+    }
+
+    static fromJS(data: any): ReturnDeliveryReviewRequestDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReturnDeliveryReviewRequestDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["ReviewId"] = this.reviewId;
+        return data;
+    }
+}
+
+export interface IReturnDeliveryReviewRequestDto {
+    reviewId?: string | undefined;
+}
+
+export class ReturnDeliveryReviewResultDto implements IReturnDeliveryReviewResultDto {
+    reviewId?: string | undefined;
+    schedulingNo?: string | undefined;
+    analysisNos?: string[] | undefined;
+    reviewDeletedCount?: number;
+    schedulingAnalysisDeletedCount?: number;
+    bomDeletedCount?: number;
+    workOrderDetailDeletedCount?: number;
+    pickMaterialDeletedCount?: number;
+    warehousingDeletedCount?: number;
+    productionDeletedCount?: number;
+    shipmentDeletedCount?: number;
+    workOrderUpdatedCount?: number;
+    workOrderDeletedCount?: number;
+
+    constructor(data?: IReturnDeliveryReviewResultDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.reviewId = _data["ReviewId"];
+            this.schedulingNo = _data["SchedulingNo"];
+            if (Array.isArray(_data["AnalysisNos"])) {
+                this.analysisNos = [] as any;
+                for (let item of _data["AnalysisNos"])
+                    this.analysisNos!.push(item);
+            }
+            this.reviewDeletedCount = _data["ReviewDeletedCount"];
+            this.schedulingAnalysisDeletedCount = _data["SchedulingAnalysisDeletedCount"];
+            this.bomDeletedCount = _data["BomDeletedCount"];
+            this.workOrderDetailDeletedCount = _data["WorkOrderDetailDeletedCount"];
+            this.pickMaterialDeletedCount = _data["PickMaterialDeletedCount"];
+            this.warehousingDeletedCount = _data["WarehousingDeletedCount"];
+            this.productionDeletedCount = _data["ProductionDeletedCount"];
+            this.shipmentDeletedCount = _data["ShipmentDeletedCount"];
+            this.workOrderUpdatedCount = _data["WorkOrderUpdatedCount"];
+            this.workOrderDeletedCount = _data["WorkOrderDeletedCount"];
+        }
+    }
+
+    static fromJS(data: any): ReturnDeliveryReviewResultDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReturnDeliveryReviewResultDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["ReviewId"] = this.reviewId;
+        data["SchedulingNo"] = this.schedulingNo;
+        if (Array.isArray(this.analysisNos)) {
+            data["AnalysisNos"] = [];
+            for (let item of this.analysisNos)
+                data["AnalysisNos"].push(item);
+        }
+        data["ReviewDeletedCount"] = this.reviewDeletedCount;
+        data["SchedulingAnalysisDeletedCount"] = this.schedulingAnalysisDeletedCount;
+        data["BomDeletedCount"] = this.bomDeletedCount;
+        data["WorkOrderDetailDeletedCount"] = this.workOrderDetailDeletedCount;
+        data["PickMaterialDeletedCount"] = this.pickMaterialDeletedCount;
+        data["WarehousingDeletedCount"] = this.warehousingDeletedCount;
+        data["ProductionDeletedCount"] = this.productionDeletedCount;
+        data["ShipmentDeletedCount"] = this.shipmentDeletedCount;
+        data["WorkOrderUpdatedCount"] = this.workOrderUpdatedCount;
+        data["WorkOrderDeletedCount"] = this.workOrderDeletedCount;
+        return data;
+    }
+}
+
+export interface IReturnDeliveryReviewResultDto {
+    reviewId?: string | undefined;
+    schedulingNo?: string | undefined;
+    analysisNos?: string[] | undefined;
+    reviewDeletedCount?: number;
+    schedulingAnalysisDeletedCount?: number;
+    bomDeletedCount?: number;
+    workOrderDetailDeletedCount?: number;
+    pickMaterialDeletedCount?: number;
+    warehousingDeletedCount?: number;
+    productionDeletedCount?: number;
+    shipmentDeletedCount?: number;
+    workOrderUpdatedCount?: number;
+    workOrderDeletedCount?: number;
+}
+
+export class ReturnDeliveryReviewResultDtoApiResponse implements IReturnDeliveryReviewResultDtoApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ReturnDeliveryReviewResultDto;
+    timestamp?: Date;
+
+    constructor(data?: IReturnDeliveryReviewResultDtoApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? ReturnDeliveryReviewResultDto.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ReturnDeliveryReviewResultDtoApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReturnDeliveryReviewResultDtoApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IReturnDeliveryReviewResultDtoApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ReturnDeliveryReviewResultDto;
+    timestamp?: Date;
 }
 
 export class SendMessageDto implements ISendMessageDto {

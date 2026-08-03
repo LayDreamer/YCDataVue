@@ -525,10 +525,10 @@
                 />
               </a-form-item>
               <a-form-item label="品名">
-                <a-input v-model:value="addChildForm.name" placeholder="请输入品名" />
+                <div class="add-child-source-text">{{ addChildForm.name || '--' }}</div>
               </a-form-item>
               <a-form-item label="规格">
-                <a-input v-model:value="addChildForm.spec" placeholder="请输入规格" />
+                <div class="add-child-source-text">{{ addChildForm.spec || '--' }}</div>
               </a-form-item>
               <a-row :gutter="12">
                 <a-col :span="12">
@@ -772,7 +772,7 @@ function onChildProductSelected(row: Record<string, any>) {
     addChildForm.partNo = '';
     Modal.warning({
       title: '货号已存在',
-      content: `货号“${partNo}”已存在于当前节点的直接子级中，请选择其他货号。`,
+      content: `货号"${partNo}"已存在于当前节点的直接子级中，请选择其他货号。`,
     });
     return;
   }
@@ -1244,7 +1244,7 @@ async function handleAddChild() {
   if (hasDirectChildPartNo(parent.children || [], partNo)) {
     Modal.warning({
       title: '货号已存在',
-      content: `货号“${partNo}”已存在于当前节点的直接子级中，请选择其他货号。`,
+      content: `货号"${partNo}"已存在于当前节点的直接子级中，请选择其他货号。`,
     });
     return;
   }
@@ -1299,7 +1299,7 @@ async function handleAddChild() {
       needQty,
       pickedQty: needQty,
       remark: '',
-      // 中间件标识由排产分析接口按货号返回，表格“中间件”列会直接显示该值。
+      // 中间件标识由排产分析接口按货号返回，表格"中间件"列会直接显示该值。
       mid: inventoryData.中间件 !== undefined && inventoryData.中间件 !== ''
         ? inventoryData.中间件
         : '',
@@ -1696,7 +1696,7 @@ function handleSchDeleteRoot() {
 // ========== 生成唯一 key ==========
 let keyCounter = 0;
 // 竞态保护：每次 loadSchedulingData 调用自增，await 返回后比对当前值；
-// 若已被新调用覆盖则丢弃旧响应，避免“多次触发导致旧 partNo 的响应覆盖新数据”
+// 若已被新调用覆盖则丢弃旧响应，避免"多次触发导致旧 partNo 的响应覆盖新数据"
 let loadSeq = 0;
 function generateKey(prefix: string, index: number) {
   return `${prefix}-${index}-${++keyCounter}`;
@@ -1849,7 +1849,7 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
     const _min = record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : 0;
     const _avail = Math.max(0, schedulingForm.analysisType === 'limit' ? _stock + _transit - _wip - _min : _stock + _transit - _wip);
 
-    // 0 层，或 1 层且产品属性含“线圈”的节点：工序车间默认“包装车间”
+    // 0 层，或 1 层且产品属性含"线圈"的节点：工序车间默认"包装车间"
     const isPackWorkshop = level === 0 || (level === 1 && (record.产品属性 || '').includes('线圈'));
 
     const item: ProductionItem = {
@@ -1865,7 +1865,7 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
       partNo: record.货号 || '',
       usage: cumulativeUsage,
       unit: record.单位 || '',
-      // 0 层，或 1 层且产品属性包含“线圈”的节点，工序车间默认“包装车间”，工序名称取“包装”
+      // 0 层，或 1 层且产品属性包含"线圈"的节点，工序车间默认"包装车间"，工序名称取"包装"
       process: record.工序名称 || (isPackWorkshop && !record.工序车间 ? '包装' : ''),
       workshop: record.工序车间 || (isPackWorkshop ? '包装车间' : ''),
       warehouse: record.仓库名称 || '',
@@ -2466,6 +2466,7 @@ const handleVisibleUpdate = (val: boolean) => {
     isSchedulingFullscreen.value = false;
     showSchedulingPanel.value = false;
     reviewSubmitted.value = false;
+    closeContextMenu();
   }
   emit('update:visible', val);
 };
@@ -2527,6 +2528,7 @@ watch(
     } else if (!newVisible) {
       showSchedulingPanel.value = false;
       reviewSubmitted.value = false;
+      closeContextMenu();
     }
   },
   { flush: 'post', immediate: true }

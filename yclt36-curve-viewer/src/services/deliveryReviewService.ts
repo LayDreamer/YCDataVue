@@ -1,5 +1,13 @@
 import { get, post, put, del } from '@/api'
-import { Service, PMCRequestDto,PMCDeliveryReview } from '@/api-generated/api';
+import {
+  ApiException,
+  PMCDeliveryReview,
+  PMCRequestDto,
+  ProductionTypeOverride,
+  ReturnDeliveryReviewRequestDto,
+  ReturnDeliveryReviewResultDto,
+  Service,
+} from '@/api-generated/api';
 import { toCamelCase, ApiResponse } from "@/services/index.ts"
 import { PMCProductInfo, ProductDataAssemblyList} from '@/views/PMC/DeliveryReview/types';
 import { RequestDto } from '@/views/PMC/types';
@@ -96,6 +104,58 @@ export const deliveryReviewService = {
         errorMessage = responseData;
       }
       throw new Error('模糊查询线圈货号失败:' + errorMessage);
+    }
+  },
+
+  async returnDeliveryReview(reviewId: string): Promise<ReturnDeliveryReviewResultDto> {
+    try {
+      const response = await service.returnDeliveryReview(
+        new ReturnDeliveryReviewRequestDto({ reviewId })
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.message || '退回待评审失败');
+      }
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = error?.message || '退回待评审失败，请稍后重试';
+      let status: number | undefined;
+
+      if (error instanceof ApiException) {
+        status = error.status;
+        try {
+          const responseData = JSON.parse(error.response || '{}');
+          errorMessage = responseData.Message || responseData.message || errorMessage;
+        } catch {
+          // 保留 NSwag 返回的原始错误信息
+        }
+      }
+
+      const serviceError = new Error(errorMessage) as Error & { status?: number };
+      serviceError.status = status;
+      throw serviceError;
+    }
+  },
+
+  // 新增或修改生产类型覆盖（按合同号+排产编号+货号匹配）
+  async saveProductionTypeOverride(override: ProductionTypeOverride): Promise<any> {
+    try {
+      const response = await service.saveProductionTypeOverride(override);
+      if (!response.success) {
+        throw new Error(response.message || '修改生产类型失败');
+      }
+      return response.data;
+    } catch (error: any) {
+      let errorMessage = error?.message || '修改生产类型失败，请稍后重试';
+
+      if (error instanceof ApiException) {
+        try {
+          const responseData = JSON.parse(error.response || '{}');
+          errorMessage = responseData.Message || responseData.message || errorMessage;
+        } catch {
+          // 保留 NSwag 返回的原始错误信息
+        }
+      }
+      throw new Error(errorMessage);
     }
   },
 

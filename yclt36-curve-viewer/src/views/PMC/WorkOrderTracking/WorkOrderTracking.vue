@@ -35,11 +35,6 @@
           齐套、配料分析
         </a-button>
 
-        <div class="tab-bar">
-          <a-tabs v-model:activeKey="activeTab" size="small">
-            <a-tab-pane key="workOrderTracking" tab="工单销控表" />
-          </a-tabs>
-        </div>
       </div>
 
       <!-- 第二行：详细筛选条件 -->
@@ -81,13 +76,27 @@
             </a-select-option>
           </a-select>
 
-          <a-input-search
+          <a-input
             v-model:value="searchKeyword"
             placeholder="货号/品名/规格"
             allow-clear
-            class="filter-search"
-            style="width: 200px"
-          />
+            class="filter-search filter-input"
+          >
+            <template #prefix>
+              <SearchOutlined />
+            </template>
+          </a-input>
+
+          <a-input
+            v-model:value="schedulingNoKeyword"
+            placeholder="排产编号"
+            allow-clear
+            class="filter-search filter-input"
+          >
+            <template #prefix>
+              <SearchOutlined />
+            </template>
+          </a-input>
         </div>
       </div>
     </div>
@@ -195,7 +204,8 @@ import { message } from 'ant-design-vue'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import {
-  ContainerOutlined
+  ContainerOutlined,
+  SearchOutlined
 } from '@ant-design/icons-vue'
 import WorkOrderDetailModal from './WorkOrderDetailModal.vue'
 import {
@@ -281,7 +291,6 @@ function updateTableHeight() {
   const h = window.innerHeight - reserved
   tableScrollY.value = Math.max(920, h)
 }
-const activeTab = ref('workOrderTracking')
 const loading = ref(false)
 const analyzing = ref(false)
 const dataSource = ref<WorkOrderSalesControl[]>([])
@@ -307,6 +316,7 @@ const kittingStatus = ref<string | undefined>(undefined)
 const feedingStatus = ref<string | undefined>(undefined)
 const workshop = ref<string | undefined>(undefined)
 const searchKeyword = ref('')
+const schedulingNoKeyword = ref('')
 const dateRange = ref<[Dayjs, Dayjs] | null>([dayjs('2026-01-01'), dayjs('2026-01-10')])
 
 // ==================== 计算属性 ====================
@@ -402,6 +412,18 @@ const filteredData = computed(() => {
         item.品名?.toLowerCase().includes(kw) ||
         item.规格?.toLowerCase().includes(kw)
     )
+  }
+
+  // 排产编号搜索：从明细表匹配排产编号，再按对应的货号过滤主表
+  if (schedulingNoKeyword.value) {
+    const kw = schedulingNoKeyword.value.trim().toLowerCase()
+    const matchedPartNos = new Set(
+      workOrderDetailList.value
+        .filter(d => (d.排产编号 || '').toLowerCase().includes(kw))
+        .map(d => String(d.货号 || ''))
+        .filter(Boolean)
+    )
+    result = result.filter(item => matchedPartNos.has(String(item.货号 || '')))
   }
 
   return result
@@ -1014,10 +1036,6 @@ async function fetchData() {
   }
 }
 
-onActivated(() => {
-  activeTab.value = 'workOrderTracking'
-})
-
 onMounted(async () => {
   updateTableHeight()
   window.addEventListener('resize', updateTableHeight)
@@ -1112,6 +1130,19 @@ onUnmounted(() => {
 .filter-select,
 .filter-search {
   border-radius: 6px;
+}
+
+.filter-input {
+  width: 200px;
+}
+
+.filter-input :deep(.ant-input) {
+  padding-left: 8px;
+}
+
+.filter-input :deep(.ant-input-prefix) {
+  color: #bfbfbf;
+  margin-right: 6px;
 }
 
 .filter-actions {

@@ -108,12 +108,23 @@
           </a-tag>
         </template>
         <template v-if="column.key === 'action'">
+          <template v-if="viewMode === 'unreviewed'">
+            <a-button type="link" @click="openReview(record)">
+              评审
+            </a-button>
+            <a-button type="link" @click="openEditProductionType(record)">
+              编辑
+            </a-button>
+          </template>
           <a-button
-            v-if="viewMode === 'unreviewed'"
+            v-else-if="record.状态 === '评审通过'"
             type="link"
-            @click="openReview(record)"
+            danger
+            :loading="returningReviewId === record.编号"
+            :disabled="returningReviewId !== null && returningReviewId !== record.编号"
+            @click="confirmReturnReview(record)"
           >
-            评审确认
+            退回待评审
           </a-button>
           <span v-else class="reviewed-tag">已评审</span>
         </template>
@@ -142,18 +153,46 @@
 
     <!-- 评审弹窗 -->
     <ReviewModal v-model:visible="modalVisible" :record="currentItem" @confirm="handleReviewConfirmed" @refresh="handleRefresh" />
+
+    <!-- 编辑生产类型弹窗 -->
+    <a-modal
+      v-model:open="editTypeVisible"
+      title="编辑生产类型"
+      :width="420"
+      centered
+      ok-text="确定"
+      cancel-text="取消"
+      :confirm-loading="editTypeSaving"
+      @ok="handleEditProductionTypeOk"
+    >
+      <a-form class="edit-type-form" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }" label-align="left">
+        <a-form-item label="排产编号">
+          <span class="edit-type-text">{{ editTypeRecord?.排产编号 || '--' }}</span>
+        </a-form-item>
+        <a-form-item label="货号">
+          <span class="edit-type-text">{{ editTypeRecord?.货号 || '--' }}</span>
+        </a-form-item>
+        <a-form-item label="修改类型">
+          <a-radio-group v-model:value="editTypeValue" class="edit-type-radio">
+            <a-radio v-for="type in availableProductionTypes" :key="type" :value="type">
+              {{ type }}
+            </a-radio>
+          </a-radio-group>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue';
-import { message, Grid } from 'ant-design-vue';
+import { message, Grid, Modal } from 'ant-design-vue';
 import type { TableColumnsType } from 'ant-design-vue';
 import ReviewModal from '../DeliveryReview/ReviewDetailModal.vue';
 import type { PMCProductInfo } from '../DeliveryReview/types';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { RequestDto } from '../types';
-import { PMCRequestDto,PMCDeliveryReview  } from '@/api-generated/api';
+import { PMCRequestDto,PMCDeliveryReview, ProductionTypeOverride  } from '@/api-generated/api';
 import { truncateText } from '@/utils';
 import CommonTable from '@/components/CommonTable.vue';
 
@@ -176,12 +215,18 @@ const baseColumns: TableColumnsType = [
     }, defaultSortOrder: 'descend' },
   { title: '特殊要求', dataIndex: '特殊要求', key: '特殊要求', width: 150, ellipsis: true },
   { title: '状态', dataIndex: '状态', key: '状态', width: 100, fixed: 'right' },
-  { title: '操作', key: 'action', width: 120, fixed: 'right' },
+  { title: '操作', key: 'action', width: 180, align: 'center', fixed: 'right' },
 ];
 
-/** 动态列：已评审模式追加备注列 */
+/** 动态列：已评审模式追加备注列；待评审模式状态列不固定右侧 */
 const allColumns = computed(() => {
-  const cols = [...baseColumns];
+  const cols = baseColumns.map((col) => {
+    if ((col.key as string) === '状态' && viewMode.value === 'unreviewed') {
+      const { fixed, ...rest } = col as any;
+      return rest;
+    }
+    return col;
+  });
   if (viewMode.value === 'reviewed') {
     const statusIndex = cols.findIndex((c) => (c.key as string) === '状态');
     cols.splice(statusIndex >= 0 ? statusIndex : cols.length, 0, {
@@ -201,6 +246,12 @@ const selectedProductionUser = ref<string | null>(null);
 const selectedProductionType = ref<string>('普通订单');
 const modalVisible = ref(false);
 const currentItem = ref<PMCDeliveryReview | null>(null);
+const returningReviewId = ref<string | null>(null);
+// 编辑生产类型弹窗
+const editTypeVisible = ref(false);
+const editTypeRecord = ref<PMCDeliveryReview | null>(null);
+const editTypeValue = ref<string>('');
+const editTypeSaving = ref(false);
 const pagination = reactive({
   pageSize: 10,
   showSizeChanger: false,
@@ -287,6 +338,10 @@ const productionUserOptions = computed(() => {
 
 // 生产类型 tab 选项（与 ALLOWED_PRODUCTION_TYPES 保持一致）
 const productionTypeOptions = ALLOWED_PRODUCTION_TYPES;
+// 编辑生产类型弹窗中，只显示与当前不同的类型
+const availableProductionTypes = computed(() =>
+  productionTypeOptions.filter((t) => t !== editTypeRecord.value?.生产类型)
+);
 
 // 获取未评审数据（产品信息）
 const  fetchProductData = async () => {
@@ -298,9 +353,14 @@ const  fetchProductData = async () => {
     });
     const response = await deliveryReviewService.convertToPMCDeliveryReviewList(requestDto);
     if (!response || response.length === 0) {
-      dataSource.value = [];
+      if (viewMode.value === 'unreviewed') {
+        dataSource.value = [];
+      }
       fullUnreviewedData.value = [];
-      message.info('暂无数据');
+      unreviewedCount.value = 0;
+      if (viewMode.value === 'unreviewed') {
+        message.info('暂无数据');
+      }
       return;
     }
   const mappedData=response;
@@ -310,7 +370,9 @@ const  fetchProductData = async () => {
       return aVal.localeCompare(bVal, 'zh');
     });
 
-    dataSource.value = mappedData;
+    if (viewMode.value === 'unreviewed') {
+      dataSource.value = mappedData;
+    }
     fullUnreviewedData.value = [...mappedData];
     // 后端已过滤生产类型，直接统计返回结果
     unreviewedCount.value = mappedData.length;
@@ -366,12 +428,11 @@ const mappedData: PMCDeliveryReview[]=response;
 // 监听模式切换，重置搜索条件并加载对应数据
 watch(viewMode, (newMode, oldMode) => {
   if (newMode === oldMode) return;
-  // 切换时清空所有筛选条件
+  // 切换时清空搜索条件，保留当前生产类型 tab
   searchForm.contractNo = '';
   searchForm.itemNo = '';
   selectedProductionUser.value = null;
-  selectedProductionType.value = productionTypeOptions[0];
-  
+
   if (newMode === 'unreviewed') {
     fetchProductData();
   } else {
@@ -426,6 +487,85 @@ const resetSearch = () => {
 const openReview = (record: PMCDeliveryReview) => {
   currentItem.value = record;
   modalVisible.value = true;
+};
+
+// 打开编辑生产类型弹窗（仅未评审模式使用）
+const openEditProductionType = (record: PMCDeliveryReview) => {
+  editTypeRecord.value = record;
+  // 默认选中“另一个”生产类型
+  editTypeValue.value =
+    availableProductionTypes.value.find((t) => t !== record.生产类型) ||
+    productionTypeOptions[0];
+  editTypeVisible.value = true;
+};
+
+// 确认修改生产类型（调用后端保存生产类型覆盖，按合同号+排产编号+货号匹配）
+const handleEditProductionTypeOk = async () => {
+  const record = editTypeRecord.value;
+  if (!record) {
+    editTypeVisible.value = false;
+    return;
+  }
+  if (!editTypeValue.value) {
+    message.warning('请选择生产类型');
+    return;
+  }
+  if (editTypeValue.value === record.生产类型) {
+    editTypeVisible.value = false;
+    return;
+  }
+
+  const newType = editTypeValue.value;
+  editTypeSaving.value = true;
+  try {
+    await deliveryReviewService.saveProductionTypeOverride(
+      new ProductionTypeOverride({
+        合同号: record.合同号,
+        排产编号: record.排产编号,
+        货号: record.货号,
+        生产类型: newType,
+      })
+    );
+
+    editTypeVisible.value = false;
+    editTypeRecord.value = null;
+    message.success(`生产类型已修改为「${newType}」`);
+    // 重新拉取待评审数据，确保展示的是后端叠加覆盖后的结果
+    await fetchProductData();
+  } catch (error: any) {
+    message.error(error?.message || '修改生产类型失败，请稍后重试');
+  } finally {
+    editTypeSaving.value = false;
+  }
+};
+
+const confirmReturnReview = (record: PMCDeliveryReview) => {
+  if (!record.编号) {
+    message.error('评审编号为空，无法退回');
+    return;
+  }
+
+  Modal.confirm({
+    title: '确认退回待评审？',
+    content: `排产编号：${record.排产编号 || '--'}，货号：${record.货号 || '--'} 的评审记录及本次保存的排产分析、BOM、工单明细和外产关联数据将被永久删除。`,
+    okText: '确认退回',
+    okType: 'danger',
+    cancelText: '取消',
+    centered: true,
+    async onOk() {
+      returningReviewId.value = record.编号!;
+      try {
+        await deliveryReviewService.returnDeliveryReview(record.编号!);
+        message.success('已退回待评审');
+        await Promise.all([fetchProductData(), fetchReviewedData()]);
+      } catch (error: any) {
+        message.error(error?.message || '退回待评审失败，请稍后重试');
+        throw error;
+      } finally {
+        returningReviewId.value = null;
+      }
+    },
+  });
 };
 
 // 评审确认后的回调
@@ -505,9 +645,35 @@ onMounted(() => {
   flex: 1;
   overflow: auto;
 }
+.edit-type-form {
+  padding: 8px 8px 0;
+}
+
+.edit-type-form :deep(.ant-form-item) {
+  margin-bottom: 18px;
+}
+
+.edit-type-text {
+  display: inline-block;
+  padding-top: 4px;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.edit-type-radio {
+  padding-top: 4px;
+}
+
+.edit-type-radio :deep(.ant-radio-wrapper) {
+  margin-right: 24px;
+}
+
 .table-card :deep(.ant-card-head) {
   background: linear-gradient(135deg, #1e3a5f 0%, #2b4b78 100%);
   border-bottom: none;
+}
+.table-card :deep(.ant-table-thead > tr > th) {
+  text-align: center !important;
 }
 .table-card :deep(.ant-card-head-title) {
   color: #fff;
