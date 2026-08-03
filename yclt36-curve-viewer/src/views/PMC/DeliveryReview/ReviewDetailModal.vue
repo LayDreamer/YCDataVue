@@ -730,7 +730,7 @@ const productDataColumns: SearchSelectColumn[] = [
   { title: '中文规格', dataIndex: '中文规格', width: 260 },
 ];
 
-// 远程搜索：传入关键字，返回下拉所需的数据源
+// 远程搜索：传入关键字，返回下拉所需的数据源 
 async function searchCoils(keyword: string): Promise<Record<string, any>[]> {
   const data = await deliveryReviewService.searchCoilsByKeyword(
     new PMCRequestDto({ 线圈货号: keyword.trim() })
