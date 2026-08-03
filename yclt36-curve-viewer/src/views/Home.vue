@@ -68,7 +68,6 @@
             </a-breadcrumb>
           </div>
           <div class="header-actions">
-            <a-button type="primary" class="wecom-btn" :icon="h(CommentOutlined)" @click="wechatModalVisible = true">发送企业微信</a-button>
             <a-badge :count="notificationCount" :offset="[-5, 5]">
               <a-button class="header-action-btn" @click="showNotifications = true">
                 <BellOutlined /> 通知

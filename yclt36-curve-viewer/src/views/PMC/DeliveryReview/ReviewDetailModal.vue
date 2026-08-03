@@ -115,7 +115,7 @@
               :disabled="!canChangeSchedulingUser"
             />
             <div v-if="!canChangeSchedulingUser" class="readonly-hint-inline">
-              <LockOutlined /> 已提交评审，排产用户已锁定
+              <LockOutlined /> 已锁定
             </div>
           </div>
 
@@ -141,8 +141,7 @@
                 @deptLoadSuccess="onOrgDeptLoadSuccess"
               />
               <div v-if="!canChangeSchedulingUser" class="user-selector-mask">
-                <LockOutlined class="user-selector-mask-icon" />
-                <span>已提交评审，排产用户已锁定</span>
+                <LockOutlined class="user-selector-mask-icon" /> 已锁定
               </div>
             </div>
             <div
@@ -190,10 +189,11 @@
               />
             </div>
             <!-- 提交评审后整卡锁定：遮罩覆盖在卡片内容上，统一表达锁定状态 -->
-            <div v-if="!canChangeSchedulingUser" class="user-selector-mask">
-              <LockOutlined class="user-selector-mask-icon" />
-              <span>已提交评审，核心要素校验已锁定</span>
-            </div>
+            <a-tooltip v-if="!canChangeSchedulingUser" title="已提交评审，核心要素校验不可再修改">
+              <div class="user-selector-mask">
+                <LockOutlined class="user-selector-mask-icon" /> 已锁定
+              </div>
+            </a-tooltip>
           </div>
         </a-card>
 
@@ -237,10 +237,11 @@
             <!-- 提交评审后整卡锁定：遮罩覆盖在 form 上方，
                  让\"最终生产交期/评审结果/评审备注\"控件不再依赖单独的灰显样式，
                  视觉上整卡片被锁定标识统一表达 -->
-            <div v-if="!canChangeSchedulingUser" class="user-selector-mask">
-              <LockOutlined class="user-selector-mask-icon" />
-              <span>已提交评审，评审结论已锁定</span>
-            </div>
+            <a-tooltip v-if="!canChangeSchedulingUser" title="已提交评审，评审结论不可再修改">
+              <div class="user-selector-mask">
+                <LockOutlined class="user-selector-mask-icon" /> 已锁定
+              </div>
+            </a-tooltip>
           </div>
         </a-card>
 
