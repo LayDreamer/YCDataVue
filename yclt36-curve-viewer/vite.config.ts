@@ -10,6 +10,9 @@ export default defineConfig({
        '@': path.resolve(__dirname, 'src')
     }
   },
+  optimizeDeps: {
+    include: ['qrcode']
+  },
   // 基础路径配置
   base: './', // 使用相对路径，便于在不同目录下部署
   build: {

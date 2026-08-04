@@ -1,4 +1,5 @@
 import { Service, PMCRequestDto, WorkOrderSalesControl, WorkOrderSalesControlDetail } from '@/api-generated/api';
+import { collectAllPagedItems, normalizePagedResult, type PagedResult, toServiceError, withPaging } from './paging';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 const service = new Service(baseUrl);
@@ -6,10 +7,11 @@ const service = new Service(baseUrl);
 export const workOrderSalesControlService = {
   // ==================== 工单销控表 ====================
   // 获取工单销控表列表
-  async getWorkOrderSalesControlList(requestDto?: PMCRequestDto): Promise<any[]> {
+  async getWorkOrderSalesControlPage(requestDto?: PMCRequestDto): Promise<PagedResult<WorkOrderSalesControl>> {
     try {
-      const response = await service.getWorkOrderSalesControlList(requestDto || new PMCRequestDto());
-      return response.data || [];
+      const request = withPaging(requestDto);
+      const response = await service.getWorkOrderSalesControlList(request);
+      return normalizePagedResult<WorkOrderSalesControl>(response.data, request);
     } catch (error: any) {
       let errorMessage = '';
       if (error.response) {
@@ -18,6 +20,13 @@ export const workOrderSalesControlService = {
       }
       throw new Error('查询工单销控表列表失败:' + errorMessage);
     }
+  },
+
+  async getWorkOrderSalesControlList(requestDto?: PMCRequestDto): Promise<WorkOrderSalesControl[]> {
+    return collectAllPagedItems(
+      (request) => this.getWorkOrderSalesControlPage(request),
+      requestDto,
+    );
   },
 
   // 新增或更新工单销控表数据
@@ -31,7 +40,7 @@ export const workOrderSalesControlService = {
         const responseData = error.response.data || error.response;
         errorMessage = responseData;
       }
-      throw new Error('新增或更新工单销控表数据失败:' + errorMessage);
+      throw toServiceError(error, '新增或更新工单销控表数据失败');
     }
   },
 
@@ -52,10 +61,11 @@ export const workOrderSalesControlService = {
 
   // ==================== 工单销控表明细 ====================
   // 获取工单销控表明细列表
-  async getWorkOrderSalesControlDetailList(requestDto?: PMCRequestDto): Promise<any[]> {
+  async getWorkOrderSalesControlDetailPage(requestDto?: PMCRequestDto): Promise<PagedResult<WorkOrderSalesControlDetail>> {
     try {
-      const response = await service.getWorkOrderSalesControlDetailList(requestDto || new PMCRequestDto());
-      return response.data || [];
+      const request = withPaging(requestDto);
+      const response = await service.getWorkOrderSalesControlDetailList(request);
+      return normalizePagedResult<WorkOrderSalesControlDetail>(response.data, request);
     } catch (error: any) {
       let errorMessage = '';
       if (error.response) {
@@ -64,6 +74,13 @@ export const workOrderSalesControlService = {
       }
       throw new Error('查询工单销控表明细列表失败:' + errorMessage);
     }
+  },
+
+  async getWorkOrderSalesControlDetailList(requestDto?: PMCRequestDto): Promise<WorkOrderSalesControlDetail[]> {
+    return collectAllPagedItems(
+      (request) => this.getWorkOrderSalesControlDetailPage(request),
+      requestDto,
+    );
   },
 
   // 新增或更新工单销控表明细数据
@@ -77,7 +94,7 @@ export const workOrderSalesControlService = {
         const responseData = error.response.data || error.response;
         errorMessage = responseData;
       }
-      throw new Error('新增或更新工单销控表明细数据失败:' + errorMessage);
+      throw toServiceError(error, '新增或更新工单销控表明细数据失败');
     }
   },
 

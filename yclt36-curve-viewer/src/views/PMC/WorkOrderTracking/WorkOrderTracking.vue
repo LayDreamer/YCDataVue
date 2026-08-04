@@ -119,14 +119,14 @@
           :columns="columns"
           :data-source="tableData"
           :pagination="tablePagination"
-          :scroll="{ x: tableScrollWidth, y: tableScrollY }"
+          :scroll="{ x: tableScrollWidth }"
           :loading="loading || analyzing"
           row-key="编号"
           size="small"
         >
           <template #bodyCell="{ column, record, text, index }">
           <template v-if="column.key === 'index'">
-            <span class="index-cell">{{ index + 1 }}</span>
+            <span class="index-cell">{{ (currentPage - 1) * pageSize + (index as number) + 1 }}</span>
           </template>
           <template v-else-if="column.key === '齐套'">
             <span
@@ -172,7 +172,9 @@
             </template>
           </template>
           <template v-else-if="isLinkColumn(column.key)">
-            <span class="link-cell">{{ text }}</span>
+            <a-tooltip :title="text" placement="topLeft" :overlayStyle="{ maxWidth: '400px', wordBreak: 'break-all' }">
+              {{ truncateText(text, getTruncateLen(column.key)) }}
+            </a-tooltip>
           </template>
           <template v-else-if="column.key === '工单总数'">
             <span class="number-cell link-number" @click="handleTotalClick(record)">{{ formatNumber(text) }}</span>
@@ -218,6 +220,7 @@ import { externalProductionService } from '@/services/externalProductionService'
 import { WorkOrderSalesControl, PMCRequestDto } from '@/api-generated/api'
 import TableColumnSettings, { type ColumnSetting } from '@/components/TableColumnSettings.vue'
 import type { TableColumnsType } from 'ant-design-vue'
+import { truncateText } from '@/utils'
 
 interface TableRowData extends WorkOrderSalesControl {
   deliveryMap: Record<string, { quantity: number; status: string } | null>
@@ -227,18 +230,18 @@ interface TableRowData extends WorkOrderSalesControl {
 const dateFormat = 'YYYY-MM-DD'
 const COLUMN_WIDTHS = {
   index: 50,
-  workshop: 110,
-  attribute: 100,
-  productNo: 110,
-  productName: 140,
-  spec: 150,
-  total: 90,
-  stored: 90,
-  inProd: 90,
+  workshop: 100,
+  attribute: 80,
+  productNo: 250,
+  productName: 180,
+  spec: 130,
+  total: 85,
+  stored: 85,
+  inProd: 85,
   kitting: 80,
   feeding: 80,
   analysisDate: 140,
-  progress: 120,
+  progress: 100,
   delivery: 90,
 }
 
@@ -256,6 +259,20 @@ const NUMBER_COLUMNS = new Set(['工单总数', '已入库数', '在产数量'])
 
 function isLinkColumn(key: string) {
   return LINK_COLUMNS.has(key)
+}
+
+// 根据列宽估算可显示字符数
+function getTruncateLen(key: string) {
+  // 中文列名 → COLUMN_WIDTHS 英文 key 映射
+  const keyMap: Record<string, keyof typeof COLUMN_WIDTHS> = {
+    '货号': 'productNo',
+    '品名': 'productName',
+    '规格': 'spec',
+  }
+  const widthKey = keyMap[key] ?? (key as keyof typeof COLUMN_WIDTHS)
+  const w = COLUMN_WIDTHS[widthKey] ?? 120
+  // 预留单元格左右 padding 约 24px，按混排字符均值约 6.5px/字估算
+  return Math.max(6, Math.floor((w - 24) / 6.5))
 }
 
 function isNumberColumn(key: string) {
@@ -283,14 +300,6 @@ function dateColumnKeyToIso(key: string) {
 }
 
 // ==================== 响应式状态 ====================
-// 表格高度：至少保证能显示 10 行（约 920px），并随窗口自适应
-const tableScrollY = ref(920)
-function updateTableHeight() {
-  // 预留：页面 padding、筛选栏、分页、余量
-  const reserved = 320
-  const h = window.innerHeight - reserved
-  tableScrollY.value = Math.max(920, h)
-}
 const loading = ref(false)
 const analyzing = ref(false)
 const dataSource = ref<WorkOrderSalesControl[]>([])
@@ -508,11 +517,11 @@ function handleAnalysisToggle() {
   }
 }
 
-/** 齐套、配料分析：根据物料需求明细中所有子件的缺料数判断状态 */
+/** 齐套、配料分析：只分析当前页数据 */
 async function runKittingAnalysis() {
   analyzing.value = true
   try {
-    for (const item of dataSource.value) {
+    for (const item of tableData.value) {
       if (!item.货号) continue
 
       const materialRows = await generateMaterialDetail(item as TableRowData)
@@ -543,7 +552,7 @@ async function runKittingAnalysis() {
 }
 
 function resetAnalysis() {
-  for (const item of dataSource.value) {
+  for (const item of tableData.value) {
     item.齐套 = '未分析'
     item.配料 = '未配料'
   }
@@ -610,7 +619,11 @@ function getWorkOrderPlansFromDetail(item: WorkOrderSalesControl): Map<string, {
   return grouped
 }
 
-const tableData = computed<TableRowData[]>(() => {
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+// 全量（已排序、按筛选条件过滤）的行
+const allTableRows = computed<TableRowData[]>(() => {
   const rows = filteredData.value.map((item) => {
     const planMap = getWorkOrderPlansFromDetail(item)
     const deliveryMap: Record<string, { quantity: number; status: string } | null> = {}
@@ -646,12 +659,27 @@ const tableData = computed<TableRowData[]>(() => {
   return rows as TableRowData[]
 })
 
+// 当前页显示的数据（供表格渲染 + 齐套配料分析使用）
+const tableData = computed<TableRowData[]>(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return allTableRows.value.slice(start, start + pageSize.value) as TableRowData[]
+})
+
 const tablePagination = computed(() => ({
   total: filteredData.value.length,
-  pageSize: 20,
+  current: currentPage.value,
+  pageSize: pageSize.value,
   showSizeChanger: true,
   showQuickJumper: true,
   showTotal: (total: number) => `共 ${total} 条`,
+  onChange: async (page: number, size: number) => {
+    currentPage.value = page
+    pageSize.value = size
+    // 如果齐套分析按钮处于选中状态，自动对新页执行分析
+    if (showKittingAnalysis.value) {
+      await runKittingAnalysis()
+    }
+  },
 }))
 
 // ==================== 方法 ====================
@@ -710,6 +738,7 @@ function generateWorkOrderDetail(record: TableRowData) {
   if (matched.length === 0) return []
   return matched.map((d, idx) => ({
     id: idx + 1,
+    编号: d.编号 || '',
     工单单号: d.工单单号 || '-',
     排产编号: d.排产编号 || '-',
     排产用户: d.排产用户 || '-',
@@ -730,6 +759,7 @@ function generateWorkOrderDetailForDate(record: TableRowData, targetDate: string
   if (matched.length === 0) return []
   return matched.map((d, idx) => ({
     id: idx + 1,
+    编号: d.编号 || '',
     工单单号: d.工单单号 || '-',
     排产编号: d.排产编号 || '-',
     排产用户: d.排产用户 || '-',
@@ -953,6 +983,9 @@ function buildMaterialRow(
     货号: item.货号 || '-',
     品名: item.品名 || '-',
     规格: item.规格 || '-',
+    产品属性: item.产品属性 || '',
+    来源: item.来源 || '',
+    单位: item.单位 || '',
     用量,
     需求数,
     已出库数,
@@ -960,6 +993,7 @@ function buildMaterialRow(
     仓库名称: item.仓库名称 || '',
     仓库数,
     仓库缺料,
+    备注: item.备注 || '',
   }
 }
 
@@ -1037,19 +1071,12 @@ async function fetchData() {
 }
 
 onMounted(async () => {
-  updateTableHeight()
-  window.addEventListener('resize', updateTableHeight)
   await fetchData()
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateTableHeight)
 })
 </script>
 
 <style scoped>
 .work-order-tracking-container {
-  min-height: 100vh;
   background-color: #f5f5f5;
   padding: 24px;
 }
@@ -1256,6 +1283,9 @@ onUnmounted(() => {
 .link-cell {
   color: #1e3a5f;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .number-cell {

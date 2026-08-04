@@ -11,15 +11,17 @@ import {
 import { toCamelCase, ApiResponse } from "@/services/index.ts"
 import { PMCProductInfo, ProductDataAssemblyList} from '@/views/PMC/DeliveryReview/types';
 import { RequestDto } from '@/views/PMC/types';
+import { normalizePagedResult, type PagedResult, toServiceError, withPaging } from './paging';
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 const service = new Service(baseUrl);
 
 export const deliveryReviewService = { 
   // 根据外销合同用户产品表->获取评审记录列表
-  async convertToPMCDeliveryReviewList(requestDto: PMCRequestDto): Promise<PMCDeliveryReview[]> {
+  async convertToPMCDeliveryReviewList(requestDto: PMCRequestDto): Promise<PagedResult<PMCDeliveryReview>> {
      try {
-       const response = await service.convertToPMCDeliveryReviewList(requestDto);
-        return response.data ?? [];
+       const pagedRequest = withPaging(requestDto);
+       const response = await service.convertToPMCDeliveryReviewList(pagedRequest);
+       return normalizePagedResult<PMCDeliveryReview>(response.data, pagedRequest);
     } catch (error: any) {
       let errorMessage = '';
       if (error.response) {
@@ -62,10 +64,11 @@ export const deliveryReviewService = {
     }
   },
 
-  async  getPMCDeliveryReviewList(requestDto: PMCRequestDto): Promise<any> {
+  async getPMCDeliveryReviewList(requestDto: PMCRequestDto): Promise<PagedResult<PMCDeliveryReview>> {
     try {
-      const response = await service.pMCDeliveryReviewList(requestDto);
-      return response.data;
+      const pagedRequest = withPaging(requestDto);
+      const response = await service.pMCDeliveryReviewList(pagedRequest);
+      return normalizePagedResult<PMCDeliveryReview>(response.data, pagedRequest);
     } catch (error: any) {
       let errorMessage = '';
       
@@ -88,7 +91,7 @@ export const deliveryReviewService = {
         const responseData = error.response.data || error.response;
         errorMessage = responseData;
       }
-      throw new Error("保存评审记录失败"+errorMessage);
+      throw toServiceError(error, '保存评审记录失败');
     }
   },
 
@@ -155,7 +158,7 @@ export const deliveryReviewService = {
           // 保留 NSwag 返回的原始错误信息
         }
       }
-      throw new Error(errorMessage);
+      throw toServiceError(error, '修改生产类型失败');
     }
   },
 

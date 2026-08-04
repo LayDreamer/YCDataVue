@@ -101,8 +101,11 @@
           </div>
         </div>
       </template>
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === '状态'">
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'index'">
+          {{ (pagination.current - 1) * pagination.pageSize + (index as number) + 1 }}
+        </template>
+        <template v-else-if="column.key === '状态'">
           <a-tag :color="record.状态 === '评审通过' ? 'green' : record.状态 === '评审驳回' ? 'red' : 'orange'">
             {{ record.状态 }}
           </a-tag>
@@ -197,6 +200,7 @@ import { truncateText } from '@/utils';
 import CommonTable from '@/components/CommonTable.vue';
 
 const baseColumns: TableColumnsType = [
+  { title: '序号', key: 'index', width: 60, align: 'center', fixed: 'left' },
   { title: '合同号', dataIndex: '合同号', key: '合同号' },
   { title: '排产编号', dataIndex: '排产编号', key: '排产编号' },
   { title: '货号', dataIndex: '货号', key: '货号', ellipsis: true },
@@ -253,7 +257,9 @@ const editTypeRecord = ref<PMCDeliveryReview | null>(null);
 const editTypeValue = ref<string>('');
 const editTypeSaving = ref(false);
 const pagination = reactive({
+  current: 1,
   pageSize: 10,
+  total: 0,
   showSizeChanger: false,
   showQuickJumper: true,
   showTotal: (total: number) => `共 ${total} 条`
@@ -262,11 +268,21 @@ const pagination = reactive({
 const screens = Grid.useBreakpoint();
 const tableSize = computed(() => (screens.value?.md ? 'middle' : 'small'));
 const tablePagination = computed(() => ({
+  current: pagination.current,
   pageSize: pagination.pageSize,
+  total: pagination.total,
   showSizeChanger: false,
   showQuickJumper: !!screens.value?.md,
   showTotal: pagination.showTotal,
   simple: !screens.value?.md,
+  onChange: (page: number) => {
+    pagination.current = page;
+    if (viewMode.value === 'reviewed') {
+      fetchReviewedData();
+    } else {
+      fetchProductData();
+    }
+  },
 }));
 const loading = ref(false);
 const loadingCount = ref(0);
@@ -297,7 +313,7 @@ const unreviewedCount = ref(0);
 const reviewedCount = ref(0);
 
 
-// 生产类型 tab 选项（后端已按这些类型过滤，此处仅用于定义 tab）
+// 生产类型 tab 选项（作为过滤条件传给后端，由后端按类型过滤+分页）
 const ALLOWED_PRODUCTION_TYPES = ['普通订单', '样品'];
 
 // 计算属性：根据当前模式及筛选条件过滤数据
@@ -321,10 +337,8 @@ const filteredData = computed(() => {
   if (selectedProductionUser.value) {
     result = result.filter(item => item.排产用户 === selectedProductionUser.value);
   }
-  // 生产类型筛选
-  if (selectedProductionType.value) {
-    result = result.filter(item => item.生产类型 === selectedProductionType.value);
-  }
+  // 注意：生产类型筛选已改为后端过滤（随请求参数 生产类型 下发），前端不再按类型过滤，
+  // 否则会和后端分页 total 不一致。
   return result;
 });
 
@@ -349,21 +363,25 @@ const  fetchProductData = async () => {
   try {
     const requestDto = new PMCRequestDto({
       合同号: searchForm.contractNo,
-      货号: searchForm.itemNo
+      货号: searchForm.itemNo,
+      生产类型: selectedProductionType.value,
+      page: pagination.current,
+      pageSize: pagination.pageSize,
     });
     const response = await deliveryReviewService.convertToPMCDeliveryReviewList(requestDto);
-    if (!response || response.length === 0) {
+    if (response.items.length === 0) {
       if (viewMode.value === 'unreviewed') {
         dataSource.value = [];
       }
       fullUnreviewedData.value = [];
       unreviewedCount.value = 0;
+      if (viewMode.value === 'unreviewed') pagination.total = 0;
       if (viewMode.value === 'unreviewed') {
         message.info('暂无数据');
       }
       return;
     }
-  const mappedData=response;
+    const mappedData = response.items;
     mappedData.sort((a, b) => {
       const aVal = a.编号 || '';
       const bVal = b.编号 || '';
@@ -374,8 +392,11 @@ const  fetchProductData = async () => {
       dataSource.value = mappedData;
     }
     fullUnreviewedData.value = [...mappedData];
-    // 后端已过滤生产类型，直接统计返回结果
-    unreviewedCount.value = mappedData.length;
+    // 后端已按生产类型过滤，直接统计返回结果（已含类型过滤后的 total）
+    unreviewedCount.value = response.total;
+    if (viewMode.value === 'unreviewed') {
+      pagination.total = response.total;
+    }
   } catch (error) {
     console.error('获取产品数据失败:', error);
     message.error('加载数据失败，请稍后重试');
@@ -390,20 +411,24 @@ const fetchReviewedData = async () => {
   try {
     const response = await deliveryReviewService.getPMCDeliveryReviewList(new PMCRequestDto({
       合同号: searchForm.contractNo,
-      货号: searchForm.itemNo
+      货号: searchForm.itemNo,
+      生产类型: selectedProductionType.value,
+      page: pagination.current,
+      pageSize: pagination.pageSize,
     }));
-    if (!response || response.length === 0) {
+    if (response.items.length === 0) {
       if (viewMode.value === 'reviewed') {
         dataSource.value = [];
       }
       fullReviewedData.value = [];
       reviewedCount.value = 0;
+      if (viewMode.value === 'reviewed') pagination.total = 0;
       if (viewMode.value === 'reviewed') {
         message.info('暂无已评审记录');
       }
       return;
     }
-const mappedData: PMCDeliveryReview[]=response;
+    const mappedData: PMCDeliveryReview[] = response.items;
     mappedData.sort((a, b) => {
       const aVal = a.编号 || '';
       const bVal = b.编号 || '';
@@ -415,8 +440,11 @@ const mappedData: PMCDeliveryReview[]=response;
       dataSource.value = mappedData;
     }
     fullReviewedData.value = [...mappedData];
-    // 后端已过滤生产类型，直接统计返回结果
-    reviewedCount.value = mappedData.length;
+    // 后端已按生产类型过滤，直接统计返回结果（已含类型过滤后的 total）
+    reviewedCount.value = response.total;
+    if (viewMode.value === 'reviewed') {
+      pagination.total = response.total;
+    }
   } catch (error) {
     console.error('获取已评审数据失败:', error);
     message.error('加载已评审数据失败，请稍后重试');
@@ -432,6 +460,7 @@ watch(viewMode, (newMode, oldMode) => {
   searchForm.contractNo = '';
   searchForm.itemNo = '';
   selectedProductionUser.value = null;
+  pagination.current = 1;
 
   if (newMode === 'unreviewed') {
     fetchProductData();
@@ -440,22 +469,20 @@ watch(viewMode, (newMode, oldMode) => {
   }
 });
 
+// 监听生产类型 tab 切换：把当前类型作为过滤条件重新请求（后端过滤+分页）
+watch(selectedProductionType, () => {
+  pagination.current = 1;
+  fetchProductData();
+  fetchReviewedData();
+});
+
 // 查询按钮逻辑
 const handleSearch = () => {
+  pagination.current = 1;
   if (viewMode.value === 'reviewed') {
-    // 已评审模式：前端过滤依赖 filteredData 的 computed，只需确保 dataSource 为完整数据
-    if (fullReviewedData.value.length) {
-      dataSource.value = [...fullReviewedData.value];
-    } else {
-      fetchReviewedData();
-    }
-    // 未评审模式：前端过滤依赖 filteredData 的 computed，只需确保 dataSource 为完整数据
+    fetchReviewedData();
   } else {
-    if (fullUnreviewedData.value.length) {
-      dataSource.value = [...fullUnreviewedData.value];
-    } else {
-      fetchProductData();
-    }
+    fetchProductData();
   }
 };
 
@@ -467,19 +494,12 @@ const resetSearch = () => {
   searchForm.coilItemNo = '';
   selectedProductionUser.value = null;
   selectedProductionType.value = productionTypeOptions[0];
+  pagination.current = 1;
   
   if (viewMode.value === 'reviewed') {
-    if (fullReviewedData.value.length) {
-    } else {
-      dataSource.value = [...fullReviewedData.value];
-      fetchReviewedData();
-    }
+    fetchReviewedData();
   } else {
-    if (fullUnreviewedData.value.length) {
-      dataSource.value = [...fullUnreviewedData.value];
-    } else {
-      fetchProductData();
-    }
+    fetchProductData();
   }
 };
   
@@ -492,7 +512,7 @@ const openReview = (record: PMCDeliveryReview) => {
 // 打开编辑生产类型弹窗（仅未评审模式使用）
 const openEditProductionType = (record: PMCDeliveryReview) => {
   editTypeRecord.value = record;
-  // 默认选中“另一个”生产类型
+  // 默认选中"另一个"生产类型
   editTypeValue.value =
     availableProductionTypes.value.find((t) => t !== record.生产类型) ||
     productionTypeOptions[0];
@@ -524,6 +544,7 @@ const handleEditProductionTypeOk = async () => {
         排产编号: record.排产编号,
         货号: record.货号,
         生产类型: newType,
+        rowVersion: record.productionTypeOverrideRowVersion,
       })
     );
 

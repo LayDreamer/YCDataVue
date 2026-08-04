@@ -353,15 +353,27 @@ async function handleAdd() {
   addLoading.value = true
   try {
     if (addType.value === 'pick') {
+      const existing = (await externalProductionService.getExternalProductionPickMaterialList(
+        new PMCRequestDto({ 编号: addForm.编号 })
+      ))[0]
       const item = new ExternalProductionPickMaterial({
         编号: addForm.编号,
+        货号: existing?.货号,
+        分析单号: existing?.分析单号,
+        rowVersion: existing?.rowVersion,
         出库数量: addForm.qty,
       })
       await externalProductionService.addOrUpdateExternalProductionPickMaterialList([item])
       message.success('外产领料新增成功')
     } else {
+      const existing = (await externalProductionService.getExternalProductionWarehousingList(
+        new PMCRequestDto({ 编号: addForm.编号 })
+      ))[0]
       const item = new ExternalProductionWarehousing({
         编号: addForm.编号,
+        货号: existing?.货号,
+        分析单号: existing?.分析单号,
+        rowVersion: existing?.rowVersion,
         入库数量: addForm.qty,
       })
       await externalProductionService.addOrUpdateExternalProductionWarehousingList([item])

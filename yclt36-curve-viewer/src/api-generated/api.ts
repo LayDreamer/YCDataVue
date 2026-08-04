@@ -472,7 +472,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    convertToPMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<PMCDeliveryReviewListApiResponse> {
+    convertToPMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<PMCDeliveryReviewPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/ConvertToPMCDeliveryReviewList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -492,14 +492,14 @@ export class Service {
         });
     }
 
-    protected processConvertToPMCDeliveryReviewList(response: Response): Promise<PMCDeliveryReviewListApiResponse> {
+    protected processConvertToPMCDeliveryReviewList(response: Response): Promise<PMCDeliveryReviewPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = PMCDeliveryReviewListApiResponse.fromJS(resultData200);
+            result200 = PMCDeliveryReviewPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -507,7 +507,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<PMCDeliveryReviewListApiResponse>(null as any);
+        return Promise.resolve<PMCDeliveryReviewPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -515,7 +515,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    productListInfo(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    productListInfo(body: PMCRequestDto | undefined): Promise<PMCProductInfoPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/ProductListInfo";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -535,14 +535,14 @@ export class Service {
         });
     }
 
-    protected processProductListInfo(response: Response): Promise<ObjectApiResponse> {
+    protected processProductListInfo(response: Response): Promise<PMCProductInfoPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = PMCProductInfoPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -550,7 +550,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<PMCProductInfoPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -773,7 +773,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    pMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    pMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<PMCDeliveryReviewPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/PMCDeliveryReviewList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -793,14 +793,14 @@ export class Service {
         });
     }
 
-    protected processPMCDeliveryReviewList(response: Response): Promise<ObjectApiResponse> {
+    protected processPMCDeliveryReviewList(response: Response): Promise<PMCDeliveryReviewPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = PMCDeliveryReviewPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -808,7 +808,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<PMCDeliveryReviewPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -1074,7 +1074,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    getWorkOrderSalesControlList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    getWorkOrderSalesControlList(body: PMCRequestDto | undefined): Promise<WorkOrderSalesControlPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/GetWorkOrderSalesControlList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1094,14 +1094,14 @@ export class Service {
         });
     }
 
-    protected processGetWorkOrderSalesControlList(response: Response): Promise<ObjectApiResponse> {
+    protected processGetWorkOrderSalesControlList(response: Response): Promise<WorkOrderSalesControlPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = WorkOrderSalesControlPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -1109,7 +1109,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<WorkOrderSalesControlPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -1203,7 +1203,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    getWorkOrderSalesControlDetailList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    getWorkOrderSalesControlDetailList(body: PMCRequestDto | undefined): Promise<WorkOrderSalesControlDetailPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/GetWorkOrderSalesControlDetailList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1223,14 +1223,14 @@ export class Service {
         });
     }
 
-    protected processGetWorkOrderSalesControlDetailList(response: Response): Promise<ObjectApiResponse> {
+    protected processGetWorkOrderSalesControlDetailList(response: Response): Promise<WorkOrderSalesControlDetailPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = WorkOrderSalesControlDetailPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -1238,7 +1238,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<WorkOrderSalesControlDetailPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -1461,7 +1461,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    getExternalProductionShipmentList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    getExternalProductionShipmentList(body: PMCRequestDto | undefined): Promise<ExternalProductionShipmentPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/GetExternalProductionShipmentList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1481,14 +1481,14 @@ export class Service {
         });
     }
 
-    protected processGetExternalProductionShipmentList(response: Response): Promise<ObjectApiResponse> {
+    protected processGetExternalProductionShipmentList(response: Response): Promise<ExternalProductionShipmentPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = ExternalProductionShipmentPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -1496,7 +1496,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<ExternalProductionShipmentPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -1547,7 +1547,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    getExternalProductionPickMaterialList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    getExternalProductionPickMaterialList(body: PMCRequestDto | undefined): Promise<ExternalProductionPickMaterialPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/GetExternalProductionPickMaterialList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1567,14 +1567,14 @@ export class Service {
         });
     }
 
-    protected processGetExternalProductionPickMaterialList(response: Response): Promise<ObjectApiResponse> {
+    protected processGetExternalProductionPickMaterialList(response: Response): Promise<ExternalProductionPickMaterialPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = ExternalProductionPickMaterialPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -1582,7 +1582,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<ExternalProductionPickMaterialPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -1633,7 +1633,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    getExternalProductionList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    getExternalProductionList(body: PMCRequestDto | undefined): Promise<ExternalProductionPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/GetExternalProductionList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1653,14 +1653,14 @@ export class Service {
         });
     }
 
-    protected processGetExternalProductionList(response: Response): Promise<ObjectApiResponse> {
+    protected processGetExternalProductionList(response: Response): Promise<ExternalProductionPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = ExternalProductionPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -1668,7 +1668,50 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<ExternalProductionPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 根据编号查询单条外产生产数据
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionByNo(body: string | undefined): Promise<ExternalProductionApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionByNo";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionByNo(_response);
+        });
+    }
+
+    protected processGetExternalProductionByNo(response: Response): Promise<ExternalProductionApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ExternalProductionApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ExternalProductionApiResponse>(null as any);
     }
 
     /**
@@ -1719,7 +1762,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    getExternalProductionWarehousingList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    getExternalProductionWarehousingList(body: PMCRequestDto | undefined): Promise<ExternalProductionWarehousingPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/GetExternalProductionWarehousingList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1739,14 +1782,14 @@ export class Service {
         });
     }
 
-    protected processGetExternalProductionWarehousingList(response: Response): Promise<ObjectApiResponse> {
+    protected processGetExternalProductionWarehousingList(response: Response): Promise<ExternalProductionWarehousingPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = ExternalProductionWarehousingPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -1754,7 +1797,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<ExternalProductionWarehousingPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -1858,7 +1901,7 @@ export class Service {
      * @param body (optional) 
      * @return OK
      */
-    getExternalProductionBOMList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+    getExternalProductionBOMList(body: PMCRequestDto | undefined): Promise<ExternalProductionBOMPagedResultApiResponse> {
         let url_ = this.baseUrl + "/api/PMC/GetExternalProductionBOMList";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -1878,14 +1921,14 @@ export class Service {
         });
     }
 
-    protected processGetExternalProductionBOMList(response: Response): Promise<ObjectApiResponse> {
+    protected processGetExternalProductionBOMList(response: Response): Promise<ExternalProductionBOMPagedResultApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
+            result200 = ExternalProductionBOMPagedResultApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -1893,7 +1936,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<ExternalProductionBOMPagedResultApiResponse>(null as any);
     }
 
     /**
@@ -3117,12 +3160,24 @@ export class ExternalProduction implements IExternalProduction {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     排产编号?: string | undefined;
     需求量?: string | undefined;
     生产数量?: string | undefined;
     分析单号?: string | undefined;
     工单单号?: string | undefined;
+    来源?: string | undefined;
+    工序车间?: string | undefined;
+    工序?: string | undefined;
+    工单层级?: string | undefined;
+    电压?: string | undefined;
+    线圈?: string | undefined;
+    订单数?: string | undefined;
+    单位?: string | undefined;
+    仓库名称?: string | undefined;
+    备注?: string | undefined;
+    用量?: string | undefined;
 
     constructor(data?: IExternalProduction) {
         if (data) {
@@ -3143,12 +3198,24 @@ export class ExternalProduction implements IExternalProduction {
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
+            this.rowVersion = _data["RowVersion"];
             this.货号 = _data["货号"];
             this.排产编号 = _data["排产编号"];
             this.需求量 = _data["需求量"];
             this.生产数量 = _data["生产数量"];
             this.分析单号 = _data["分析单号"];
             this.工单单号 = _data["工单单号"];
+            this.来源 = _data["来源"];
+            this.工序车间 = _data["工序车间"];
+            this.工序 = _data["工序"];
+            this.工单层级 = _data["工单层级"];
+            this.电压 = _data["电压"];
+            this.线圈 = _data["线圈"];
+            this.订单数 = _data["订单数"];
+            this.单位 = _data["单位"];
+            this.仓库名称 = _data["仓库名称"];
+            this.备注 = _data["备注"];
+            this.用量 = _data["用量"];
         }
     }
 
@@ -3169,12 +3236,24 @@ export class ExternalProduction implements IExternalProduction {
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
+        data["RowVersion"] = this.rowVersion;
         data["货号"] = this.货号;
         data["排产编号"] = this.排产编号;
         data["需求量"] = this.需求量;
         data["生产数量"] = this.生产数量;
         data["分析单号"] = this.分析单号;
         data["工单单号"] = this.工单单号;
+        data["来源"] = this.来源;
+        data["工序车间"] = this.工序车间;
+        data["工序"] = this.工序;
+        data["工单层级"] = this.工单层级;
+        data["电压"] = this.电压;
+        data["线圈"] = this.线圈;
+        data["订单数"] = this.订单数;
+        data["单位"] = this.单位;
+        data["仓库名称"] = this.仓库名称;
+        data["备注"] = this.备注;
+        data["用量"] = this.用量;
         return data;
     }
 }
@@ -3189,12 +3268,72 @@ export interface IExternalProduction {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     排产编号?: string | undefined;
     需求量?: string | undefined;
     生产数量?: string | undefined;
     分析单号?: string | undefined;
     工单单号?: string | undefined;
+    来源?: string | undefined;
+    工序车间?: string | undefined;
+    工序?: string | undefined;
+    工单层级?: string | undefined;
+    电压?: string | undefined;
+    线圈?: string | undefined;
+    订单数?: string | undefined;
+    单位?: string | undefined;
+    仓库名称?: string | undefined;
+    备注?: string | undefined;
+    用量?: string | undefined;
+}
+
+export class ExternalProductionApiResponse implements IExternalProductionApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProduction;
+    timestamp?: Date;
+
+    constructor(data?: IExternalProductionApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? ExternalProduction.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IExternalProductionApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProduction;
+    timestamp?: Date;
 }
 
 /** 外产_BOM */
@@ -3219,6 +3358,10 @@ export class ExternalProductionBOM implements IExternalProductionBOM {
     生产数?: string | undefined;
     分析单号?: string | undefined;
     交货日期?: string | undefined;
+    产品属性?: string | undefined;
+    来源?: string | undefined;
+    单位?: string | undefined;
+    备注?: string | undefined;
 
     constructor(data?: IExternalProductionBOM) {
         if (data) {
@@ -3251,6 +3394,10 @@ export class ExternalProductionBOM implements IExternalProductionBOM {
             this.生产数 = _data["生产数"];
             this.分析单号 = _data["分析单号"];
             this.交货日期 = _data["交货日期"];
+            this.产品属性 = _data["产品属性"];
+            this.来源 = _data["来源"];
+            this.单位 = _data["单位"];
+            this.备注 = _data["备注"];
         }
     }
 
@@ -3283,6 +3430,10 @@ export class ExternalProductionBOM implements IExternalProductionBOM {
         data["生产数"] = this.生产数;
         data["分析单号"] = this.分析单号;
         data["交货日期"] = this.交货日期;
+        data["产品属性"] = this.产品属性;
+        data["来源"] = this.来源;
+        data["单位"] = this.单位;
+        data["备注"] = this.备注;
         return data;
     }
 }
@@ -3309,6 +3460,218 @@ export interface IExternalProductionBOM {
     生产数?: string | undefined;
     分析单号?: string | undefined;
     交货日期?: string | undefined;
+    产品属性?: string | undefined;
+    来源?: string | undefined;
+    单位?: string | undefined;
+    备注?: string | undefined;
+}
+
+export class ExternalProductionBOMPagedResult implements IExternalProductionBOMPagedResult {
+    items!: ExternalProductionBOM[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IExternalProductionBOMPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(ExternalProductionBOM.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionBOMPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionBOMPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IExternalProductionBOMPagedResult {
+    items: ExternalProductionBOM[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class ExternalProductionBOMPagedResultApiResponse implements IExternalProductionBOMPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionBOMPagedResult;
+    timestamp?: Date;
+
+    constructor(data?: IExternalProductionBOMPagedResultApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? ExternalProductionBOMPagedResult.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionBOMPagedResultApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionBOMPagedResultApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IExternalProductionBOMPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionBOMPagedResult;
+    timestamp?: Date;
+}
+
+export class ExternalProductionPagedResult implements IExternalProductionPagedResult {
+    items!: ExternalProduction[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IExternalProductionPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(ExternalProduction.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IExternalProductionPagedResult {
+    items: ExternalProduction[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class ExternalProductionPagedResultApiResponse implements IExternalProductionPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionPagedResult;
+    timestamp?: Date;
+
+    constructor(data?: IExternalProductionPagedResultApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? ExternalProductionPagedResult.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionPagedResultApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionPagedResultApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IExternalProductionPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionPagedResult;
+    timestamp?: Date;
 }
 
 /** 外产_领料 */
@@ -3321,6 +3684,7 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     需求量?: string | undefined;
     出库数量?: string | undefined;
@@ -3347,6 +3711,7 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
+            this.rowVersion = _data["RowVersion"];
             this.货号 = _data["货号"];
             this.需求量 = _data["需求量"];
             this.出库数量 = _data["出库数量"];
@@ -3373,6 +3738,7 @@ export class ExternalProductionPickMaterial implements IExternalProductionPickMa
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
+        data["RowVersion"] = this.rowVersion;
         data["货号"] = this.货号;
         data["需求量"] = this.需求量;
         data["出库数量"] = this.出库数量;
@@ -3393,12 +3759,117 @@ export interface IExternalProductionPickMaterial {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     需求量?: string | undefined;
     出库数量?: string | undefined;
     分析单号?: string | undefined;
     父级编号?: string | undefined;
     来源编号?: string | undefined;
+}
+
+export class ExternalProductionPickMaterialPagedResult implements IExternalProductionPickMaterialPagedResult {
+    items!: ExternalProductionPickMaterial[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IExternalProductionPickMaterialPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(ExternalProductionPickMaterial.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionPickMaterialPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionPickMaterialPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IExternalProductionPickMaterialPagedResult {
+    items: ExternalProductionPickMaterial[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class ExternalProductionPickMaterialPagedResultApiResponse implements IExternalProductionPickMaterialPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionPickMaterialPagedResult;
+    timestamp?: Date;
+
+    constructor(data?: IExternalProductionPickMaterialPagedResultApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? ExternalProductionPickMaterialPagedResult.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionPickMaterialPagedResultApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionPickMaterialPagedResultApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IExternalProductionPickMaterialPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionPickMaterialPagedResult;
+    timestamp?: Date;
 }
 
 /** 外产_发运 */
@@ -3411,6 +3882,7 @@ export class ExternalProductionShipment implements IExternalProductionShipment {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     排产编号?: string | undefined;
     需求量?: string | undefined;
@@ -3436,6 +3908,7 @@ export class ExternalProductionShipment implements IExternalProductionShipment {
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
+            this.rowVersion = _data["RowVersion"];
             this.货号 = _data["货号"];
             this.排产编号 = _data["排产编号"];
             this.需求量 = _data["需求量"];
@@ -3461,6 +3934,7 @@ export class ExternalProductionShipment implements IExternalProductionShipment {
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
+        data["RowVersion"] = this.rowVersion;
         data["货号"] = this.货号;
         data["排产编号"] = this.排产编号;
         data["需求量"] = this.需求量;
@@ -3480,11 +3954,116 @@ export interface IExternalProductionShipment {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     排产编号?: string | undefined;
     需求量?: string | undefined;
     发运数量?: string | undefined;
     分析单号?: string | undefined;
+}
+
+export class ExternalProductionShipmentPagedResult implements IExternalProductionShipmentPagedResult {
+    items!: ExternalProductionShipment[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IExternalProductionShipmentPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(ExternalProductionShipment.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionShipmentPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionShipmentPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IExternalProductionShipmentPagedResult {
+    items: ExternalProductionShipment[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class ExternalProductionShipmentPagedResultApiResponse implements IExternalProductionShipmentPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionShipmentPagedResult;
+    timestamp?: Date;
+
+    constructor(data?: IExternalProductionShipmentPagedResultApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? ExternalProductionShipmentPagedResult.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionShipmentPagedResultApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionShipmentPagedResultApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IExternalProductionShipmentPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionShipmentPagedResult;
+    timestamp?: Date;
 }
 
 /** 外产_入库 */
@@ -3497,6 +4076,7 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     需求量?: string | undefined;
     入库数量?: string | undefined;
@@ -3522,6 +4102,7 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
+            this.rowVersion = _data["RowVersion"];
             this.货号 = _data["货号"];
             this.需求量 = _data["需求量"];
             this.入库数量 = _data["入库数量"];
@@ -3547,6 +4128,7 @@ export class ExternalProductionWarehousing implements IExternalProductionWarehou
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
+        data["RowVersion"] = this.rowVersion;
         data["货号"] = this.货号;
         data["需求量"] = this.需求量;
         data["入库数量"] = this.入库数量;
@@ -3566,11 +4148,116 @@ export interface IExternalProductionWarehousing {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     需求量?: string | undefined;
     入库数量?: string | undefined;
     分析单号?: string | undefined;
     工单单号?: string | undefined;
+}
+
+export class ExternalProductionWarehousingPagedResult implements IExternalProductionWarehousingPagedResult {
+    items!: ExternalProductionWarehousing[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IExternalProductionWarehousingPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(ExternalProductionWarehousing.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionWarehousingPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionWarehousingPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IExternalProductionWarehousingPagedResult {
+    items: ExternalProductionWarehousing[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class ExternalProductionWarehousingPagedResultApiResponse implements IExternalProductionWarehousingPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionWarehousingPagedResult;
+    timestamp?: Date;
+
+    constructor(data?: IExternalProductionWarehousingPagedResultApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? ExternalProductionWarehousingPagedResult.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ExternalProductionWarehousingPagedResultApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExternalProductionWarehousingPagedResultApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IExternalProductionWarehousingPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: ExternalProductionWarehousingPagedResult;
+    timestamp?: Date;
 }
 
 export class GetBLFParameterRequest implements IGetBLFParameterRequest {
@@ -3910,6 +4597,8 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
+    productionTypeOverrideRowVersion?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
     数量?: string | undefined;
@@ -3949,6 +4638,8 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
+            this.rowVersion = _data["RowVersion"];
+            this.productionTypeOverrideRowVersion = _data["ProductionTypeOverrideRowVersion"];
             this.合同号 = _data["合同号"];
             this.排产编号 = _data["排产编号"];
             this.数量 = _data["数量"];
@@ -3988,6 +4679,8 @@ export class PMCDeliveryReview implements IPMCDeliveryReview {
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
+        data["RowVersion"] = this.rowVersion;
+        data["ProductionTypeOverrideRowVersion"] = this.productionTypeOverrideRowVersion;
         data["合同号"] = this.合同号;
         data["排产编号"] = this.排产编号;
         data["数量"] = this.数量;
@@ -4020,6 +4713,8 @@ export interface IPMCDeliveryReview {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
+    productionTypeOverrideRowVersion?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
     数量?: string | undefined;
@@ -4041,13 +4736,69 @@ export interface IPMCDeliveryReview {
     特殊要求?: string | undefined;
 }
 
-export class PMCDeliveryReviewListApiResponse implements IPMCDeliveryReviewListApiResponse {
+export class PMCDeliveryReviewPagedResult implements IPMCDeliveryReviewPagedResult {
+    items!: PMCDeliveryReview[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IPMCDeliveryReviewPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(PMCDeliveryReview.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): PMCDeliveryReviewPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new PMCDeliveryReviewPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IPMCDeliveryReviewPagedResult {
+    items: PMCDeliveryReview[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class PMCDeliveryReviewPagedResultApiResponse implements IPMCDeliveryReviewPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
-    data?: PMCDeliveryReview[] | undefined;
+    data?: PMCDeliveryReviewPagedResult;
     timestamp?: Date;
 
-    constructor(data?: IPMCDeliveryReviewListApiResponse) {
+    constructor(data?: IPMCDeliveryReviewPagedResultApiResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -4060,18 +4811,14 @@ export class PMCDeliveryReviewListApiResponse implements IPMCDeliveryReviewListA
         if (_data) {
             this.success = _data["Success"];
             this.message = _data["Message"];
-            if (Array.isArray(_data["Data"])) {
-                this.data = [] as any;
-                for (let item of _data["Data"])
-                    this.data!.push(PMCDeliveryReview.fromJS(item));
-            }
+            this.data = _data["Data"] ? PMCDeliveryReviewPagedResult.fromJS(_data["Data"]) : undefined as any;
             this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
         }
     }
 
-    static fromJS(data: any): PMCDeliveryReviewListApiResponse {
+    static fromJS(data: any): PMCDeliveryReviewPagedResultApiResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new PMCDeliveryReviewListApiResponse();
+        let result = new PMCDeliveryReviewPagedResultApiResponse();
         result.init(data);
         return result;
     }
@@ -4080,24 +4827,280 @@ export class PMCDeliveryReviewListApiResponse implements IPMCDeliveryReviewListA
         data = typeof data === 'object' ? data : {};
         data["Success"] = this.success;
         data["Message"] = this.message;
-        if (Array.isArray(this.data)) {
-            data["Data"] = [];
-            for (let item of this.data)
-                data["Data"].push(item ? item.toJSON() : undefined as any);
-        }
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
         data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
         return data;
     }
 }
 
-export interface IPMCDeliveryReviewListApiResponse {
+export interface IPMCDeliveryReviewPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
-    data?: PMCDeliveryReview[] | undefined;
+    data?: PMCDeliveryReviewPagedResult;
+    timestamp?: Date;
+}
+
+/** 外销合同产品 */
+export class PMCProductInfo implements IPMCProductInfo {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    排产编号?: string | undefined;
+    层?: string | undefined;
+    货号?: string | undefined;
+    中文品名?: string | undefined;
+    中文规格?: string | undefined;
+    父编号?: string | undefined;
+    分析单号?: string | undefined;
+    来源编号?: string | undefined;
+    来源?: string | undefined;
+    工单单号?: string | undefined;
+    线圈?: string | undefined;
+    电压?: string | undefined;
+    交货日期?: string | undefined;
+    排产用户?: string | undefined;
+    状态?: string | undefined;
+    实际完成日期?: string | undefined;
+    数量?: string | undefined;
+    发运数量?: string | undefined;
+    入库数量?: string | undefined;
+    在产需求量?: string | undefined;
+
+    constructor(data?: IPMCProductInfo) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.编号 = _data["编号"];
+            this.用户编号 = _data["用户编号"];
+            this.用户铭 = _data["用户铭"];
+            this.修改状态 = _data["修改状态"];
+            this.创建时间 = _data["创建时间"];
+            this.锁定用户 = _data["锁定用户"];
+            this.审核过程 = _data["审核过程"];
+            this.打印 = _data["打印"];
+            this.合同号 = _data["合同号"];
+            this.排产编号 = _data["排产编号"];
+            this.层 = _data["层"];
+            this.货号 = _data["货号"];
+            this.中文品名 = _data["中文品名"];
+            this.中文规格 = _data["中文规格"];
+            this.父编号 = _data["父编号"];
+            this.分析单号 = _data["分析单号"];
+            this.来源编号 = _data["来源编号"];
+            this.来源 = _data["来源"];
+            this.工单单号 = _data["工单单号"];
+            this.线圈 = _data["线圈"];
+            this.电压 = _data["电压"];
+            this.交货日期 = _data["交货日期"];
+            this.排产用户 = _data["排产用户"];
+            this.状态 = _data["状态"];
+            this.实际完成日期 = _data["实际完成日期"];
+            this.数量 = _data["数量"];
+            this.发运数量 = _data["发运数量"];
+            this.入库数量 = _data["入库数量"];
+            this.在产需求量 = _data["在产需求量"];
+        }
+    }
+
+    static fromJS(data: any): PMCProductInfo {
+        data = typeof data === 'object' ? data : {};
+        let result = new PMCProductInfo();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["编号"] = this.编号;
+        data["用户编号"] = this.用户编号;
+        data["用户铭"] = this.用户铭;
+        data["修改状态"] = this.修改状态;
+        data["创建时间"] = this.创建时间;
+        data["锁定用户"] = this.锁定用户;
+        data["审核过程"] = this.审核过程;
+        data["打印"] = this.打印;
+        data["合同号"] = this.合同号;
+        data["排产编号"] = this.排产编号;
+        data["层"] = this.层;
+        data["货号"] = this.货号;
+        data["中文品名"] = this.中文品名;
+        data["中文规格"] = this.中文规格;
+        data["父编号"] = this.父编号;
+        data["分析单号"] = this.分析单号;
+        data["来源编号"] = this.来源编号;
+        data["来源"] = this.来源;
+        data["工单单号"] = this.工单单号;
+        data["线圈"] = this.线圈;
+        data["电压"] = this.电压;
+        data["交货日期"] = this.交货日期;
+        data["排产用户"] = this.排产用户;
+        data["状态"] = this.状态;
+        data["实际完成日期"] = this.实际完成日期;
+        data["数量"] = this.数量;
+        data["发运数量"] = this.发运数量;
+        data["入库数量"] = this.入库数量;
+        data["在产需求量"] = this.在产需求量;
+        return data;
+    }
+}
+
+/** 外销合同产品 */
+export interface IPMCProductInfo {
+    编号?: string | undefined;
+    用户编号?: string | undefined;
+    用户铭?: string | undefined;
+    修改状态?: string | undefined;
+    创建时间?: string | undefined;
+    锁定用户?: string | undefined;
+    审核过程?: string | undefined;
+    打印?: string | undefined;
+    合同号?: string | undefined;
+    排产编号?: string | undefined;
+    层?: string | undefined;
+    货号?: string | undefined;
+    中文品名?: string | undefined;
+    中文规格?: string | undefined;
+    父编号?: string | undefined;
+    分析单号?: string | undefined;
+    来源编号?: string | undefined;
+    来源?: string | undefined;
+    工单单号?: string | undefined;
+    线圈?: string | undefined;
+    电压?: string | undefined;
+    交货日期?: string | undefined;
+    排产用户?: string | undefined;
+    状态?: string | undefined;
+    实际完成日期?: string | undefined;
+    数量?: string | undefined;
+    发运数量?: string | undefined;
+    入库数量?: string | undefined;
+    在产需求量?: string | undefined;
+}
+
+export class PMCProductInfoPagedResult implements IPMCProductInfoPagedResult {
+    items!: PMCProductInfo[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IPMCProductInfoPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(PMCProductInfo.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): PMCProductInfoPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new PMCProductInfoPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IPMCProductInfoPagedResult {
+    items: PMCProductInfo[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class PMCProductInfoPagedResultApiResponse implements IPMCProductInfoPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: PMCProductInfoPagedResult;
+    timestamp?: Date;
+
+    constructor(data?: IPMCProductInfoPagedResultApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? PMCProductInfoPagedResult.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): PMCProductInfoPagedResultApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new PMCProductInfoPagedResultApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IPMCProductInfoPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: PMCProductInfoPagedResult;
     timestamp?: Date;
 }
 
 export class PMCRequestDto implements IPMCRequestDto {
+    /** 当前页码，从1开始 */
+    page?: number;
+    /** 每页条数，限制最大值为 MaxPageSize */
+    pageSize?: number;
+    /** 排序字段，格式如 "字段名 asc" 或 "字段名 desc" */
+    sorting?: string | undefined;
     编号?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
@@ -4105,6 +5108,7 @@ export class PMCRequestDto implements IPMCRequestDto {
     货号?: string | undefined;
     线圈货号?: string | undefined;
     补充数据?: string | undefined;
+    生产类型?: string | undefined;
 
     constructor(data?: IPMCRequestDto) {
         if (data) {
@@ -4117,6 +5121,9 @@ export class PMCRequestDto implements IPMCRequestDto {
 
     init(_data?: any) {
         if (_data) {
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+            this.sorting = _data["Sorting"];
             this.编号 = _data["编号"];
             this.合同号 = _data["合同号"];
             this.排产编号 = _data["排产编号"];
@@ -4124,6 +5131,7 @@ export class PMCRequestDto implements IPMCRequestDto {
             this.货号 = _data["货号"];
             this.线圈货号 = _data["线圈货号"];
             this.补充数据 = _data["补充数据"];
+            this.生产类型 = _data["生产类型"];
         }
     }
 
@@ -4136,6 +5144,9 @@ export class PMCRequestDto implements IPMCRequestDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        data["Sorting"] = this.sorting;
         data["编号"] = this.编号;
         data["合同号"] = this.合同号;
         data["排产编号"] = this.排产编号;
@@ -4143,11 +5154,18 @@ export class PMCRequestDto implements IPMCRequestDto {
         data["货号"] = this.货号;
         data["线圈货号"] = this.线圈货号;
         data["补充数据"] = this.补充数据;
+        data["生产类型"] = this.生产类型;
         return data;
     }
 }
 
 export interface IPMCRequestDto {
+    /** 当前页码，从1开始 */
+    page?: number;
+    /** 每页条数，限制最大值为 MaxPageSize */
+    pageSize?: number;
+    /** 排序字段，格式如 "字段名 asc" 或 "字段名 desc" */
+    sorting?: string | undefined;
     编号?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
@@ -4155,6 +5173,7 @@ export interface IPMCRequestDto {
     货号?: string | undefined;
     线圈货号?: string | undefined;
     补充数据?: string | undefined;
+    生产类型?: string | undefined;
 }
 
 /** 压力流量 */
@@ -4213,6 +5232,7 @@ export class ProductionTypeOverride implements IProductionTypeOverride {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
     货号?: string | undefined;
@@ -4239,6 +5259,7 @@ export class ProductionTypeOverride implements IProductionTypeOverride {
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
+            this.rowVersion = _data["RowVersion"];
             this.合同号 = _data["合同号"];
             this.排产编号 = _data["排产编号"];
             this.货号 = _data["货号"];
@@ -4265,6 +5286,7 @@ export class ProductionTypeOverride implements IProductionTypeOverride {
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
+        data["RowVersion"] = this.rowVersion;
         data["合同号"] = this.合同号;
         data["排产编号"] = this.排产编号;
         data["货号"] = this.货号;
@@ -4285,6 +5307,7 @@ export interface IProductionTypeOverride {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     合同号?: string | undefined;
     排产编号?: string | undefined;
     货号?: string | undefined;
@@ -4767,6 +5790,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     车间名称?: string | undefined;
     工单单号?: string | undefined;
     商品属性?: string | undefined;
@@ -4803,6 +5827,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
+            this.rowVersion = _data["RowVersion"];
             this.车间名称 = _data["车间名称"];
             this.工单单号 = _data["工单单号"];
             this.商品属性 = _data["商品属性"];
@@ -4839,6 +5864,7 @@ export class WorkOrderSalesControl implements IWorkOrderSalesControl {
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
+        data["RowVersion"] = this.rowVersion;
         data["车间名称"] = this.车间名称;
         data["工单单号"] = this.工单单号;
         data["商品属性"] = this.商品属性;
@@ -4869,6 +5895,7 @@ export interface IWorkOrderSalesControl {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     车间名称?: string | undefined;
     工单单号?: string | undefined;
     商品属性?: string | undefined;
@@ -4897,6 +5924,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     品名?: string | undefined;
     规格?: string | undefined;
@@ -4929,6 +5957,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
             this.锁定用户 = _data["锁定用户"];
             this.审核过程 = _data["审核过程"];
             this.打印 = _data["打印"];
+            this.rowVersion = _data["RowVersion"];
             this.货号 = _data["货号"];
             this.品名 = _data["品名"];
             this.规格 = _data["规格"];
@@ -4961,6 +5990,7 @@ export class WorkOrderSalesControlDetail implements IWorkOrderSalesControlDetail
         data["锁定用户"] = this.锁定用户;
         data["审核过程"] = this.审核过程;
         data["打印"] = this.打印;
+        data["RowVersion"] = this.rowVersion;
         data["货号"] = this.货号;
         data["品名"] = this.品名;
         data["规格"] = this.规格;
@@ -4987,6 +6017,7 @@ export interface IWorkOrderSalesControlDetail {
     锁定用户?: string | undefined;
     审核过程?: string | undefined;
     打印?: string | undefined;
+    rowVersion?: string | undefined;
     货号?: string | undefined;
     品名?: string | undefined;
     规格?: string | undefined;
@@ -4999,6 +6030,214 @@ export interface IWorkOrderSalesControlDetail {
     父级编号?: string | undefined;
     分析单号?: string | undefined;
     排产用户?: string | undefined;
+}
+
+export class WorkOrderSalesControlDetailPagedResult implements IWorkOrderSalesControlDetailPagedResult {
+    items!: WorkOrderSalesControlDetail[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IWorkOrderSalesControlDetailPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(WorkOrderSalesControlDetail.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): WorkOrderSalesControlDetailPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkOrderSalesControlDetailPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IWorkOrderSalesControlDetailPagedResult {
+    items: WorkOrderSalesControlDetail[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class WorkOrderSalesControlDetailPagedResultApiResponse implements IWorkOrderSalesControlDetailPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: WorkOrderSalesControlDetailPagedResult;
+    timestamp?: Date;
+
+    constructor(data?: IWorkOrderSalesControlDetailPagedResultApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? WorkOrderSalesControlDetailPagedResult.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): WorkOrderSalesControlDetailPagedResultApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkOrderSalesControlDetailPagedResultApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IWorkOrderSalesControlDetailPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: WorkOrderSalesControlDetailPagedResult;
+    timestamp?: Date;
+}
+
+export class WorkOrderSalesControlPagedResult implements IWorkOrderSalesControlPagedResult {
+    items!: WorkOrderSalesControl[] | undefined;
+    total!: number;
+    page!: number;
+    pageSize!: number;
+
+    constructor(data?: IWorkOrderSalesControlPagedResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["Items"])) {
+                this.items = [] as any;
+                for (let item of _data["Items"])
+                    this.items!.push(WorkOrderSalesControl.fromJS(item));
+            }
+            this.total = _data["Total"];
+            this.page = _data["Page"];
+            this.pageSize = _data["PageSize"];
+        }
+    }
+
+    static fromJS(data: any): WorkOrderSalesControlPagedResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkOrderSalesControlPagedResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["Items"] = [];
+            for (let item of this.items)
+                data["Items"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["Total"] = this.total;
+        data["Page"] = this.page;
+        data["PageSize"] = this.pageSize;
+        return data;
+    }
+}
+
+export interface IWorkOrderSalesControlPagedResult {
+    items: WorkOrderSalesControl[] | undefined;
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export class WorkOrderSalesControlPagedResultApiResponse implements IWorkOrderSalesControlPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: WorkOrderSalesControlPagedResult;
+    timestamp?: Date;
+
+    constructor(data?: IWorkOrderSalesControlPagedResultApiResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.success = _data["Success"];
+            this.message = _data["Message"];
+            this.data = _data["Data"] ? WorkOrderSalesControlPagedResult.fromJS(_data["Data"]) : undefined as any;
+            this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): WorkOrderSalesControlPagedResultApiResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkOrderSalesControlPagedResultApiResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["Success"] = this.success;
+        data["Message"] = this.message;
+        data["Data"] = this.data ? this.data.toJSON() : undefined as any;
+        data["Timestamp"] = this.timestamp ? this.timestamp.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IWorkOrderSalesControlPagedResultApiResponse {
+    success?: boolean;
+    message?: string | undefined;
+    data?: WorkOrderSalesControlPagedResult;
+    timestamp?: Date;
 }
 
 export class ApiException extends Error {

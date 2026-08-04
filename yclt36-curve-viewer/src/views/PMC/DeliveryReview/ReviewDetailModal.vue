@@ -931,6 +931,7 @@ const doSubmitReview = async () => {
 
   const reviewData = new PMCDeliveryReview({
     编号,
+    rowVersion: props.record?.rowVersion,
     用户编号,
     合同号,
     排产编号,
@@ -2083,6 +2084,44 @@ function convertToWorkOrderSalesControl(item: ProductionItem, index: number): Wo
   return sc;
 }
 
+type VersionedRecord = {
+  编号?: string;
+  分析单号?: string;
+  rowVersion?: string;
+};
+
+async function attachExistingRowVersions<T extends VersionedRecord>(
+  incoming: T[],
+  loadExisting: (request: PMCRequestDto) => Promise<T[]>,
+  keyOf: (item: T) => string,
+) {
+  if (incoming.length === 0) return;
+
+  const analysisNos = Array.from(new Set(
+    incoming.map((item) => item.分析单号).filter((value): value is string => !!value)
+  ));
+  const idsWithoutAnalysis = Array.from(new Set(
+    incoming
+      .filter((item) => !item.分析单号)
+      .map((item) => item.编号)
+      .filter((value): value is string => !!value)
+  ));
+
+  const existingGroups = await Promise.all([
+    ...analysisNos.map((analysisNo) => loadExisting(new PMCRequestDto({ 分析单号: analysisNo }))),
+    ...idsWithoutAnalysis.map((id) => loadExisting(new PMCRequestDto({ 编号: id }))),
+  ]);
+  const existingMap = new Map<string, T>();
+  existingGroups.flat().forEach((item) => existingMap.set(keyOf(item), item));
+
+  incoming.forEach((item) => {
+    const existing = existingMap.get(keyOf(item));
+    if (!existing) return;
+    item.rowVersion = existing.rowVersion;
+    item.编号 = existing.编号;
+  });
+}
+
 // ========== 保存排产分析 ==========
 async function handleSchSave() {
   if (!schedulingForm.deliveryDate) {
@@ -2106,12 +2145,6 @@ async function handleSchSave() {
         bomAnalysisNoMap.set(b.货号, b.分析单号 || '');
         if (b.编号) bomIdMap.set(b.货号, String(b.编号));
       }
-    });
-
-    const existingList = await workOrderSalesControlService.getWorkOrderSalesControlList();
-    const existingMap = new Map<string, any>();
-    (existingList || []).forEach((item: any) => {
-      if (item.货号) existingMap.set(item.货号, item);
     });
 
     // ========== 根据保存范围决定数据源 ==========
@@ -2168,11 +2201,25 @@ async function handleSchSave() {
     }
     const mergedNodes = Array.from(mergedMap.values());
 
+    const existingGroups = await Promise.all(
+      mergedNodes
+        .map((item) => item.partNo)
+        .filter((partNo): partNo is string => !!partNo)
+        .map((partNo) => workOrderSalesControlService.getWorkOrderSalesControlList(
+          new PMCRequestDto({ 货号: partNo })
+        ))
+    );
+    const existingMap = new Map<string, WorkOrderSalesControl>();
+    existingGroups.flat().forEach((item) => {
+      if (item.货号) existingMap.set(item.货号, item);
+    });
+
     const salesControlList = mergedNodes.map((item, idx) => {
       const newSc = convertToWorkOrderSalesControl(item, idx);
       const existing = existingMap.get(newSc.货号 || '');
       if (existing) {
-        newSc.编号 = existing.编号 || existing.id;
+        newSc.编号 = existing.编号;
+        newSc.rowVersion = existing.rowVersion;
         // const oldTotal = Number(existing.工单总数) || 0;
         // const addTotal = Number(newSc.工单总数) || 0;
         // newSc.工单总数 = String(oldTotal + addTotal);
@@ -2183,9 +2230,7 @@ async function handleSchSave() {
       return newSc;
     });
 
-    await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlList(salesControlList);
-
-    const updatedMainList = await workOrderSalesControlService.getWorkOrderSalesControlList();
+    const updatedMainList = await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlList(salesControlList);
     const mainNoMap = new Map<string, string>();
     (updatedMainList || []).forEach((item: any) => {
       if (item.货号 && (item.编号 || item.id)) {
@@ -2237,6 +2282,11 @@ async function handleSchSave() {
     });
 
     if (detailList.length > 0) {
+      await attachExistingRowVersions(
+        detailList,
+        (request) => workOrderSalesControlService.getWorkOrderSalesControlDetailList(request),
+        (item) => `${item.货号 || ''}\u0000${item.分析单号 || ''}`,
+      );
       await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlDetailList(detailList);
     }
 
@@ -2268,6 +2318,11 @@ async function handleSchSave() {
       return pick;
     });
     if (pickMaterialList.length > 0) {
+      await attachExistingRowVersions(
+        pickMaterialList,
+        (request) => externalProductionService.getExternalProductionPickMaterialList(request),
+        (item) => item.编号 || '',
+      );
       await externalProductionService.addOrUpdateExternalProductionPickMaterialList(pickMaterialList);
     }
 
@@ -2283,21 +2338,45 @@ async function handleSchSave() {
       return wh;
     });
     if (warehousingList.length > 0) {
+      await attachExistingRowVersions(
+        warehousingList,
+        (request) => externalProductionService.getExternalProductionWarehousingList(request),
+        (item) => item.编号 || '',
+      );
       await externalProductionService.addOrUpdateExternalProductionWarehousingList(warehousingList);
     }
 
     // ========== 保存外产生产：基于工单销控表明细，编号/货号/分析单号/排产编号直接赋值，需求量=生产数 ==========
     const externalProductionList = detailList.map(item => {
       const ep = new ExternalProduction();
+      const matchedProductionItem = mergedMap.get(item.货号 || '');
       ep.编号 = item.编号;            // 直接取明细的编号
       ep.货号 = item.货号;            // 直接取明细的货号
       ep.分析单号 = item.分析单号;    // 关联明细的分析单号
       ep.排产编号 = item.排产编号;    // 关联明细的排产编号
       ep.需求量 = item.生产数;        // 需求量 = 生产数
       ep.生产数量 = '0';              // 生产数量默认为0
+      ep.工单单号 = item.工单单号 || ''; // 关联明细的工单单号
+      // 外产生产扩展字段：从排产分析树中匹配同货号节点取值
+      ep.来源 = matchedProductionItem?.source || '';
+      ep.工序车间 = matchedProductionItem?.workshop || '';
+      ep.工序 = matchedProductionItem?.process || '';
+      ep.工单层级 = matchedProductionItem?.levelIndex || '';
+      ep.电压 = props.record?.电压 || '';
+      ep.线圈 = reviewForm.coilItemNo || props.record?.线圈货号 || '';
+      ep.订单数 = String(schedulingProduct.qty || props.record?.数量 || 0);
+      ep.单位 = matchedProductionItem?.unit || '';
+      ep.仓库名称 = matchedProductionItem?.warehouse || '';
+      ep.备注 = matchedProductionItem?.remark || '';
+      ep.用量 = String(matchedProductionItem?.usage || 0);
       return ep;
     });
     if (externalProductionList.length > 0) {
+      await attachExistingRowVersions(
+        externalProductionList,
+        (request) => externalProductionService.getExternalProductionList(request),
+        (item) => `${item.分析单号 || ''}\u0000${item.货号 || ''}`,
+      );
       await externalProductionService.addOrUpdateExternalProductionList(externalProductionList);
     }
 
@@ -2313,11 +2392,16 @@ async function handleSchSave() {
       return ship;
     });
     if (externalShipmentList.length > 0) {
+      await attachExistingRowVersions(
+        externalShipmentList,
+        (request) => externalProductionService.getExternalProductionShipmentList(request),
+        (item) => `${item.分析单号 || ''}\u0000${item.货号 || ''}`,
+      );
       await externalProductionService.addOrUpdateExternalProductionShipmentList(externalShipmentList);
     }
 
     const bomCount = savedBomList?.length || 0;
-    message.success(`已保存 ${salesControlList.length} 条到工单销控表，${detailList.length} 条明细，${bomCount} 条BOM数据，${pickMaterialList.length} 条领料，${warehousingList.length} 条入库，${externalProductionList.length} 条外产生产，${externalShipmentList.length} 条外产发运`);
+    //message.success(`已保存 ${salesControlList.length} 条到工单销控表，${detailList.length} 条明细，${bomCount} 条BOM数据，${pickMaterialList.length} 条领料，${warehousingList.length} 条入库，${externalProductionList.length} 条外产生产，${externalShipmentList.length} 条外产发运`);
 
     // 排产分析保存成功后，才真正提交评审结果
     const mappedStatus = await doSubmitReview();
@@ -2325,9 +2409,13 @@ async function handleSchSave() {
     emit('confirm', { id: props.record!.编号 || '', status: mappedStatus });
     emit('refresh');
     message.success('评审结果提交成功!');
-  } catch (error) {
+  } catch (error: any) {
     console.error('保存分析失败:', error);
-    message.error('保存分析失败，请稍后重试');
+    message.error(
+      error?.status === 409
+        ? (error.message || '数据已被其他用户修改，请刷新后重试')
+        : (error?.message || '保存分析失败，请稍后重试')
+    );
   } finally {
     schSaveLoading.value = false;
   }
@@ -2363,6 +2451,10 @@ async function handleSchSaveBOM(): Promise<ExternalProductionBOM[] | null> {
         // 仅可见且生产数>0 的节点才保存生产数，否则为 null
         生产数: ((visible && Number(item.produceQty) > 0) ? String(item.produceQty) : null) as any,
         交货日期: schedulingForm.deliveryDate || '',
+        产品属性: item.attr || '',
+        来源: item.source || '',
+        单位: item.unit || '',
+        备注: item.remark || '',
       });
 
     const traverse = (items: ProductionItem[], parentPartNo: string, parentVisible: boolean) => {

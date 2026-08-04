@@ -7,16 +7,18 @@ import {
   ExternalProductionBOM,
   ExternalProductionShipment,
 } from '@/api-generated/api';
+import { collectAllPagedItems, normalizePagedResult, type PagedResult, toServiceError, withPaging } from './paging';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 const service = new Service(baseUrl);
 
 export const externalProductionService = {
   // ==================== 外产_生产 ====================
-  async getExternalProductionList(requestDto?: PMCRequestDto): Promise<any[]> {
+  async getExternalProductionPage(requestDto?: PMCRequestDto): Promise<PagedResult<ExternalProduction>> {
     try {
-      const response = await service.getExternalProductionList(requestDto || new PMCRequestDto());
-      return response.data || [];
+      const request = withPaging(requestDto);
+      const response = await service.getExternalProductionList(request);
+      return normalizePagedResult<ExternalProduction>(response.data, request);
     } catch (error: any) {
       let errorMessage = '';
       if (error.response) {
@@ -25,6 +27,10 @@ export const externalProductionService = {
       }
       throw new Error('查询外产生产列表失败:' + errorMessage);
     }
+  },
+
+  async getExternalProductionList(requestDto?: PMCRequestDto): Promise<ExternalProduction[]> {
+    return collectAllPagedItems((request) => this.getExternalProductionPage(request), requestDto);
   },
 
   async addOrUpdateExternalProductionList(list: ExternalProduction[]): Promise<any> {
@@ -37,7 +43,7 @@ export const externalProductionService = {
         const responseData = error.response.data || error.response;
         errorMessage = responseData;
       }
-      throw new Error('新增或更新外产生产数据失败:' + errorMessage);
+      throw toServiceError(error, '新增或更新外产生产数据失败');
     }
   },
 
@@ -52,6 +58,22 @@ export const externalProductionService = {
         errorMessage = responseData;
       }
       throw new Error('删除外产生产数据失败:' + errorMessage);
+    }
+  },
+
+  // 根据编号查询单条外产生产数据
+  async getExternalProductionByNo(no: string | undefined): Promise<ExternalProduction | null> {
+    try {
+      if (!no) return null;
+      const response = await service.getExternalProductionByNo(no);
+      return response.data || null;
+    } catch (error: any) {
+      let errorMessage = '';
+      if (error.response) {
+        const responseData = error.response.data || error.response;
+        errorMessage = responseData;
+      }
+      throw new Error('查询外产生产数据失败:' + errorMessage);
     }
   },
 
@@ -105,10 +127,11 @@ export const externalProductionService = {
   },
 
   // ==================== 外产_BOM 查询 ====================
-  async getExternalProductionBOMList(requestDto?: PMCRequestDto): Promise<any[]> {
+  async getExternalProductionBOMPage(requestDto?: PMCRequestDto): Promise<PagedResult<ExternalProductionBOM>> {
     try {
-      const response = await service.getExternalProductionBOMList(requestDto || new PMCRequestDto());
-      return response.data || [];
+      const request = withPaging(requestDto);
+      const response = await service.getExternalProductionBOMList(request);
+      return normalizePagedResult<ExternalProductionBOM>(response.data, request);
     } catch (error: any) {
       let errorMessage = '';
       if (error.response) {
@@ -119,11 +142,16 @@ export const externalProductionService = {
     }
   },
 
+  async getExternalProductionBOMList(requestDto?: PMCRequestDto): Promise<ExternalProductionBOM[]> {
+    return collectAllPagedItems((request) => this.getExternalProductionBOMPage(request), requestDto);
+  },
+
   // ==================== 外产_领料 ====================
-  async getExternalProductionPickMaterialList(requestDto?: PMCRequestDto): Promise<any[]> {
+  async getExternalProductionPickMaterialPage(requestDto?: PMCRequestDto): Promise<PagedResult<ExternalProductionPickMaterial>> {
     try {
-      const response = await service.getExternalProductionPickMaterialList(requestDto || new PMCRequestDto());
-      return response.data || [];
+      const request = withPaging(requestDto);
+      const response = await service.getExternalProductionPickMaterialList(request);
+      return normalizePagedResult<ExternalProductionPickMaterial>(response.data, request);
     } catch (error: any) {
       let errorMessage = '';
       if (error.response) {
@@ -132,6 +160,10 @@ export const externalProductionService = {
       }
       throw new Error('查询外产领料列表失败:' + errorMessage);
     }
+  },
+
+  async getExternalProductionPickMaterialList(requestDto?: PMCRequestDto): Promise<ExternalProductionPickMaterial[]> {
+    return collectAllPagedItems((request) => this.getExternalProductionPickMaterialPage(request), requestDto);
   },
 
   async addOrUpdateExternalProductionPickMaterialList(list: ExternalProductionPickMaterial[]): Promise<any> {
@@ -144,7 +176,7 @@ export const externalProductionService = {
         const responseData = error.response.data || error.response;
         errorMessage = responseData;
       }
-      throw new Error('新增或更新外产领料数据失败:' + errorMessage);
+      throw toServiceError(error, '新增或更新外产领料数据失败');
     }
   },
 
@@ -163,10 +195,11 @@ export const externalProductionService = {
   },
 
   // ==================== 外产_入库 ====================
-  async getExternalProductionWarehousingList(requestDto?: PMCRequestDto): Promise<any[]> {
+  async getExternalProductionWarehousingPage(requestDto?: PMCRequestDto): Promise<PagedResult<ExternalProductionWarehousing>> {
     try {
-      const response = await service.getExternalProductionWarehousingList(requestDto || new PMCRequestDto());
-      return response.data || [];
+      const request = withPaging(requestDto);
+      const response = await service.getExternalProductionWarehousingList(request);
+      return normalizePagedResult<ExternalProductionWarehousing>(response.data, request);
     } catch (error: any) {
       let errorMessage = '';
       if (error.response) {
@@ -175,6 +208,10 @@ export const externalProductionService = {
       }
       throw new Error('查询外产入库列表失败:' + errorMessage);
     }
+  },
+
+  async getExternalProductionWarehousingList(requestDto?: PMCRequestDto): Promise<ExternalProductionWarehousing[]> {
+    return collectAllPagedItems((request) => this.getExternalProductionWarehousingPage(request), requestDto);
   },
 
   async addOrUpdateExternalProductionWarehousingList(list: ExternalProductionWarehousing[]): Promise<any> {
@@ -187,7 +224,7 @@ export const externalProductionService = {
         const responseData = error.response.data || error.response;
         errorMessage = responseData;
       }
-      throw new Error('新增或更新外产入库数据失败:' + errorMessage);
+      throw toServiceError(error, '新增或更新外产入库数据失败');
     }
   },
 
@@ -206,10 +243,11 @@ export const externalProductionService = {
   },
 
   // ==================== 外产_发运 ====================
-  async getExternalProductionShipmentList(requestDto?: PMCRequestDto): Promise<any[]> {
+  async getExternalProductionShipmentPage(requestDto?: PMCRequestDto): Promise<PagedResult<ExternalProductionShipment>> {
     try {
-      const response = await service.getExternalProductionShipmentList(requestDto || new PMCRequestDto());
-      return response.data || [];
+      const request = withPaging(requestDto);
+      const response = await service.getExternalProductionShipmentList(request);
+      return normalizePagedResult<ExternalProductionShipment>(response.data, request);
     } catch (error: any) {
       let errorMessage = '';
       if (error.response) {
@@ -218,6 +256,10 @@ export const externalProductionService = {
       }
       throw new Error('查询外产发运列表失败:' + errorMessage);
     }
+  },
+
+  async getExternalProductionShipmentList(requestDto?: PMCRequestDto): Promise<ExternalProductionShipment[]> {
+    return collectAllPagedItems((request) => this.getExternalProductionShipmentPage(request), requestDto);
   },
 
   async addOrUpdateExternalProductionShipmentList(list: ExternalProductionShipment[]): Promise<any> {
@@ -230,7 +272,7 @@ export const externalProductionService = {
         const responseData = error.response.data || error.response;
         errorMessage = responseData;
       }
-      throw new Error('新增或更新外产发运数据失败:' + errorMessage);
+      throw toServiceError(error, '新增或更新外产发运数据失败');
     }
   },
 
