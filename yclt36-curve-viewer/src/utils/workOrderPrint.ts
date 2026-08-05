@@ -21,6 +21,7 @@ export interface WorkOrderPrintItem {
   仓库名称?: string
   备注?: string
   用量?: string
+  工单状态?: string
 }
 
 export interface MaterialPrintItem {
@@ -111,8 +112,8 @@ function renderInfoTable(
           </td>
         </tr>
         <tr>
-          <td class="label">工单状态：</td>
-          <td class="value">${EMPTY}</td>
+        <td class="label">工单状态：</td>
+        <td class="value">${fmt(wo.工单状态) || '已下达'}</td>
           <td class="label">工序车间：</td>
           <td class="value">${fmt(wo.工序车间)}</td>
           <td class="label">工 序：</td>
@@ -240,8 +241,8 @@ function renderMaterialTable(materials: MaterialPrintItem[]): string {
 async function buildHtml(data: WorkOrderPrintData): Promise<string> {
   const pages = await Promise.all(
     data.workOrders.map(async (wo) => {
-      const productQr = await makeQrCode(data.productNo || wo.工单单号)
-      const materialQr = await makeQrCode(data.productNo)
+      const productQr = await makeQrCode(wo.工单单号)
+      const materialQr = await makeQrCode(`${data.productNo}#${wo.工单单号}`)
       const infoTable = renderInfoTable(wo, productQr, materialQr, data)
       const materialTable = renderMaterialTable(data.materials)
 
@@ -433,51 +434,63 @@ async function buildHtml(data: WorkOrderPrintData): Promise<string> {
   `
 }
 
-function openPrintWindow(html: string): void {
-  const iframe = document.createElement('iframe')
-  iframe.style.position = 'fixed'
-  iframe.style.width = '0'
-  iframe.style.height = '0'
-  iframe.style.border = 'none'
-  iframe.style.visibility = 'hidden'
-  document.body.appendChild(iframe)
+function openPrintWindow(html: string): Promise<void> {
+  return new Promise((resolve) => {
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = 'none'
+    iframe.style.visibility = 'hidden'
+    document.body.appendChild(iframe)
 
-  const doc = iframe.contentWindow?.document
-  if (!doc) {
-    document.body.removeChild(iframe)
-    return
-  }
-
-  doc.open()
-  doc.write(html)
-  doc.close()
-
-  const printWin = iframe.contentWindow
-  if (!printWin) {
-    document.body.removeChild(iframe)
-    return
-  }
-
-  printWin.onafterprint = () => {
-    if (iframe.parentNode) {
+    const doc = iframe.contentWindow?.document
+    if (!doc) {
       document.body.removeChild(iframe)
+      resolve()
+      return
     }
-  }
 
-  setTimeout(() => {
-    printWin.focus()
-    printWin.print()
-  }, 200)
+    doc.open()
+    doc.write(html)
+    doc.close()
 
-  setTimeout(() => {
-    if (iframe.parentNode) {
+    const printWin = iframe.contentWindow
+    if (!printWin) {
       document.body.removeChild(iframe)
+      resolve()
+      return
     }
-  }, 10000)
+
+    let cleaned = false
+    const cleanup = () => {
+      if (!cleaned && iframe.parentNode) {
+        document.body.removeChild(iframe)
+        cleaned = true
+      }
+    }
+
+    // 用户在打印预览页完成打印或取消关闭后触发，resolve 以便后续逻辑（如回写）执行
+    printWin.onafterprint = () => {
+      cleanup()
+      resolve()
+    }
+
+    setTimeout(() => {
+      printWin.focus()
+      printWin.print()
+    }, 200)
+
+    // 兜底：部分浏览器可能不触发 onafterprint，超时后也 resolve，避免流程卡死
+    setTimeout(() => {
+      cleanup()
+      resolve()
+    }, 10000)
+  })
 }
 
 export async function printWorkOrder(data: WorkOrderPrintData): Promise<void> {
   if (!data.workOrders || data.workOrders.length === 0) return
   const html = await buildHtml(data)
-  openPrintWindow(html)
+  await openPrintWindow(html)
 }

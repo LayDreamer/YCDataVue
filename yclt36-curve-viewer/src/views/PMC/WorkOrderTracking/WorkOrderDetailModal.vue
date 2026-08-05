@@ -47,7 +47,7 @@
             @click="handlePrint"
           >
             <PrinterOutlined />
-            <span>打印{{ selectedRowKeys.length ? `(${selectedRowKeys.length})` : '' }}</span>
+            <span>打印</span>
           </a-button>
         </div>
         <div class="table-scroll">
@@ -57,7 +57,7 @@
             :pagination="false"
             size="small"
             class="detail-table"
-            :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
+            :row-selection="{ type: 'radio', selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
             :row-key="(record: WorkOrderItem) => record.id"
           >
             <template #bodyCell="{ column, text }">
@@ -83,9 +83,14 @@
             <span class="section-title">物料需求明细</span>
             <span class="section-count">{{ materialData.length }} 条</span>
           </div>
-          <a-tag v-if="materialShortage > 0" color="error" class="shortage-tag">
-            缺料 {{ materialShortage }} 项
-          </a-tag>
+          <div class="shortage-tags">
+            <a-tag v-if="materialShortage > 0" color="error" class="shortage-tag">
+              缺料 {{ materialShortage }} 项
+            </a-tag>
+            <a-tag v-if="warehouseShortage > 0" color="error" class="shortage-tag">
+              仓库缺料 {{ warehouseShortage }} 项
+            </a-tag>
+          </div>
         </div>
         <div class="table-scroll">
           <a-table
@@ -119,6 +124,7 @@ import { computed, h, ref, watch } from 'vue'
 import { PrinterOutlined } from '@ant-design/icons-vue'
 import { printWorkOrder, type WorkOrderPrintData } from '@/utils/workOrderPrint'
 import { externalProductionService } from '@/services/externalProductionService'
+import { ExternalProduction } from '@/api-generated/api'
 
 const StatusBadge = {
   props: {
@@ -185,6 +191,10 @@ const materialShortage = computed(
   () => props.materialData.filter((m) => Number(m.缺料数) > 0 || Number(m.仓库缺料) > 0).length
 )
 
+const warehouseShortage = computed(
+  () => props.materialData.filter((m) => Number(m.仓库缺料) > 0).length
+)
+
 const selectedRowKeys = ref<number[]>([])
 
 function onSelectChange(keys: number[]) {
@@ -231,6 +241,25 @@ async function handlePrint() {
   }
 
   await printWorkOrder(printData)
+
+  // 打印触发后，回写外产生产数据的打印时间字段（值设为"更新"），根据当前选中行查询到的外产生产记录传入
+  const extUpdates = rows
+    .map((item) => externalProductionService.getExternalProductionByNo(item.编号))
+    .map((p) =>
+      p.then((ext) => {
+        if (!ext) return null
+        const ep = new ExternalProduction(ext)
+        ep.打印时间 = '更新'
+        return ep
+      }),
+    )
+
+  const updatedList = (await Promise.all(extUpdates)).filter(
+    (ep): ep is ExternalProduction => ep !== null,
+  )
+  if (updatedList.length > 0) {
+    await externalProductionService.addOrUpdateExternalProductionList(updatedList)
+  }
 }
 
 const workOrderColumns = [
@@ -415,6 +444,13 @@ watch(
   background-color: #f5f5f5;
   padding: 2px 8px;
   border-radius: 4px;
+}
+
+.shortage-tags {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .shortage-tag {

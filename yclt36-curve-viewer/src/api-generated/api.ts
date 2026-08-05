@@ -104,7 +104,7 @@ export class Service {
     }
 
     /**
-     * 修改密码（需携带登录令牌，身份从令牌获取）
+     * 修改密码(需携带登录令牌,身份从令牌获取)
      * @param body (optional) 
      * @return OK
      */
@@ -147,7 +147,7 @@ export class Service {
     }
 
     /**
-     * 更新个人资料（显示名 / 邮箱 / 手机号，需携带登录令牌）
+     * 更新个人资料(显示名 / 邮箱 / 手机号,需携带登录令牌)
      * @param body (optional) 
      * @return OK
      */
@@ -190,6 +190,7 @@ export class Service {
     }
 
     /**
+     * 查询所有比例阀参数
      * @return OK
      */
     list(): Promise<BLFParameter[]> {
@@ -234,6 +235,7 @@ export class Service {
     }
 
     /**
+     * 按比例阀编号查询
      * @param body (optional) 
      * @return OK
      */
@@ -272,6 +274,7 @@ export class Service {
     }
 
     /**
+     * 创建比例阀参数
      * @param body (optional) 
      * @return OK
      */
@@ -310,6 +313,7 @@ export class Service {
     }
 
     /**
+     * 更新比例阀参数(局部更新非空字段)
      * @param body (optional) 
      * @return OK
      */
@@ -348,6 +352,7 @@ export class Service {
     }
 
     /**
+     * 批量删除比例阀参数
      * @param body (optional) 
      * @return OK
      */
@@ -424,12 +429,11 @@ export class Service {
     }
 
     /**
-     * 校验 ERP 用户（tb_control_user）：用户名不存在返回“用户名错误”，
-    密码不匹配返回“密码错误”，均通过返回校验成功及用户信息。
+     * 校验 ERP 用户(tb_control_user):用户名不存在返回"用户名错误",密码不匹配返回"密码错误"。
      * @param body (optional) 
      * @return OK
      */
-    validate(body: ERPUserLoginDto | undefined): Promise<ERPUserApiResponse> {
+    validate(body: ERPUserLoginDto | undefined): Promise<ERPUserDtoApiResponse> {
         let url_ = this.baseUrl + "/api/ERP/validate";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -449,14 +453,14 @@ export class Service {
         });
     }
 
-    protected processValidate(response: Response): Promise<ERPUserApiResponse> {
+    protected processValidate(response: Response): Promise<ERPUserDtoApiResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ERPUserApiResponse.fromJS(resultData200);
+            result200 = ERPUserDtoApiResponse.fromJS(resultData200);
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -464,1383 +468,7 @@ export class Service {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ERPUserApiResponse>(null as any);
-    }
-
-    /**
-     * 转换交期评审列表(根据外销合同客户产品表)
-     * @param body (optional) 
-     * @return OK
-     */
-    convertToPMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<PMCDeliveryReviewPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/ConvertToPMCDeliveryReviewList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processConvertToPMCDeliveryReviewList(_response);
-        });
-    }
-
-    protected processConvertToPMCDeliveryReviewList(response: Response): Promise<PMCDeliveryReviewPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = PMCDeliveryReviewPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PMCDeliveryReviewPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 获取产品信息列表
-     * @param body (optional) 
-     * @return OK
-     */
-    productListInfo(body: PMCRequestDto | undefined): Promise<PMCProductInfoPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/ProductListInfo";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processProductListInfo(_response);
-        });
-    }
-
-    protected processProductListInfo(response: Response): Promise<PMCProductInfoPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = PMCProductInfoPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PMCProductInfoPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 根据货号获取产品资料装配清单
-     * @param body (optional) 
-     * @return OK
-     */
-    productDataAssemblyList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/ProductDataAssemblyList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processProductDataAssemblyList(_response);
-        });
-    }
-
-    protected processProductDataAssemblyList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 根据货号获取产品资料装配清单中中间件等于 0 的记录
-     * @param body (optional) 
-     * @return OK
-     */
-    productDataAssemblyListByItemNo(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/ProductDataAssemblyListByItemNo";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processProductDataAssemblyListByItemNo(_response);
-        });
-    }
-
-    protected processProductDataAssemblyListByItemNo(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 检查线圈货号是否存在于装配清单中
-     * @param body (optional) 
-     * @return OK
-     */
-    checkAssemblyList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/CheckAssemblyList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCheckAssemblyList(_response);
-        });
-    }
-
-    protected processCheckAssemblyList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 按关键字模糊查询产品资料中的线圈（货号包含关键字即可），最多返回 50 条
-     * @param body (optional) 
-     * @return OK
-     */
-    searchCoilsByKeyword(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/SearchCoilsByKeyword";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processSearchCoilsByKeyword(_response);
-        });
-    }
-
-    protected processSearchCoilsByKeyword(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 按货号模糊查询产品资料（不区分线圈，货号包含关键字即可），最多返回 50 条
-     * @param body (optional) 
-     * @return OK
-     */
-    searchProductDataByKeyword(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/SearchProductDataByKeyword";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processSearchProductDataByKeyword(_response);
-        });
-    }
-
-    protected processSearchProductDataByKeyword(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 获取交期评审列表
-     * @param body (optional) 
-     * @return OK
-     */
-    pMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<PMCDeliveryReviewPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/PMCDeliveryReviewList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processPMCDeliveryReviewList(_response);
-        });
-    }
-
-    protected processPMCDeliveryReviewList(response: Response): Promise<PMCDeliveryReviewPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = PMCDeliveryReviewPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PMCDeliveryReviewPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 新增交期评审记录
-     * @param body (optional) 
-     * @return OK
-     */
-    addPMCDeliveryReview(body: PMCDeliveryReview | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/AddPMCDeliveryReview";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAddPMCDeliveryReview(_response);
-        });
-    }
-
-    protected processAddPMCDeliveryReview(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 新增或修改生产类型覆盖（交期评审生产类型手动覆盖，按合同号+排产编号+货号匹配）
-     * @param body (optional) 
-     * @return OK
-     */
-    saveProductionTypeOverride(body: ProductionTypeOverride | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/SaveProductionTypeOverride";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processSaveProductionTypeOverride(_response);
-        });
-    }
-
-    protected processSaveProductionTypeOverride(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 将已通过的交期评审退回待评审，并删除本次分析关联数据
-     * @param body (optional) 
-     * @return OK
-     */
-    returnDeliveryReview(body: ReturnDeliveryReviewRequestDto | undefined): Promise<ReturnDeliveryReviewResultDtoApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/ReturnDeliveryReview";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processReturnDeliveryReview(_response);
-        });
-    }
-
-    protected processReturnDeliveryReview(response: Response): Promise<ReturnDeliveryReviewResultDtoApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ReturnDeliveryReviewResultDtoApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ReturnDeliveryReviewResultDtoApiResponse>(null as any);
-    }
-
-    /**
-     * 根据货号获取产品资料
-     * @param body (optional) 
-     * @return OK
-     */
-    getPMCProductData(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/GetPMCProductData";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetPMCProductData(_response);
-        });
-    }
-
-    protected processGetPMCProductData(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 获取排产分析列表
-     * @param body (optional) 
-     * @return OK
-     */
-    schedulingAnalysisList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/SchedulingAnalysisList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processSchedulingAnalysisList(_response);
-        });
-    }
-
-    protected processSchedulingAnalysisList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 批量添加或更新工单销控表数据（存在则覆盖，不存在则新增）
-     * @param body (optional) 
-     * @return OK
-     */
-    addOrUpdateWorkOrderSalesControlList(body: WorkOrderSalesControl[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateWorkOrderSalesControlList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAddOrUpdateWorkOrderSalesControlList(_response);
-        });
-    }
-
-    protected processAddOrUpdateWorkOrderSalesControlList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 获取工单销控表列表
-     * @param body (optional) 
-     * @return OK
-     */
-    getWorkOrderSalesControlList(body: PMCRequestDto | undefined): Promise<WorkOrderSalesControlPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/GetWorkOrderSalesControlList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetWorkOrderSalesControlList(_response);
-        });
-    }
-
-    protected processGetWorkOrderSalesControlList(response: Response): Promise<WorkOrderSalesControlPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = WorkOrderSalesControlPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<WorkOrderSalesControlPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 批量删除工单销控表数据
-     * @param body (optional) 
-     * @return OK
-     */
-    deleteWorkOrderSalesControlList(body: string[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/DeleteWorkOrderSalesControlList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteWorkOrderSalesControlList(_response);
-        });
-    }
-
-    protected processDeleteWorkOrderSalesControlList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 批量添加或更新工单销控表明细数据（存在则覆盖，不存在则新增）
-     * @param body (optional) 
-     * @return OK
-     */
-    addOrUpdateWorkOrderSalesControlDetailList(body: WorkOrderSalesControlDetail[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateWorkOrderSalesControlDetailList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAddOrUpdateWorkOrderSalesControlDetailList(_response);
-        });
-    }
-
-    protected processAddOrUpdateWorkOrderSalesControlDetailList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 获取工单销控表明细列表
-     * @param body (optional) 
-     * @return OK
-     */
-    getWorkOrderSalesControlDetailList(body: PMCRequestDto | undefined): Promise<WorkOrderSalesControlDetailPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/GetWorkOrderSalesControlDetailList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetWorkOrderSalesControlDetailList(_response);
-        });
-    }
-
-    protected processGetWorkOrderSalesControlDetailList(response: Response): Promise<WorkOrderSalesControlDetailPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = WorkOrderSalesControlDetailPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<WorkOrderSalesControlDetailPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 批量删除工单销控表明细数据
-     * @param body (optional) 
-     * @return OK
-     */
-    deleteWorkOrderSalesControlDetailList(body: string[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/DeleteWorkOrderSalesControlDetailList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteWorkOrderSalesControlDetailList(_response);
-        });
-    }
-
-    protected processDeleteWorkOrderSalesControlDetailList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 批量添加或更新外产发运数据（存在则覆盖，不存在则新增）
-     * @param body (optional) 
-     * @return OK
-     */
-    addOrUpdateExternalProductionShipmentList(body: ExternalProductionShipment[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionShipmentList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAddOrUpdateExternalProductionShipmentList(_response);
-        });
-    }
-
-    protected processAddOrUpdateExternalProductionShipmentList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 批量添加或更新外产领料数据（存在则覆盖，不存在则新增）
-     * @param body (optional) 
-     * @return OK
-     */
-    addOrUpdateExternalProductionPickMaterialList(body: ExternalProductionPickMaterial[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionPickMaterialList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAddOrUpdateExternalProductionPickMaterialList(_response);
-        });
-    }
-
-    protected processAddOrUpdateExternalProductionPickMaterialList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 批量添加或更新外产生产数据（存在则覆盖，不存在则新增）
-     * @param body (optional) 
-     * @return OK
-     */
-    addOrUpdateExternalProductionList(body: ExternalProduction[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAddOrUpdateExternalProductionList(_response);
-        });
-    }
-
-    protected processAddOrUpdateExternalProductionList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 批量添加或更新外产入库数据（存在则覆盖，不存在则新增）
-     * @param body (optional) 
-     * @return OK
-     */
-    addOrUpdateExternalProductionWarehousingList(body: ExternalProductionWarehousing[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionWarehousingList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAddOrUpdateExternalProductionWarehousingList(_response);
-        });
-    }
-
-    protected processAddOrUpdateExternalProductionWarehousingList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 获取外产发运列表
-     * @param body (optional) 
-     * @return OK
-     */
-    getExternalProductionShipmentList(body: PMCRequestDto | undefined): Promise<ExternalProductionShipmentPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionShipmentList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetExternalProductionShipmentList(_response);
-        });
-    }
-
-    protected processGetExternalProductionShipmentList(response: Response): Promise<ExternalProductionShipmentPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ExternalProductionShipmentPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ExternalProductionShipmentPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 批量删除外产发运数据
-     * @param body (optional) 
-     * @return OK
-     */
-    deleteExternalProductionShipmentList(body: string[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionShipmentList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteExternalProductionShipmentList(_response);
-        });
-    }
-
-    protected processDeleteExternalProductionShipmentList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 获取外产领料列表
-     * @param body (optional) 
-     * @return OK
-     */
-    getExternalProductionPickMaterialList(body: PMCRequestDto | undefined): Promise<ExternalProductionPickMaterialPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionPickMaterialList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetExternalProductionPickMaterialList(_response);
-        });
-    }
-
-    protected processGetExternalProductionPickMaterialList(response: Response): Promise<ExternalProductionPickMaterialPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ExternalProductionPickMaterialPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ExternalProductionPickMaterialPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 批量删除外产领料数据
-     * @param body (optional) 
-     * @return OK
-     */
-    deleteExternalProductionPickMaterialList(body: string[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionPickMaterialList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteExternalProductionPickMaterialList(_response);
-        });
-    }
-
-    protected processDeleteExternalProductionPickMaterialList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 获取外产生产列表
-     * @param body (optional) 
-     * @return OK
-     */
-    getExternalProductionList(body: PMCRequestDto | undefined): Promise<ExternalProductionPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetExternalProductionList(_response);
-        });
-    }
-
-    protected processGetExternalProductionList(response: Response): Promise<ExternalProductionPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ExternalProductionPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ExternalProductionPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 根据编号查询单条外产生产数据
-     * @param body (optional) 
-     * @return OK
-     */
-    getExternalProductionByNo(body: string | undefined): Promise<ExternalProductionApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionByNo";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetExternalProductionByNo(_response);
-        });
-    }
-
-    protected processGetExternalProductionByNo(response: Response): Promise<ExternalProductionApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ExternalProductionApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ExternalProductionApiResponse>(null as any);
-    }
-
-    /**
-     * 批量删除外产生产数据
-     * @param body (optional) 
-     * @return OK
-     */
-    deleteExternalProductionList(body: string[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteExternalProductionList(_response);
-        });
-    }
-
-    protected processDeleteExternalProductionList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
-    }
-
-    /**
-     * 获取外产入库列表
-     * @param body (optional) 
-     * @return OK
-     */
-    getExternalProductionWarehousingList(body: PMCRequestDto | undefined): Promise<ExternalProductionWarehousingPagedResultApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionWarehousingList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetExternalProductionWarehousingList(_response);
-        });
-    }
-
-    protected processGetExternalProductionWarehousingList(response: Response): Promise<ExternalProductionWarehousingPagedResultApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ExternalProductionWarehousingPagedResultApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ExternalProductionWarehousingPagedResultApiResponse>(null as any);
-    }
-
-    /**
-     * 批量删除外产入库数据
-     * @param body (optional) 
-     * @return OK
-     */
-    deleteExternalProductionWarehousingList(body: string[] | undefined): Promise<ObjectApiResponse> {
-        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionWarehousingList";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteExternalProductionWarehousingList(_response);
-        });
-    }
-
-    protected processDeleteExternalProductionWarehousingList(response: Response): Promise<ObjectApiResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ObjectApiResponse.fromJS(resultData200);
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ObjectApiResponse>(null as any);
+        return Promise.resolve<ERPUserDtoApiResponse>(null as any);
     }
 
     /**
@@ -2021,9 +649,1385 @@ export class Service {
     }
 
     /**
+     * 转换交期评审列表(根据外销合同客户产品表)
+     * @param body (optional) 
+     * @return OK
+     */
+    convertToPMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<PMCDeliveryReviewPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/ConvertToPMCDeliveryReviewList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processConvertToPMCDeliveryReviewList(_response);
+        });
+    }
+
+    protected processConvertToPMCDeliveryReviewList(response: Response): Promise<PMCDeliveryReviewPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PMCDeliveryReviewPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PMCDeliveryReviewPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 获取交期评审列表
+     * @param body (optional) 
+     * @return OK
+     */
+    pMCDeliveryReviewList(body: PMCRequestDto | undefined): Promise<PMCDeliveryReviewPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/PMCDeliveryReviewList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPMCDeliveryReviewList(_response);
+        });
+    }
+
+    protected processPMCDeliveryReviewList(response: Response): Promise<PMCDeliveryReviewPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PMCDeliveryReviewPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PMCDeliveryReviewPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 新增交期评审记录
+     * @param body (optional) 
+     * @return OK
+     */
+    addPMCDeliveryReview(body: PMCDeliveryReview | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddPMCDeliveryReview";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddPMCDeliveryReview(_response);
+        });
+    }
+
+    protected processAddPMCDeliveryReview(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 新增或修改生产类型覆盖(按合同号+排产编号+货号匹配)
+     * @param body (optional) 
+     * @return OK
+     */
+    saveProductionTypeOverride(body: ProductionTypeOverride | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/SaveProductionTypeOverride";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSaveProductionTypeOverride(_response);
+        });
+    }
+
+    protected processSaveProductionTypeOverride(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 将已通过的交期评审退回待评审,并删除本次分析关联数据
+     * @param body (optional) 
+     * @return OK
+     */
+    returnDeliveryReview(body: ReturnDeliveryReviewRequestDto | undefined): Promise<ReturnDeliveryReviewResultDtoApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/ReturnDeliveryReview";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReturnDeliveryReview(_response);
+        });
+    }
+
+    protected processReturnDeliveryReview(response: Response): Promise<ReturnDeliveryReviewResultDtoApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ReturnDeliveryReviewResultDtoApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ReturnDeliveryReviewResultDtoApiResponse>(null as any);
+    }
+
+    /**
+     * 批量添加或更新外产发运数据(存在则覆盖,不存在则新增)
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateExternalProductionShipmentList(body: ExternalProductionShipment[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionShipmentList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateExternalProductionShipmentList(_response);
+        });
+    }
+
+    protected processAddOrUpdateExternalProductionShipmentList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取外产发运列表
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionShipmentList(body: PMCRequestDto | undefined): Promise<ExternalProductionShipmentPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionShipmentList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionShipmentList(_response);
+        });
+    }
+
+    protected processGetExternalProductionShipmentList(response: Response): Promise<ExternalProductionShipmentPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ExternalProductionShipmentPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ExternalProductionShipmentPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 批量删除外产发运数据
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteExternalProductionShipmentList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionShipmentList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteExternalProductionShipmentList(_response);
+        });
+    }
+
+    protected processDeleteExternalProductionShipmentList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 批量添加或更新外产领料数据(存在则覆盖,不存在则新增)
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateExternalProductionPickMaterialList(body: ExternalProductionPickMaterial[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionPickMaterialList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateExternalProductionPickMaterialList(_response);
+        });
+    }
+
+    protected processAddOrUpdateExternalProductionPickMaterialList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取外产领料列表
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionPickMaterialList(body: PMCRequestDto | undefined): Promise<ExternalProductionPickMaterialPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionPickMaterialList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionPickMaterialList(_response);
+        });
+    }
+
+    protected processGetExternalProductionPickMaterialList(response: Response): Promise<ExternalProductionPickMaterialPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ExternalProductionPickMaterialPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ExternalProductionPickMaterialPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 批量删除外产领料数据
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteExternalProductionPickMaterialList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionPickMaterialList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteExternalProductionPickMaterialList(_response);
+        });
+    }
+
+    protected processDeleteExternalProductionPickMaterialList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 批量添加或更新外产生产数据(存在则覆盖,不存在则新增)
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateExternalProductionList(body: ExternalProduction[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateExternalProductionList(_response);
+        });
+    }
+
+    protected processAddOrUpdateExternalProductionList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取外产生产列表
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionList(body: PMCRequestDto | undefined): Promise<ExternalProductionPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionList(_response);
+        });
+    }
+
+    protected processGetExternalProductionList(response: Response): Promise<ExternalProductionPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ExternalProductionPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ExternalProductionPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 根据编号查询单条外产生产数据
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionByNo(body: string | undefined): Promise<ExternalProductionApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionByNo";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionByNo(_response);
+        });
+    }
+
+    protected processGetExternalProductionByNo(response: Response): Promise<ExternalProductionApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ExternalProductionApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ExternalProductionApiResponse>(null as any);
+    }
+
+    /**
+     * 批量删除外产生产数据
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteExternalProductionList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteExternalProductionList(_response);
+        });
+    }
+
+    protected processDeleteExternalProductionList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 批量添加或更新外产入库数据(存在则覆盖,不存在则新增)
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateExternalProductionWarehousingList(body: ExternalProductionWarehousing[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateExternalProductionWarehousingList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateExternalProductionWarehousingList(_response);
+        });
+    }
+
+    protected processAddOrUpdateExternalProductionWarehousingList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取外产入库列表
+     * @param body (optional) 
+     * @return OK
+     */
+    getExternalProductionWarehousingList(body: PMCRequestDto | undefined): Promise<ExternalProductionWarehousingPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetExternalProductionWarehousingList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetExternalProductionWarehousingList(_response);
+        });
+    }
+
+    protected processGetExternalProductionWarehousingList(response: Response): Promise<ExternalProductionWarehousingPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ExternalProductionWarehousingPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ExternalProductionWarehousingPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 批量删除外产入库数据
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteExternalProductionWarehousingList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteExternalProductionWarehousingList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteExternalProductionWarehousingList(_response);
+        });
+    }
+
+    protected processDeleteExternalProductionWarehousingList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取产品信息列表
+     * @param body (optional) 
+     * @return OK
+     */
+    productListInfo(body: PMCRequestDto | undefined): Promise<PMCProductInfoPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/ProductListInfo";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processProductListInfo(_response);
+        });
+    }
+
+    protected processProductListInfo(response: Response): Promise<PMCProductInfoPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PMCProductInfoPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PMCProductInfoPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 根据货号获取产品资料
+     * @param body (optional) 
+     * @return OK
+     */
+    getPMCProductData(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetPMCProductData";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPMCProductData(_response);
+        });
+    }
+
+    protected processGetPMCProductData(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 根据货号获取产品资料装配清单
+     * @param body (optional) 
+     * @return OK
+     */
+    productDataAssemblyList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/ProductDataAssemblyList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processProductDataAssemblyList(_response);
+        });
+    }
+
+    protected processProductDataAssemblyList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 根据货号获取产品资料装配清单中中间件等于 0 的记录
+     * @param body (optional) 
+     * @return OK
+     */
+    productDataAssemblyListByItemNo(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/ProductDataAssemblyListByItemNo";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processProductDataAssemblyListByItemNo(_response);
+        });
+    }
+
+    protected processProductDataAssemblyListByItemNo(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 检查线圈货号是否存在于装配清单中
+     * @param body (optional) 
+     * @return OK
+     */
+    checkAssemblyList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/CheckAssemblyList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCheckAssemblyList(_response);
+        });
+    }
+
+    protected processCheckAssemblyList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 按关键字模糊查询产品资料中的线圈(货号包含关键字即可),最多返回 50 条
+     * @param body (optional) 
+     * @return OK
+     */
+    searchCoilsByKeyword(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/SearchCoilsByKeyword";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSearchCoilsByKeyword(_response);
+        });
+    }
+
+    protected processSearchCoilsByKeyword(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 按货号模糊查询产品资料(不区分线圈),最多返回 50 条
+     * @param body (optional) 
+     * @return OK
+     */
+    searchProductDataByKeyword(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/SearchProductDataByKeyword";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSearchProductDataByKeyword(_response);
+        });
+    }
+
+    protected processSearchProductDataByKeyword(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取排产分析列表
+     * @param body (optional) 
+     * @return OK
+     */
+    schedulingAnalysisList(body: PMCRequestDto | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/SchedulingAnalysisList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSchedulingAnalysisList(_response);
+        });
+    }
+
+    protected processSchedulingAnalysisList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 批量添加或更新工单销控表数据(存在则覆盖,不存在则新增)
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateWorkOrderSalesControlList(body: WorkOrderSalesControl[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateWorkOrderSalesControlList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateWorkOrderSalesControlList(_response);
+        });
+    }
+
+    protected processAddOrUpdateWorkOrderSalesControlList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取工单销控表列表
+     * @param body (optional) 
+     * @return OK
+     */
+    getWorkOrderSalesControlList(body: PMCRequestDto | undefined): Promise<WorkOrderSalesControlPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetWorkOrderSalesControlList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetWorkOrderSalesControlList(_response);
+        });
+    }
+
+    protected processGetWorkOrderSalesControlList(response: Response): Promise<WorkOrderSalesControlPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = WorkOrderSalesControlPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<WorkOrderSalesControlPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 批量删除工单销控表数据
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteWorkOrderSalesControlList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteWorkOrderSalesControlList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteWorkOrderSalesControlList(_response);
+        });
+    }
+
+    protected processDeleteWorkOrderSalesControlList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 批量添加或更新工单销控表明细数据(存在则覆盖,不存在则新增)
+     * @param body (optional) 
+     * @return OK
+     */
+    addOrUpdateWorkOrderSalesControlDetailList(body: WorkOrderSalesControlDetail[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/AddOrUpdateWorkOrderSalesControlDetailList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddOrUpdateWorkOrderSalesControlDetailList(_response);
+        });
+    }
+
+    protected processAddOrUpdateWorkOrderSalesControlDetailList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
+     * 获取工单销控表明细列表
+     * @param body (optional) 
+     * @return OK
+     */
+    getWorkOrderSalesControlDetailList(body: PMCRequestDto | undefined): Promise<WorkOrderSalesControlDetailPagedResultApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/GetWorkOrderSalesControlDetailList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetWorkOrderSalesControlDetailList(_response);
+        });
+    }
+
+    protected processGetWorkOrderSalesControlDetailList(response: Response): Promise<WorkOrderSalesControlDetailPagedResultApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = WorkOrderSalesControlDetailPagedResultApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<WorkOrderSalesControlDetailPagedResultApiResponse>(null as any);
+    }
+
+    /**
+     * 批量删除工单销控表明细数据
+     * @param body (optional) 
+     * @return OK
+     */
+    deleteWorkOrderSalesControlDetailList(body: string[] | undefined): Promise<ObjectApiResponse> {
+        let url_ = this.baseUrl + "/api/PMC/DeleteWorkOrderSalesControlDetailList";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteWorkOrderSalesControlDetailList(_response);
+        });
+    }
+
+    protected processDeleteWorkOrderSalesControlDetailList(response: Response): Promise<ObjectApiResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ObjectApiResponse.fromJS(resultData200);
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ObjectApiResponse>(null as any);
+    }
+
+    /**
      * 生成授权跳转URL
-     * @param redirectUri (optional) 授权后跳转的回调地址
-     * @param state (optional) 状态参数
+     * @param redirectUri (optional) 
+     * @param state (optional) 
      * @return OK
      */
     authorizeUrl(redirectUri: string | undefined, state: string | undefined): Promise<void> {
@@ -2066,8 +2070,8 @@ export class Service {
 
     /**
      * 授权回调处理
-     * @param code (optional) 授权code
-     * @param state (optional) 状态参数
+     * @param code (optional) 
+     * @param state (optional) 
      * @return OK
      */
     callback(code: string | undefined, state: string | undefined): Promise<void> {
@@ -2110,7 +2114,6 @@ export class Service {
 
     /**
      * 直接通过userid获取用户信息
-     * @param userId 用户ID
      * @return OK
      */
     user(userId: string): Promise<void> {
@@ -2147,7 +2150,7 @@ export class Service {
     }
 
     /**
-     * 获取指定部门下的成员列表（包含详情）
+     * 获取指定部门下的成员列表(包含详情)
      * @param body (optional) 
      * @return OK
      */
@@ -2190,6 +2193,7 @@ export class Service {
     }
 
     /**
+     * 获取部门列表(树形结构)
      * @return OK
      */
     departments(): Promise<ObjectApiResponse> {
@@ -2227,6 +2231,7 @@ export class Service {
     }
 
     /**
+     * 发送文本 / Markdown 消息
      * @param body (optional) 
      * @return OK
      */
@@ -2269,6 +2274,7 @@ export class Service {
     }
 
     /**
+     * 发送文本卡片消息
      * @param body (optional) 
      * @return OK
      */
@@ -2311,6 +2317,7 @@ export class Service {
     }
 
     /**
+     * 创建智能表格
      * @param body (optional) 
      * @return OK
      */
@@ -2353,6 +2360,7 @@ export class Service {
     }
 
     /**
+     * 向智能表格添加记录
      * @param docId (optional) 
      * @param sheetId (optional) 
      * @return OK
@@ -2400,6 +2408,7 @@ export class Service {
     }
 
     /**
+     * 获取智能表格记录
      * @param docId (optional) 
      * @param sheetId (optional) 
      * @return OK
@@ -2533,7 +2542,7 @@ export class Service {
     }
 
     /**
-     * 获取所有已创建的群聊列表（从数据库查询）
+     * 获取所有已创建的群聊列表(从数据库查询)
      * @return OK
      */
     groupChats(): Promise<ObjectApiResponse> {
@@ -2571,6 +2580,7 @@ export class Service {
     }
 
     /**
+     * 创建智能表格并发送通知
      * @param body (optional) 
      * @return OK
      */
@@ -2613,7 +2623,7 @@ export class Service {
     }
 
     /**
-     * 获取 JS-SDK 配置（用于前端 wx.config 鉴权，调用扫码等能力）
+     * 获取 JS-SDK 配置(用于前端 wx.config 鉴权,调用扫码等能力)
      * @param url (optional) 
      * @return OK
      */
@@ -3012,13 +3022,13 @@ export interface IDepartmentRequestDto {
     departmentId?: number;
 }
 
-export class ERPUser implements IERPUser {
+/** ERP 用户校验响应(不含密码字段)。 */
+export class ERPUserDto implements IERPUserDto {
     iD?: string | undefined;
     username?: string | undefined;
     usercode?: string | undefined;
-    upwd?: string | undefined;
 
-    constructor(data?: IERPUser) {
+    constructor(data?: IERPUserDto) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3032,13 +3042,12 @@ export class ERPUser implements IERPUser {
             this.iD = _data["ID"];
             this.username = _data["username"];
             this.usercode = _data["usercode"];
-            this.upwd = _data["upwd"];
         }
     }
 
-    static fromJS(data: any): ERPUser {
+    static fromJS(data: any): ERPUserDto {
         data = typeof data === 'object' ? data : {};
-        let result = new ERPUser();
+        let result = new ERPUserDto();
         result.init(data);
         return result;
     }
@@ -3048,25 +3057,25 @@ export class ERPUser implements IERPUser {
         data["ID"] = this.iD;
         data["username"] = this.username;
         data["usercode"] = this.usercode;
-        data["upwd"] = this.upwd;
         return data;
     }
 }
 
-export interface IERPUser {
+/** ERP 用户校验响应(不含密码字段)。 */
+export interface IERPUserDto {
     iD?: string | undefined;
     username?: string | undefined;
     usercode?: string | undefined;
-    upwd?: string | undefined;
 }
 
-export class ERPUserApiResponse implements IERPUserApiResponse {
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
+export class ERPUserDtoApiResponse implements IERPUserDtoApiResponse {
     success?: boolean;
     message?: string | undefined;
-    data?: ERPUser;
+    data?: ERPUserDto;
     timestamp?: Date;
 
-    constructor(data?: IERPUserApiResponse) {
+    constructor(data?: IERPUserDtoApiResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3079,14 +3088,14 @@ export class ERPUserApiResponse implements IERPUserApiResponse {
         if (_data) {
             this.success = _data["Success"];
             this.message = _data["Message"];
-            this.data = _data["Data"] ? ERPUser.fromJS(_data["Data"]) : undefined as any;
+            this.data = _data["Data"] ? ERPUserDto.fromJS(_data["Data"]) : undefined as any;
             this.timestamp = _data["Timestamp"] ? new Date(_data["Timestamp"].toString()) : undefined as any;
         }
     }
 
-    static fromJS(data: any): ERPUserApiResponse {
+    static fromJS(data: any): ERPUserDtoApiResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new ERPUserApiResponse();
+        let result = new ERPUserDtoApiResponse();
         result.init(data);
         return result;
     }
@@ -3101,10 +3110,11 @@ export class ERPUserApiResponse implements IERPUserApiResponse {
     }
 }
 
-export interface IERPUserApiResponse {
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
+export interface IERPUserDtoApiResponse {
     success?: boolean;
     message?: string | undefined;
-    data?: ERPUser;
+    data?: ERPUserDto;
     timestamp?: Date;
 }
 
@@ -3178,6 +3188,8 @@ export class ExternalProduction implements IExternalProduction {
     仓库名称?: string | undefined;
     备注?: string | undefined;
     用量?: string | undefined;
+    /** 打印时间(前端触发打印动作时更新该列) */
+    打印时间?: string | undefined;
 
     constructor(data?: IExternalProduction) {
         if (data) {
@@ -3216,6 +3228,7 @@ export class ExternalProduction implements IExternalProduction {
             this.仓库名称 = _data["仓库名称"];
             this.备注 = _data["备注"];
             this.用量 = _data["用量"];
+            this.打印时间 = _data["打印时间"];
         }
     }
 
@@ -3254,6 +3267,7 @@ export class ExternalProduction implements IExternalProduction {
         data["仓库名称"] = this.仓库名称;
         data["备注"] = this.备注;
         data["用量"] = this.用量;
+        data["打印时间"] = this.打印时间;
         return data;
     }
 }
@@ -3286,8 +3300,11 @@ export interface IExternalProduction {
     仓库名称?: string | undefined;
     备注?: string | undefined;
     用量?: string | undefined;
+    /** 打印时间(前端触发打印动作时更新该列) */
+    打印时间?: string | undefined;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class ExternalProductionApiResponse implements IExternalProductionApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -3329,6 +3346,7 @@ export class ExternalProductionApiResponse implements IExternalProductionApiResp
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IExternalProductionApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -3522,6 +3540,7 @@ export interface IExternalProductionBOMPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class ExternalProductionBOMPagedResultApiResponse implements IExternalProductionBOMPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -3563,6 +3582,7 @@ export class ExternalProductionBOMPagedResultApiResponse implements IExternalPro
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IExternalProductionBOMPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -3626,6 +3646,7 @@ export interface IExternalProductionPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class ExternalProductionPagedResultApiResponse implements IExternalProductionPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -3667,6 +3688,7 @@ export class ExternalProductionPagedResultApiResponse implements IExternalProduc
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IExternalProductionPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -3824,6 +3846,7 @@ export interface IExternalProductionPickMaterialPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class ExternalProductionPickMaterialPagedResultApiResponse implements IExternalProductionPickMaterialPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -3865,6 +3888,7 @@ export class ExternalProductionPickMaterialPagedResultApiResponse implements IEx
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IExternalProductionPickMaterialPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4018,6 +4042,7 @@ export interface IExternalProductionShipmentPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class ExternalProductionShipmentPagedResultApiResponse implements IExternalProductionShipmentPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4059,6 +4084,7 @@ export class ExternalProductionShipmentPagedResultApiResponse implements IExtern
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IExternalProductionShipmentPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4212,6 +4238,7 @@ export interface IExternalProductionWarehousingPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class ExternalProductionWarehousingPagedResultApiResponse implements IExternalProductionWarehousingPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4253,6 +4280,7 @@ export class ExternalProductionWarehousingPagedResultApiResponse implements IExt
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IExternalProductionWarehousingPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4492,6 +4520,7 @@ export interface ILoginResultDto {
     user?: UserInfoDto;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class LoginResultDtoApiResponse implements ILoginResultDtoApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4533,6 +4562,7 @@ export class LoginResultDtoApiResponse implements ILoginResultDtoApiResponse {
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface ILoginResultDtoApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4540,6 +4570,7 @@ export interface ILoginResultDtoApiResponse {
     timestamp?: Date;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class ObjectApiResponse implements IObjectApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4581,6 +4612,7 @@ export class ObjectApiResponse implements IObjectApiResponse {
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IObjectApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4792,6 +4824,7 @@ export interface IPMCDeliveryReviewPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class PMCDeliveryReviewPagedResultApiResponse implements IPMCDeliveryReviewPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -4833,6 +4866,7 @@ export class PMCDeliveryReviewPagedResultApiResponse implements IPMCDeliveryRevi
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IPMCDeliveryReviewPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -5046,6 +5080,7 @@ export interface IPMCProductInfoPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class PMCProductInfoPagedResultApiResponse implements IPMCProductInfoPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -5087,6 +5122,7 @@ export class PMCProductInfoPagedResultApiResponse implements IPMCProductInfoPage
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IPMCProductInfoPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -5502,6 +5538,7 @@ export interface IReturnDeliveryReviewResultDto {
     workOrderDeletedCount?: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class ReturnDeliveryReviewResultDtoApiResponse implements IReturnDeliveryReviewResultDtoApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -5543,6 +5580,7 @@ export class ReturnDeliveryReviewResultDtoApiResponse implements IReturnDelivery
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IReturnDeliveryReviewResultDtoApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -5614,6 +5652,7 @@ export interface ISendMessageDto {
     msgType?: WechatWorkMessageType;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class StringListApiResponse implements IStringListApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -5663,6 +5702,7 @@ export class StringListApiResponse implements IStringListApiResponse {
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IStringListApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -6088,6 +6128,7 @@ export interface IWorkOrderSalesControlDetailPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class WorkOrderSalesControlDetailPagedResultApiResponse implements IWorkOrderSalesControlDetailPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -6129,6 +6170,7 @@ export class WorkOrderSalesControlDetailPagedResultApiResponse implements IWorkO
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IWorkOrderSalesControlDetailPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -6192,6 +6234,7 @@ export interface IWorkOrderSalesControlPagedResult {
     pageSize: number;
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export class WorkOrderSalesControlPagedResultApiResponse implements IWorkOrderSalesControlPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
@@ -6233,6 +6276,7 @@ export class WorkOrderSalesControlPagedResultApiResponse implements IWorkOrderSa
     }
 }
 
+/** 统一 API 响应包装。前端契约:{ Success, Message, Data, Timestamp }。 */
 export interface IWorkOrderSalesControlPagedResultApiResponse {
     success?: boolean;
     message?: string | undefined;
