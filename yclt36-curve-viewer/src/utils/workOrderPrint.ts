@@ -196,19 +196,19 @@ function renderMaterialTable(materials: MaterialPrintItem[]): string {
     <table class="material-table">
       <colgroup>
         <col style="width: 4%;" />
-        <col style="width: 7%;" />
-        <col style="width: 12%;" />
-        <col style="width: 17%;" />
-        <col style="width: 10%;" />
         <col style="width: 6%;" />
-        <col style="width: 5%;" />
-        <col style="width: 5%;" />
+        <col style="width: 11%;" />
+        <col style="width: 15%;" />
         <col style="width: 9%;" />
-        <col style="width: 6%;" />
+        <col style="width: 5%;" />
+        <col style="width: 4%;" />
+        <col style="width: 4%;" />
         <col style="width: 8%;" />
         <col style="width: 5%;" />
         <col style="width: 6%;" />
-        <col style="width: 5%;" />
+        <col style="width: 4%;" />
+        <col style="width: 8%;" />
+        <col style="width: 6%;" />
         <col style="width: 5%;" />
       </colgroup>
       <thead>
@@ -347,7 +347,7 @@ async function buildHtml(data: WorkOrderPrintData): Promise<string> {
             padding: 1mm;
           }
           .qr-cell-mid {
-            width: 8%;
+            width: 10%;
             text-align: center;
             vertical-align: middle;
             padding: 0.5mm;
@@ -358,15 +358,18 @@ async function buildHtml(data: WorkOrderPrintData): Promise<string> {
             align-items: center;
             justify-content: center;
             gap: 0.5mm;
+            max-width: 100%;
           }
           .qr-img {
-            width: 25mm;
-            height: 25mm;
+            width: 20mm;
+            height: 20mm;
+            max-width: 100%;
             display: block;
           }
           .qr-placeholder {
-            width: 25mm;
-            height: 25mm;
+            width: 20mm;
+            height: 20mm;
+            max-width: 100%;
             border: 1px dashed #999;
           }
           .qr-label {
@@ -379,19 +382,26 @@ async function buildHtml(data: WorkOrderPrintData): Promise<string> {
           .material-section {
             margin-top: 2mm;
           }
+          .material-table {
+            table-layout: fixed !important;
+            width: 100% !important;
+            max-width: 100%;
+          }
           .material-table th,
           .material-table td {
             border: 1px solid #000;
-            padding: 1mm 0.8mm;
+            padding: 1mm 0.5mm;
             text-align: center;
             vertical-align: middle;
             font-size: 8pt;
             line-height: 1.2;
             word-break: break-all;
+            overflow: hidden;
           }
           .material-table th {
             font-weight: bold;
             background: #fff;
+            white-space: nowrap;
           }
           .material-table td:nth-child(4),
           .material-table td:nth-child(3) {
