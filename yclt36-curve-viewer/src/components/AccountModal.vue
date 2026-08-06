@@ -20,25 +20,13 @@
             <a-input :value="userName" disabled />
           </a-form-item>
           <a-form-item name="email" label="邮箱">
-            <a-input
-              v-model:value="profileForm.email"
-              placeholder="请输入邮箱地址"
-              allow-clear
-              :max-length="100"
-            />
+            <a-input v-model:value="profileForm.email" placeholder="请输入邮箱地址" allow-clear :max-length="100" />
           </a-form-item>
           <a-form-item name="phoneNumber" label="手机号">
-            <a-input
-              v-model:value="profileForm.phoneNumber"
-              placeholder="请输入手机号"
-              allow-clear
-              :max-length="20"
-            />
+            <a-input v-model:value="profileForm.phoneNumber" placeholder="请输入手机号" allow-clear :max-length="20" />
           </a-form-item>
           <a-form-item class="form-actions">
-            <a-button type="primary" html-type="submit" :loading="profileLoading">
-              保存资料
-            </a-button>
+            <a-button type="primary" html-type="submit" :loading="profileLoading"> 保存资料 </a-button>
           </a-form-item>
         </a-form>
       </a-tab-pane>
@@ -73,9 +61,7 @@
             />
           </a-form-item>
           <a-form-item class="form-actions">
-            <a-button type="primary" html-type="submit" :loading="passwordLoading">
-              修改密码
-            </a-button>
+            <a-button type="primary" html-type="submit" :loading="passwordLoading"> 修改密码 </a-button>
           </a-form-item>
         </a-form>
       </a-tab-pane>
@@ -84,89 +70,88 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
-import { message } from 'ant-design-vue'
-import type { Rule } from 'ant-design-vue/es/form'
-import { useAuth } from '@/composables/useAuth'
+import { reactive, ref, watch } from 'vue';
+import { message } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import { useAuth } from '@/composables/useAuth';
 
 const props = defineProps<{
-  open: boolean
-}>()
+  open: boolean;
+}>();
 
 const emit = defineEmits<{
-  'update:open': [value: boolean]
-}>()
+  'update:open': [value: boolean];
+}>();
 
-const { user, updateProfile, changePassword } = useAuth()
+const { user, updateProfile, changePassword } = useAuth();
 
-const visible = ref(props.open)
-const activeKey = ref('profile')
-const profileFormRef = ref()
-const passwordFormRef = ref()
-const profileLoading = ref(false)
-const passwordLoading = ref(false)
+const visible = ref(props.open);
+const activeKey = ref('profile');
+const profileFormRef = ref();
+const passwordFormRef = ref();
+const profileLoading = ref(false);
+const passwordLoading = ref(false);
 
-const userName = ref(user.value?.userName || '')
+const userName = ref(user.value?.userName || '');
 
 const profileForm = reactive({
   email: '',
   phoneNumber: ''
-})
+});
 
 const passwordForm = reactive({
   oldPassword: '',
   newPassword: '',
   confirmPassword: ''
-})
+});
 
-watch(() => props.open, (val) => {
-  visible.value = val
-  if (val) {
-    resetProfileForm()
-    activeKey.value = 'profile'
+watch(
+  () => props.open,
+  (val) => {
+    visible.value = val;
+    if (val) {
+      resetProfileForm();
+      activeKey.value = 'profile';
+    }
   }
-})
+);
 
 watch(visible, (val) => {
-  emit('update:open', val)
-})
+  emit('update:open', val);
+});
 
 function resetProfileForm() {
-  profileForm.email = user.value?.email || ''
-  profileForm.phoneNumber = user.value?.phoneNumber || ''
-  userName.value = user.value?.userName || ''
+  profileForm.email = user.value?.email || '';
+  profileForm.phoneNumber = user.value?.phoneNumber || '';
+  userName.value = user.value?.userName || '';
 }
 
 function handleCancel() {
-  visible.value = false
-  passwordFormRef.value?.resetFields()
+  visible.value = false;
+  passwordFormRef.value?.resetFields();
 }
 
-const validateEmail = (_rule: any, value: string) => {
-  if (!value) return Promise.resolve()
-  const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailReg.test(value) ? Promise.resolve() : Promise.reject(new Error('邮箱格式不正确'))
-}
+const validateEmail = (_rule: Rule, value: string) => {
+  if (!value) return Promise.resolve();
+  const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailReg.test(value) ? Promise.resolve() : Promise.reject(new Error('邮箱格式不正确'));
+};
 
-const validatePhone = (_rule: any, value: string) => {
-  if (!value) return Promise.resolve()
-  const phoneReg = /^1[3-9]\d{9}$/
-  return phoneReg.test(value) ? Promise.resolve() : Promise.reject(new Error('手机号格式不正确'))
-}
+const validatePhone = (_rule: Rule, value: string) => {
+  if (!value) return Promise.resolve();
+  const phoneReg = /^1[3-9]\d{9}$/;
+  return phoneReg.test(value) ? Promise.resolve() : Promise.reject(new Error('手机号格式不正确'));
+};
 
-const validateConfirmPassword = (_rule: any, value: string) => {
-  if (!value) return Promise.reject(new Error('请再次输入新密码'))
-  return value === passwordForm.newPassword ? Promise.resolve() : Promise.reject(new Error('两次输入的密码不一致'))
-}
+const validateConfirmPassword = (_rule: Rule, value: string) => {
+  if (!value) return Promise.reject(new Error('请再次输入新密码'));
+  return value === passwordForm.newPassword ? Promise.resolve() : Promise.reject(new Error('两次输入的密码不一致'));
+};
 
 const profileRules: Record<string, Rule[]> = {
-  email: [
-    { validator: validateEmail, trigger: 'blur' }
-  ],
-  phoneNumber: [
-    { validator: validatePhone, trigger: 'blur' }
-  ]
-}
+  email: [{ validator: validateEmail, trigger: 'blur' }],
+  phoneNumber: [{ validator: validatePhone, trigger: 'blur' }]
+};
 
 const passwordRules: Record<string, Rule[]> = {
   oldPassword: [
@@ -181,41 +166,52 @@ const passwordRules: Record<string, Rule[]> = {
     { required: true, message: '请再次输入新密码', trigger: 'blur' },
     { validator: validateConfirmPassword, trigger: 'blur' }
   ]
+};
+
+/** 从任意异常中提取可展示的错误信息（兼容 axios 响应体与普通 Error） */
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    const withResponse = error as Error & {
+      response?: { data?: { Message?: string; message?: string } };
+    };
+    return (
+      withResponse.response?.data?.Message || withResponse.response?.data?.message || withResponse.message || fallback
+    );
+  }
+  return fallback;
 }
 
 /** 提交更新个人资料 */
 async function handleUpdateProfile() {
   try {
-    profileLoading.value = true
+    profileLoading.value = true;
     await updateProfile({
       email: profileForm.email.trim() || undefined,
       phoneNumber: profileForm.phoneNumber.trim() || undefined
-    })
-    message.success('个人资料已更新')
-  } catch (err: any) {
-    const msg = err?.response?.data?.Message || err?.response?.data?.message || err?.message || '更新资料失败'
-    message.error(msg)
+    });
+    message.success('个人资料已更新');
+  } catch (err) {
+    message.error(getErrorMessage(err, '更新资料失败'));
   } finally {
-    profileLoading.value = false
+    profileLoading.value = false;
   }
 }
 
 /** 提交修改密码 */
 async function handleChangePassword() {
   try {
-    passwordLoading.value = true
+    passwordLoading.value = true;
     await changePassword({
       oldPassword: passwordForm.oldPassword,
       newPassword: passwordForm.newPassword
-    })
-    message.success('密码修改成功')
-    passwordFormRef.value?.resetFields()
-    activeKey.value = 'profile'
-  } catch (err: any) {
-    const msg = err?.response?.data?.Message || err?.response?.data?.message || err?.message || '修改密码失败'
-    message.error(msg)
+    });
+    message.success('密码修改成功');
+    passwordFormRef.value?.resetFields();
+    activeKey.value = 'profile';
+  } catch (err) {
+    message.error(getErrorMessage(err, '修改密码失败'));
   } finally {
-    passwordLoading.value = false
+    passwordLoading.value = false;
   }
 }
 </script>

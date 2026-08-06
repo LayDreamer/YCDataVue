@@ -1,4 +1,6 @@
-import { ApiException, PMCRequestDto } from '@/api-generated/api';
+import { PMCRequestDto } from '@/api-generated/api';
+
+export { toServiceError } from './error';
 
 export interface PagedResult<T> {
   items: T[];
@@ -14,29 +16,31 @@ export function withPaging(request?: PMCRequestDto, defaultPageSize = 10): PMCRe
   return result;
 }
 
-export function normalizePagedResult<T>(data: any, request?: PMCRequestDto): PagedResult<T> {
+export function normalizePagedResult<T>(data: unknown, request?: PMCRequestDto): PagedResult<T> {
   if (Array.isArray(data)) {
     return {
-      items: data,
+      items: data as T[],
       total: data.length,
       page: request?.page || 1,
-      pageSize: request?.pageSize || data.length || 20,
+      pageSize: request?.pageSize || data.length || 20
     };
   }
 
-  const items = data?.items ?? data?.Items ?? [];
+  // 后端分页响应（可能为 PascalCase 或 camelCase），字段形状不确定
+  const record = data as Record<string, unknown> | null | undefined;
+  const items = record?.items ?? record?.Items ?? [];
   return {
-    items: Array.isArray(items) ? items : [],
-    total: Number(data?.total ?? data?.Total ?? items.length ?? 0),
-    page: Number(data?.page ?? data?.Page ?? request?.page ?? 1),
-    pageSize: Number(data?.pageSize ?? data?.PageSize ?? request?.pageSize ?? 20),
+    items: Array.isArray(items) ? (items as T[]) : [],
+    total: Number(record?.total ?? record?.Total ?? (Array.isArray(items) ? items.length : 0) ?? 0),
+    page: Number(record?.page ?? record?.Page ?? request?.page ?? 1),
+    pageSize: Number(record?.pageSize ?? record?.PageSize ?? request?.pageSize ?? 20)
   };
 }
 
 export async function collectAllPagedItems<T>(
   loadPage: (request: PMCRequestDto) => Promise<PagedResult<T>>,
   request?: PMCRequestDto,
-  maxItems = 10_000,
+  maxItems = 10_000
 ): Promise<T[]> {
   const baseRequest = withPaging(request, 100);
   const items: T[] = [];
@@ -54,29 +58,4 @@ export async function collectAllPagedItems<T>(
   }
 
   return items.slice(0, maxItems);
-}
-
-export function toServiceError(error: unknown, fallback: string): Error & { status?: number } {
-  let message = fallback;
-  let status: number | undefined;
-
-  if (error instanceof ApiException) {
-    status = error.status;
-    try {
-      const body = JSON.parse(error.response || '{}');
-      message = body.message || body.Message || body.title || message;
-    } catch {
-      message = error.message || message;
-    }
-  } else if (error instanceof Error) {
-    message = error.message || message;
-  }
-
-  if (status === 409 && message === fallback) {
-    message = '数据已被其他用户修改，请刷新后重试';
-  }
-
-  const result = new Error(message) as Error & { status?: number };
-  result.status = status;
-  return result;
 }

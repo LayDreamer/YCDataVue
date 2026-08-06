@@ -1,13 +1,13 @@
 <template>
   <a-layout class="app-container" :class="{ 'layout-narrow': isNarrowLayout }">
     <!-- 左侧导航栏 -->
-    <a-layout-sider 
-      v-model:collapsed="collapsed" 
-      :trigger="null" 
-      collapsible 
+    <a-layout-sider
+      v-model:collapsed="collapsed"
+      :trigger="null"
+      collapsible
       breakpoint="lg"
-      :width="220" 
-      :collapsed-width="collapsedSiderWidth" 
+      :width="220"
+      :collapsed-width="collapsedSiderWidth"
       class="sider"
     >
       <div class="sider-trigger">
@@ -45,7 +45,7 @@
       </a-menu>
     </a-layout-sider>
 
-      <!-- 移动端遮罩层：点击关闭侧边栏 -->
+    <!-- 移动端遮罩层：点击关闭侧边栏 -->
     <div v-if="isNarrowLayout && !collapsed" class="mobile-mask" @click="collapsed = true" />
 
     <!-- 右侧内容区 -->
@@ -69,9 +69,7 @@
           </div>
           <div class="header-actions">
             <a-badge :count="notificationCount" :offset="[-5, 5]">
-              <a-button class="header-action-btn" @click="showNotifications = true">
-                <BellOutlined /> 通知
-              </a-button>
+              <a-button class="header-action-btn" @click="showNotifications = true"> <BellOutlined /> 通知 </a-button>
             </a-badge>
             <a-dropdown :trigger="['click']">
               <a-button class="header-action-btn">
@@ -109,15 +107,27 @@
                   {{ tab.title }}
                 </span>
                 <template #overlay>
-                  <a-menu @click="(e: any) => handleContextMenuClick(e.key, tab)">
-                    <a-menu-item key="refreshTab"><template #icon><ReloadOutlined /></template>重新加载</a-menu-item>
-                    <a-menu-item key="closeCurrent" :disabled="!tab.closable"><template #icon><CloseOutlined /></template>关闭标签页</a-menu-item>
+                  <a-menu @click="handleTabContextMenu(tab)">
+                    <a-menu-item key="refreshTab"
+                      ><template #icon><ReloadOutlined /></template>重新加载</a-menu-item
+                    >
+                    <a-menu-item key="closeCurrent" :disabled="!tab.closable"
+                      ><template #icon><CloseOutlined /></template>关闭标签页</a-menu-item
+                    >
                     <a-menu-divider />
-                    <a-menu-item key="closeLeft"><template #icon><VerticalRightOutlined /></template>关闭左侧标签页</a-menu-item>
-                    <a-menu-item key="closeRight"><template #icon><VerticalLeftOutlined /></template>关闭右侧标签页</a-menu-item>
+                    <a-menu-item key="closeLeft"
+                      ><template #icon><VerticalRightOutlined /></template>关闭左侧标签页</a-menu-item
+                    >
+                    <a-menu-item key="closeRight"
+                      ><template #icon><VerticalLeftOutlined /></template>关闭右侧标签页</a-menu-item
+                    >
                     <a-menu-divider />
-                    <a-menu-item key="closeOther"><template #icon><ColumnWidthOutlined /></template>关闭其它标签页</a-menu-item>
-                    <a-menu-item key="closeAll"><template #icon><LineOutlined /></template>关闭全部标签页</a-menu-item>
+                    <a-menu-item key="closeOther"
+                      ><template #icon><ColumnWidthOutlined /></template>关闭其它标签页</a-menu-item
+                    >
+                    <a-menu-item key="closeAll"
+                      ><template #icon><LineOutlined /></template>关闭全部标签页</a-menu-item
+                    >
                   </a-menu>
                 </template>
               </a-dropdown>
@@ -148,12 +158,7 @@
   <AccountModal v-model:open="accountModalOpen" />
 
   <!-- 通知抽屉 -->
-  <a-drawer
-    v-model:open="showNotifications"
-    title="通知中心"
-    placement="right"
-    width="400"
-  >
+  <a-drawer v-model:open="showNotifications" title="通知中心" placement="right" width="400">
     <a-tabs v-model:activeKey="notifTabKey">
       <a-tab-pane key="all" :tab="`全部 (${notifications.length})`">
         <a-list :data-source="notifications" :split="false">
@@ -183,27 +188,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, provide, h } from 'vue'
-import { Grid, Modal } from 'ant-design-vue'
-import WeChatSendModal from '@/views/WeChatWork/WeChatSendModal.vue'
-import AccountModal from '@/components/AccountModal.vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+import { ref, computed, watch, provide, type Component } from 'vue';
+import { CloseTabKey } from '@/keys';
+import { Grid, Modal } from 'ant-design-vue';
+import WeChatSendModal from '@/views/WeChatWork/WeChatSendModal.vue';
+import AccountModal from '@/components/AccountModal.vue';
+import { useRouter, useRoute, type RouteRecordRaw } from 'vue-router';
+import { useAuth } from '@/composables/useAuth';
 import {
-  MenuFoldOutlined, MenuUnfoldOutlined, WechatOutlined, ReloadOutlined,
-  CloseOutlined, VerticalRightOutlined, VerticalLeftOutlined,
-  ColumnWidthOutlined, LineOutlined,AntCloudOutlined,
-  DashboardOutlined, ShoppingOutlined, SettingOutlined,
-  TeamOutlined, ToolOutlined, FileDoneOutlined,
-  ScheduleOutlined, LineChartOutlined, ContainerOutlined,
-  FunnelPlotOutlined, ExperimentOutlined, ProjectOutlined,
-  DollarCircleOutlined, CommentOutlined, ApartmentOutlined,
-  BellOutlined, UserOutlined, DownOutlined, LogoutOutlined
-} from '@ant-design/icons-vue'
-
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  ReloadOutlined,
+  CloseOutlined,
+  VerticalRightOutlined,
+  VerticalLeftOutlined,
+  ColumnWidthOutlined,
+  LineOutlined,
+  AntCloudOutlined,
+  DashboardOutlined,
+  ShoppingOutlined,
+  SettingOutlined,
+  TeamOutlined,
+  ToolOutlined,
+  FileDoneOutlined,
+  ScheduleOutlined,
+  LineChartOutlined,
+  ContainerOutlined,
+  FunnelPlotOutlined,
+  ExperimentOutlined,
+  ProjectOutlined,
+  DollarCircleOutlined,
+  CommentOutlined,
+  ApartmentOutlined,
+  BellOutlined,
+  UserOutlined,
+  DownOutlined,
+  LogoutOutlined
+} from '@ant-design/icons-vue';
 
 // --- 基础配置 ---
-const TABS_KEY = 'V_APP_TABS'
+const TABS_KEY = 'V_APP_TABS';
 
 // 图标映射
 const iconMap = {
@@ -222,7 +246,7 @@ const iconMap = {
   DollarCircleOutlined,
   CommentOutlined,
   ApartmentOutlined
-}
+};
 
 const DASHBOARD_CONF = {
   title: '仪表盘',
@@ -230,35 +254,59 @@ const DASHBOARD_CONF = {
   name: 'Dashboard',
   icon: DashboardOutlined,
   closable: false
-}
+};
 
-const router = useRouter()
-const route = useRoute()
-const collapsed = ref(false)
-const screens = Grid.useBreakpoint()
-const isNarrowLayout = computed(() => !screens.value?.lg)
-const collapsedSiderWidth = computed(() => (isNarrowLayout.value ? 0 : 80))
-const selectedKeys = ref<string[]>([])
-const wechatModalVisible = ref(false)
-const accountModalOpen = ref(false)
+const router = useRouter();
+const route = useRoute();
+const collapsed = ref(false);
+const screens = Grid.useBreakpoint();
+const isNarrowLayout = computed(() => !screens.value?.lg);
+const collapsedSiderWidth = computed(() => (isNarrowLayout.value ? 0 : 80));
+const selectedKeys = ref<string[]>([]);
+const wechatModalVisible = ref(false);
+const accountModalOpen = ref(false);
 
 // --- 通知与管理员 ---
-const notificationCount = ref(3)
+const notificationCount = ref(3);
 // 顶栏展示的用户名（从登录态读取）
-const { displayName, logout: doLogout } = useAuth()
-const currentUser = computed(() => displayName.value || '未登录')
-const showNotifications = ref(false)
-const notifTabKey = ref('all')
+const { displayName, logout: doLogout } = useAuth();
+const currentUser = computed(() => displayName.value || '未登录');
+const showNotifications = ref(false);
+const notifTabKey = ref('all');
 const notifications = ref([
-  { id: 1, icon: '📢', avatarBg: '#1890ff', title: '系统维护通知', content: '计划于今晚23:00进行系统维护升级', time: '5分钟前', read: false },
-  { id: 2, icon: '📋', avatarBg: '#52c41a', title: '任务提醒', content: '您有3个待处理任务需要处理', time: '1小时前', read: false },
-  { id: 3, icon: '💬', avatarBg: '#faad14', title: '新消息', content: '李四给您发了一条私信', time: '2小时前', read: true }
-])
-const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+  {
+    id: 1,
+    icon: '📢',
+    avatarBg: '#1890ff',
+    title: '系统维护通知',
+    content: '计划于今晚23:00进行系统维护升级',
+    time: '5分钟前',
+    read: false
+  },
+  {
+    id: 2,
+    icon: '📋',
+    avatarBg: '#52c41a',
+    title: '任务提醒',
+    content: '您有3个待处理任务需要处理',
+    time: '1小时前',
+    read: false
+  },
+  {
+    id: 3,
+    icon: '💬',
+    avatarBg: '#faad14',
+    title: '新消息',
+    content: '李四给您发了一条私信',
+    time: '2小时前',
+    read: true
+  }
+]);
+const unreadCount = computed(() => notifications.value.filter((n) => !n.read).length);
 
 const handleUserMenu = ({ key }: { key: string }) => {
   if (key === 'settings') {
-    accountModalOpen.value = true
+    accountModalOpen.value = true;
   } else if (key === 'logout') {
     Modal.confirm({
       title: '确认退出登录？',
@@ -266,217 +314,255 @@ const handleUserMenu = ({ key }: { key: string }) => {
       okText: '退出',
       cancelText: '取消',
       onOk: () => {
-        doLogout()
+        doLogout();
         // 清理掉多标签页缓存，避免下个用户继承
-        localStorage.removeItem(TABS_KEY)
-        router.replace('/login')
+        localStorage.removeItem(TABS_KEY);
+        router.replace('/login');
       }
-    })
+    });
   }
-}
-
+};
 
 // --- 面包屑 ---
-const breadcrumbs = computed(() => route.matched.filter(item => item.meta && item.meta.title))
-const refreshPage = () => router.go(0)
+const breadcrumbs = computed(() => route.matched.filter((item) => item.meta && item.meta.title));
+const refreshPage = () => router.go(0);
 
 // --- Tabs 核心逻辑 ---
 interface TabItem {
   title: string;
   fullPath: string;
   name: string;
-  icon?: any;
+  icon?: Component;
   closable: boolean;
+}
+
+/** 本地缓存中的标签（icon 存为图标名，加载后转为组件） */
+interface StoredTab {
+  title?: string;
+  fullPath?: string;
+  name?: string;
+  closable?: boolean;
+  icon?: unknown;
+}
+
+/** 侧边栏菜单项 */
+interface MenuItem {
+  key: string;
+  label: string;
+  icon?: Component | string;
+  children?: MenuItem[];
 }
 
 // 1. 初始化 TabList (从本地缓存读取)
 const getInitialTabs = (): TabItem[] => {
-  const cache = localStorage.getItem(TABS_KEY)
+  const cache = localStorage.getItem(TABS_KEY);
   if (cache) {
     try {
-      const tabs = JSON.parse(cache)
+      const tabs = JSON.parse(cache) as StoredTab[];
       // 处理图标，将字符串转换为组件
-      return tabs.map((tab: any) => ({
-        ...tab,
-        icon: typeof tab.icon === 'string' ? iconMap[tab.icon as keyof typeof iconMap] : tab.icon
-      }))
-    } catch (e) {
-      return [DASHBOARD_CONF]
+      return tabs.map(
+        (tab) =>
+          ({
+            ...tab,
+            icon: typeof tab.icon === 'string' ? iconMap[tab.icon as keyof typeof iconMap] : tab.icon
+          }) as TabItem
+      );
+    } catch {
+      return [DASHBOARD_CONF];
     }
   }
-  return [DASHBOARD_CONF]
-}
+  return [DASHBOARD_CONF];
+};
 
-const tabList = ref<TabItem[]>(getInitialTabs())
-const activeTabKey = ref(route.fullPath)
+const tabList = ref<TabItem[]>(getInitialTabs());
+const activeTabKey = ref(route.fullPath);
 
 // 2. 持久化存储 - 只保存图标名称字符串
-watch(tabList, (newList) => {
-  const listToSave = newList.map(tab => {
-    // 找到图标组件对应的名称
-    let iconName = ''
-    for (const [name, icon] of Object.entries(iconMap)) {
-      if (icon === tab.icon) {
-        iconName = name
-        break
+watch(
+  tabList,
+  (newList) => {
+    const listToSave = newList.map((tab) => {
+      // 找到图标组件对应的名称
+      let iconName = '';
+      for (const [name, icon] of Object.entries(iconMap)) {
+        if (icon === tab.icon) {
+          iconName = name;
+          break;
+        }
       }
-    }
-    return {
-      ...tab,
-      icon: iconName // 保存图标名称而不是组件
-    }
-  })
-  localStorage.setItem(TABS_KEY, JSON.stringify(listToSave))
-}, { deep: true })
+      return {
+        ...tab,
+        icon: iconName // 保存图标名称而不是组件
+      };
+    });
+    localStorage.setItem(TABS_KEY, JSON.stringify(listToSave));
+  },
+  { deep: true }
+);
 
 // 3. 添加标签逻辑
 const addTab = () => {
-  const { meta, fullPath, name, query } = route
-  if (!name || ['Login', 'Redirect', '404'].includes(name as string)) return
+  const { meta, fullPath, name, query } = route;
+  if (!name || ['Login', 'Redirect', '404'].includes(name as string)) return;
 
   // 优先级：参数 tabTitle > 路由 title > 默认
-  const dynamicTitle = (query.tabTitle as string) || (meta.title as string) || '新标签页'
+  const dynamicTitle = (query.tabTitle as string) || (meta.title as string) || '新标签页';
 
-  const existingTab = tabList.value.find(tab => tab.fullPath === fullPath)
+  const existingTab = tabList.value.find((tab) => tab.fullPath === fullPath);
   if (!existingTab) {
     // 处理图标，确保是组件形式
-    let tabIcon = meta.icon
+    let tabIcon: Component | string | undefined = meta.icon as Component | string | undefined;
     if (typeof tabIcon === 'string' && iconMap[tabIcon as keyof typeof iconMap]) {
-      tabIcon = iconMap[tabIcon as keyof typeof iconMap]
+      tabIcon = iconMap[tabIcon as keyof typeof iconMap];
     }
     tabList.value.push({
       title: dynamicTitle,
       fullPath: fullPath,
       name: name as string,
-      icon: tabIcon,
+      icon: tabIcon as Component | undefined,
       closable: name !== DASHBOARD_CONF.name // 仪表盘不让关
-    })
+    });
   } else {
     // 已存在的标签页同步最新标题（排除动态 tabTitle 的页面）
     if (!query.tabTitle) {
-      existingTab.title = dynamicTitle
+      existingTab.title = dynamicTitle;
     }
   }
-  activeTabKey.value = fullPath
-}
+  activeTabKey.value = fullPath;
+};
 
 // 4. 提供给子页面的关闭方法 (用于“返回”按钮)
 const closeCurrentTab = (targetPath?: string) => {
-  const path = targetPath || route.fullPath
-  handleTabEdit(path, 'remove')
-}
-provide('closeTab', closeCurrentTab)
+  const path = targetPath || route.fullPath;
+  handleTabEdit(path, 'remove');
+};
+provide(CloseTabKey, closeCurrentTab);
 
 // 5. 标签页交互
-const handleTabChange = (key: any) => router.push(key)
+const handleTabChange = (key: string) => router.push(key);
 
-const handleTabEdit = (targetKey: any, action: string) => {
+const handleTabEdit = (targetKey: string, action: string) => {
   if (action === 'remove') {
-    const index = tabList.value.findIndex(tab => tab.fullPath === targetKey)
-    if (index === -1) return
-    
-    // 如果是唯一不可关闭项，不允许删
-    if (!tabList.value[index].closable) return
+    const index = tabList.value.findIndex((tab) => tab.fullPath === targetKey);
+    if (index === -1) return;
 
-    tabList.value.splice(index, 1)
+    // 如果是唯一不可关闭项，不允许删
+    if (!tabList.value[index].closable) return;
+
+    tabList.value.splice(index, 1);
     if (activeTabKey.value === targetKey) {
-      const lastTab = tabList.value[tabList.value.length - 1]
-      router.push(lastTab ? lastTab.fullPath : '/')
+      const lastTab = tabList.value[tabList.value.length - 1];
+      router.push(lastTab ? lastTab.fullPath : '/');
     }
   }
-}
+};
 
 // 6. 右键菜单功能实现
 const handleContextMenuClick = (key: string, currentTab: TabItem) => {
-  const index = tabList.value.findIndex(t => t.fullPath === currentTab.fullPath)
-  
+  const index = tabList.value.findIndex((t) => t.fullPath === currentTab.fullPath);
+
   switch (key) {
     case 'refreshTab':
-      refreshPage()
-      break
+      refreshPage();
+      break;
     case 'closeCurrent':
-      handleTabEdit(currentTab.fullPath, 'remove')
-      break
+      handleTabEdit(currentTab.fullPath, 'remove');
+      break;
     case 'closeLeft':
-      tabList.value = tabList.value.filter((t, i) => i >= index || !t.closable)
-      ensureValidActiveTab()
-      break
+      tabList.value = tabList.value.filter((t, i) => i >= index || !t.closable);
+      ensureValidActiveTab();
+      break;
     case 'closeRight':
-      tabList.value = tabList.value.filter((t, i) => i <= index || !t.closable)
-      ensureValidActiveTab()
-      break
+      tabList.value = tabList.value.filter((t, i) => i <= index || !t.closable);
+      ensureValidActiveTab();
+      break;
     case 'closeOther':
-      tabList.value = tabList.value.filter((t, i) => i === index || !t.closable)
-      ensureValidActiveTab()
-      break
+      tabList.value = tabList.value.filter((t, i) => i === index || !t.closable);
+      ensureValidActiveTab();
+      break;
     case 'closeAll':
-      tabList.value = tabList.value.filter(t => !t.closable)
-      router.push(tabList.value[0].fullPath)
-      break
+      tabList.value = tabList.value.filter((t) => !t.closable);
+      router.push(tabList.value[0].fullPath);
+      break;
   }
-}
+};
+
+/** 右键菜单点击：a-menu-item 的 @click 通过柯里化拿到当前 tab */
+const handleTabContextMenu = (tab: TabItem) => (e: { key: string }) => {
+  handleContextMenuClick(e.key, tab);
+};
 
 const ensureValidActiveTab = () => {
-  const exists = tabList.value.some(t => t.fullPath === activeTabKey.value)
+  const exists = tabList.value.some((t) => t.fullPath === activeTabKey.value);
   if (!exists && tabList.value.length > 0) {
-    router.push(tabList.value[tabList.value.length - 1].fullPath)
+    router.push(tabList.value[tabList.value.length - 1].fullPath);
   }
-}
+};
 
 // --- 侧边栏菜单生成 ---
-const generateMenuItems = (routes: any[], basePath = '') => {
+const generateMenuItems = (routes: RouteRecordRaw[], basePath = '') => {
   return routes
-    .filter(route => route.meta?.title && !route.meta.hidden)
-    .sort((a, b) => (a.meta.order || 0) - (b.meta.order || 0))
-    .map(route => {
-      const fullPath = basePath + (route.path.startsWith('/') ? route.path : '/' + route.path)
-      const item: any = { key: route.name || fullPath, label: route.meta.title, icon: route.meta.icon }
-      if (route.children?.some((child: any) => child.meta?.title && !child.meta.hidden)) {
-        item.children = generateMenuItems(route.children, fullPath)
+    .filter((route) => route.meta?.title && !route.meta.hidden)
+    .sort((a, b) => ((a.meta?.order as number) || 0) - ((b.meta?.order as number) || 0))
+    .map((route) => {
+      const fullPath = basePath + (route.path.startsWith('/') ? route.path : '/' + route.path);
+      const item: MenuItem = {
+        key: (route.name as string) || fullPath,
+        label: route.meta?.title as string,
+        icon: route.meta?.icon as Component | string | undefined
+      };
+      if (route.children?.some((child: RouteRecordRaw) => child.meta?.title && !child.meta.hidden)) {
+        item.children = generateMenuItems(route.children, fullPath);
       }
-      return item
-    })
-}
+      return item;
+    });
+};
 
 const menuItems = computed(() => {
-  const root = router.options.routes.find(r => r.path === '/')
-  return root?.children ? generateMenuItems(root.children) : []
-})
+  const root = router.options.routes.find((r) => r.path === '/');
+  return root?.children ? generateMenuItems(root.children) : [];
+});
 
 // --- 路由监听 ---
-watch(() => route.fullPath, () => {
-  addTab()
-  if (route.name) selectedKeys.value = [route.name as string]
-}, { immediate: true })
+watch(
+  () => route.fullPath,
+  () => {
+    addTab();
+    if (route.name) selectedKeys.value = [route.name as string];
+  },
+  { immediate: true }
+);
 
-const handleMenuClick = ({ key }: any) => {
-  if (isNarrowLayout.value) collapsed.value = true
-  router.push({ name: key }).catch(() => {})
-}
-
+const handleMenuClick = ({ key }: { key: string }) => {
+  if (isNarrowLayout.value) collapsed.value = true;
+  router.push({ name: key }).catch(() => {});
+};
 </script>
 
 <style scoped>
-.app-container { min-height: 100vh; background: #f0f2f5; }
-
-/* 侧边栏样式优化 */
-.sider { 
-  background: #fff; 
-  box-shadow: 2px 0 10px rgba(0,0,0,0.05); 
-  position: fixed; 
-  left: 0; 
-  top: 0; 
-  bottom: 0; 
-  z-index: 100; 
+.app-container {
+  min-height: 100vh;
+  background: #f0f2f5;
 }
 
-.sider-trigger { 
-  height: 50px; 
-  display: flex;  
+/* 侧边栏样式优化 */
+.sider {
+  background: #fff;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+.sider-trigger {
+  height: 50px;
+  display: flex;
   justify-content: center;
-  align-items: center; 
-  padding: 0 16px; 
-  border-bottom: 1px solid #f0f0f0; 
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .logo-wrapper {
@@ -536,17 +622,23 @@ const handleMenuClick = ({ key }: any) => {
 }
 
 /* 右侧布局 */
-.right-layout { 
-  margin-left: 220px; 
-  transition: all 0.2s; 
-  min-height: 100vh; 
-  display: flex; 
-  flex-direction: column; 
+.right-layout {
+  margin-left: 220px;
+  transition: all 0.2s;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
-.right-layout.sider-collapsed { margin-left: 80px; }
+.right-layout.sider-collapsed {
+  margin-left: 80px;
+}
 .layout-narrow.right-layout,
-.layout-narrow .right-layout { margin-left: 0 !important; }
-.layout-narrow .sider { box-shadow: 2px 0 12px rgba(0,0,0,0.12); }
+.layout-narrow .right-layout {
+  margin-left: 0 !important;
+}
+.layout-narrow .sider {
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.12);
+}
 
 /* 移动端遮罩层 */
 .mobile-mask {
@@ -557,27 +649,35 @@ const handleMenuClick = ({ key }: any) => {
 }
 
 /* 头部样式 */
-.header { 
-  background: #fff; 
-  padding: 0 16px; 
-  height: 50px; 
-  line-height: 50px; 
-  display: flex; 
-  align-items: center; 
-  position: sticky; 
-  top: 0; 
-  z-index: 99; 
-  border-bottom: 1px solid #f0f2f5; 
+.header {
+  background: #fff;
+  padding: 0 16px;
+  height: 50px;
+  line-height: 50px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  border-bottom: 1px solid #f0f2f5;
 }
-.header-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-.header-left { display: flex; align-items: center; }
-.header-icon-btn { 
-  font-size: 18px; 
-  width: 40px; 
-  height: 40px; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+}
+.header-icon-btn {
+  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.3s;
 }
 .header-icon-btn:hover {
@@ -594,26 +694,34 @@ const handleMenuClick = ({ key }: any) => {
   align-items: center;
   gap: 4px;
 }
-.breadcrumb-nav { margin-left: 8px; }
-.breadcrumb-item-content { display: inline-flex; align-items: center; gap: 4px; }
+.breadcrumb-nav {
+  margin-left: 8px;
+}
+.breadcrumb-item-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 
 /* Tabs 样式优化 */
-.tabs-container { 
-  background: #fff; 
-  padding: 6px 12px 0 12px; 
-  border-bottom: 1px solid #e5e7eb; 
-  position: sticky; 
-  top: 50px; 
-  z-index: 98; 
+.tabs-container {
+  background: #fff;
+  padding: 6px 12px 0 12px;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 50px;
+  z-index: 98;
 }
-.nav-tabs :deep(.ant-tabs-nav) { margin-bottom: 0 !important; }
-.nav-tabs :deep(.ant-tabs-tab) { 
-  background: #f5f5f5 !important; 
-  border: 1px solid #d9d9d9 !important; 
-  margin-right: 4px !important; 
-  border-radius: 6px 6px 0 0 !important; 
-  padding: 6px 14px !important; 
-  font-size: 13px; 
+.nav-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 0 !important;
+}
+.nav-tabs :deep(.ant-tabs-tab) {
+  background: #f5f5f5 !important;
+  border: 1px solid #d9d9d9 !important;
+  margin-right: 4px !important;
+  border-radius: 6px 6px 0 0 !important;
+  padding: 6px 14px !important;
+  font-size: 13px;
   transition: all 0.3s ease;
 }
 .nav-tabs :deep(.ant-tabs-tab:hover) {
@@ -621,48 +729,93 @@ const handleMenuClick = ({ key }: any) => {
   border-color: #1890ff !important;
   color: #1890ff;
 }
-.nav-tabs :deep(.ant-tabs-tab-active) { 
-  background: #fff !important; 
-  border-top: 2px solid #1890ff !important; 
+.nav-tabs :deep(.ant-tabs-tab-active) {
+  background: #fff !important;
+  border-top: 2px solid #1890ff !important;
   border-bottom-color: transparent !important;
   box-shadow: 0 -2px 8px rgba(24, 144, 255, 0.1);
 }
-.tab-title-wrapper { display: flex; align-items: center; gap: 6px; cursor: context-menu; user-select: none; }
-.tab-icon { font-size: 14px; }
+.tab-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: context-menu;
+  user-select: none;
+}
+.tab-icon {
+  font-size: 14px;
+}
 
 /* 主内容区域 */
-.main-content { 
-  padding: 16px; 
-  flex: 1; 
-  overflow-x: hidden; 
-  box-sizing: border-box; 
-  width: 100%; 
-  max-width: 100%; 
+.main-content {
+  padding: 16px;
+  flex: 1;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* 响应式布局优化 */
 @media (max-width: 991px) {
-  .main-content { padding: 8px; }
-  .header-content { flex-wrap: wrap; gap: 8px; }
-  .tabs-container { padding-left: 8px; padding-right: 8px; }
-  .breadcrumb-nav { display: none; }
-  .header { padding: 0 8px; }
-  .wecom-btn span { display: none; }
-  .wecom-btn { padding: 0 8px; }
+  .main-content {
+    padding: 8px;
+  }
+  .header-content {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tabs-container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .breadcrumb-nav {
+    display: none;
+  }
+  .header {
+    padding: 0 8px;
+  }
+  .wecom-btn span {
+    display: none;
+  }
+  .wecom-btn {
+    padding: 0 8px;
+  }
 }
 
 @media (max-width: 576px) {
-  .header-left { flex-wrap: wrap; }
-  .tabs-container { overflow-x: auto; }
-  .nav-tabs :deep(.ant-tabs-tab) { padding: 4px 8px !important; font-size: 12px; }
+  .header-left {
+    flex-wrap: wrap;
+  }
+  .tabs-container {
+    overflow-x: auto;
+  }
+  .nav-tabs :deep(.ant-tabs-tab) {
+    padding: 4px 8px !important;
+    font-size: 12px;
+  }
 }
 
-.footer { text-align: center; padding: 12px; color: #999; font-size: 12px; }
+.footer {
+  text-align: center;
+  padding: 12px;
+  color: #999;
+  font-size: 12px;
+}
 
 /* 页面切换动画 */
-.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.3s ease; }
-.fade-slide-enter-from { opacity: 0; transform: translateX(-20px); }
-.fade-slide-leave-to { opacity: 0; transform: translateX(20px); }
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
 
 /* 滚动条样式优化 */
 ::-webkit-scrollbar {

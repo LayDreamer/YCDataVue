@@ -12,105 +12,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
-import type { ECharts, EChartsOption } from 'echarts'
+import { ref, toRef } from 'vue';
+import type { EChartsOption } from 'echarts';
+import { useECharts } from '@/composables/useECharts';
 
 /**
  * 图表组件属性
  */
 interface Props {
-  options: EChartsOption
-  isLoading?: boolean
+  options: EChartsOption;
+  isLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false
-})
+});
 
 // DOM 引用
-const containerRef = ref<HTMLElement | null>(null)
-const chartRef = ref<HTMLElement | null>(null)
+const containerRef = ref<HTMLElement | null>(null);
+const chartRef = ref<HTMLElement | null>(null);
 
-// ECharts 实例
-let chartInstance: ECharts | null = null
+// ECharts 实例生命周期统一由 composable 管理（init / resize / watch / dispose）
+const { handleResize, resize } = useECharts(containerRef, chartRef, toRef(props, 'options'));
 
-// ResizeObserver 实例
-let resizeObserver: ResizeObserver | null = null
-
-/**
- * 初始化图表
- */
-const initChart = (): void => {
-  if (!chartRef.value) return
-
-  // 创建 ECharts 实例，使用容器宽度
-  chartInstance = echarts.init(chartRef.value, undefined, {
-    renderer: 'canvas',
-    width: 'auto',
-    height: 'auto'
-  })
-
-  // 设置图表选项
-  if (props.options) {
-    chartInstance.setOption(props.options, true)
-  }
-}
-
-/**
- * 处理尺寸变化
- */
-const handleResize = (): void => {
-  chartInstance?.resize()
-}
-
-/**
- * 清理资源
- */
-const cleanup = (): void => {
-  resizeObserver?.disconnect()
-  resizeObserver = null
-
-  chartInstance?.dispose()
-  chartInstance = null
-}
-
-// 监听选项变化
-watch(
-  () => props.options,
-  (newOptions) => {
-    if (chartInstance && newOptions) {
-      chartInstance.setOption(newOptions, true)
-    }
-  },
-  { deep: false }
-)
-
-// 生命周期钩子
-onMounted(async () => {
-  await nextTick()
-
-  // 使用 ResizeObserver 监听容器大小变化
-  if (containerRef.value) {
-    resizeObserver = new ResizeObserver(() => {
-      handleResize()
-    })
-    resizeObserver.observe(containerRef.value)
-  }
-
-  // 延迟初始化，确保 DOM 已渲染
-  setTimeout(initChart, 50)
-})
-
-onUnmounted(() => {
-  cleanup()
-})
-
-// 暴露方法给父组件
+// 暴露方法给父组件（与旧实现保持一致）
 defineExpose({
   handleResize,
-  resize: handleResize
-})
+  resize
+});
 </script>
 
 <style scoped>

@@ -69,14 +69,7 @@
             </div>
 
             <a-form-item class="submit-item">
-              <a-button
-                type="primary"
-                size="large"
-                html-type="submit"
-                block
-                :loading="loading"
-                class="login-btn"
-              >
+              <a-button type="primary" size="large" html-type="submit" block :loading="loading" class="login-btn">
                 登 录
               </a-button>
             </a-form-item>
@@ -84,12 +77,7 @@
             <div class="quick-login">
               <a-divider plain class="quick-divider">或</a-divider>
               <div class="quick-actions">
-                <a-button
-                  size="large"
-                  class="quick-btn"
-                  :loading="quickLoading"
-                  @click="handleQuickLogin"
-                >
+                <a-button size="large" class="quick-btn" :loading="quickLoading" @click="handleQuickLogin">
                   <ThunderboltOutlined />
                   临时登录
                 </a-button>
@@ -112,32 +100,32 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { reactive, ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { message } from 'ant-design-vue';
 import {
   UserOutlined,
   LockOutlined,
   AntCloudOutlined,
   ThunderboltOutlined,
   ClusterOutlined
-} from '@ant-design/icons-vue'
-import type { Rule } from 'ant-design-vue/es/form'
-import { useAuth } from '@/composables/useAuth'
+} from '@ant-design/icons-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import { useAuth } from '@/composables/useAuth';
 
-const router = useRouter()
-const route = useRoute()
-const { login, quickLogin } = useAuth()
+const router = useRouter();
+const route = useRoute();
+const { login, quickLogin } = useAuth();
 
-const formRef = ref()
-const loading = ref(false)
-const quickLoading = ref(false)
+const formRef = ref();
+const loading = ref(false);
+const quickLoading = ref(false);
 
 const formState = reactive({
   userName: '',
   password: '',
   rememberMe: false
-})
+});
 
 const rules: Record<string, Rule[]> = {
   userName: [
@@ -148,57 +136,62 @@ const rules: Record<string, Rule[]> = {
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 4, max: 32, message: '密码长度需在 4-32 个字符', trigger: 'blur' }
   ]
+};
+
+/** 从任意异常中提取可读错误信息：axios 响应体优先，其次 Error.message，最后兜底文案 */
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const data = (err as { response?: { data?: { Message?: string; message?: string } } }).response?.data;
+    const serverMsg = data?.Message || data?.message;
+    if (serverMsg) return serverMsg;
+  }
+  return err instanceof Error ? err.message || fallback : fallback;
 }
 
 /** 提交登录 */
 async function handleLogin() {
   try {
-    loading.value = true
+    loading.value = true;
     const result = await login({
       userName: formState.userName.trim(),
       password: formState.password,
       rememberMe: formState.rememberMe
-    })
+    });
 
     if (result.success === false) {
-      message.error(result.message || '登录失败')
-      return
+      message.error(result.message || '登录失败');
+      return;
     }
 
-    message.success(result.message || '登录成功')
+    message.success(result.message || '登录成功');
 
     // 跳转到来源页或首页
-    const redirect = (route.query.redirect as string) || '/'
-    router.replace(redirect)
-  } catch (err: any) {
-    const msg =
-      err?.response?.data?.Message ||
-      err?.response?.data?.message ||
-      err?.message ||
-      '登录失败，请检查用户名或密码'
-    message.error(msg)
+    const redirect = (route.query.redirect as string) || '/';
+    router.replace(redirect);
+  } catch (err) {
+    message.error(getErrorMessage(err, '登录失败，请检查用户名或密码'));
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 /** 忘记密码（占位） */
 function onForgot() {
-  message.info('请联系系统管理员重置密码')
+  message.info('请联系系统管理员重置密码');
 }
 
 /** 临时登录：无需账号密码直接进入系统 */
 async function handleQuickLogin() {
   try {
-    quickLoading.value = true
-    quickLogin()
-    message.success('已临时登录，正在进入系统...')
-    const redirect = (route.query.redirect as string) || '/'
-    router.replace(redirect)
-  } catch (err: any) {
-    message.error(err?.message || '临时登录失败')
+    quickLoading.value = true;
+    quickLogin();
+    message.success('已临时登录，正在进入系统...');
+    const redirect = (route.query.redirect as string) || '/';
+    router.replace(redirect);
+  } catch (err) {
+    message.error(err instanceof Error ? err.message : '临时登录失败');
   } finally {
-    quickLoading.value = false
+    quickLoading.value = false;
   }
 }
 </script>
@@ -212,8 +205,18 @@ async function handleQuickLogin() {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse 80% 70% at 70% 20%, rgba(191, 219, 254, 0.55) 0%, rgba(219, 234, 254, 0.25) 40%, transparent 70%),
-    radial-gradient(ellipse 70% 60% at 15% 85%, rgba(191, 219, 254, 0.45) 0%, rgba(219, 234, 254, 0.18) 45%, transparent 75%),
+    radial-gradient(
+      ellipse 80% 70% at 70% 20%,
+      rgba(191, 219, 254, 0.55) 0%,
+      rgba(219, 234, 254, 0.25) 40%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 70% 60% at 15% 85%,
+      rgba(191, 219, 254, 0.45) 0%,
+      rgba(219, 234, 254, 0.18) 45%,
+      transparent 75%
+    ),
     linear-gradient(180deg, #f8fbff 0%, #eef4ff 50%, #e6f0ff 100%);
   overflow: hidden;
 }
@@ -259,8 +262,13 @@ async function handleQuickLogin() {
   animation-delay: -12s;
 }
 @keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(50px, -35px) scale(1.12); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(50px, -35px) scale(1.12);
+  }
 }
 
 .login-container {
@@ -287,8 +295,12 @@ async function handleQuickLogin() {
   flex: 1;
   padding: 52px 44px;
   color: #1e293b;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.55) 0%, rgba(239, 246, 255, 0.55) 55%, rgba(219, 234, 254, 0.55) 100%);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(239, 246, 255, 0.55) 55%,
+    rgba(219, 234, 254, 0.55) 100%
+  );
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -341,8 +353,21 @@ async function handleQuickLogin() {
   animation: logoPulse 4s ease-in-out infinite;
 }
 @keyframes logoPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 12px 28px rgba(59, 130, 246, 0.45), 0 0 0 8px rgba(59, 130, 246, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
-  50% { transform: scale(1.03); box-shadow: 0 16px 34px rgba(59, 130, 246, 0.5), 0 0 0 12px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 12px 28px rgba(59, 130, 246, 0.45),
+      0 0 0 8px rgba(59, 130, 246, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow:
+      0 16px 34px rgba(59, 130, 246, 0.5),
+      0 0 0 12px rgba(59, 130, 246, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
 }
 .brand-title {
   font-size: 30px;
@@ -524,8 +549,16 @@ async function handleQuickLogin() {
   .login-brand {
     padding: 32px 24px;
   }
-  .brand-title { font-size: 24px; }
-  .brand-logo { width: 60px; height: 60px; font-size: 28px; }
-  .login-form-wrap { padding: 32px 24px; }
+  .brand-title {
+    font-size: 24px;
+  }
+  .brand-logo {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+  .login-form-wrap {
+    padding: 32px 24px;
+  }
 }
 </style>

@@ -6,7 +6,12 @@
         <p class="page-description">管理和跟踪业务流程的执行状态</p>
       </div>
       <div class="header-right">
-        <a-radio-group v-model:value="timeRange" size="small" @change="handleTimeRangeChange" style="margin-right: 16px;">
+        <a-radio-group
+          v-model:value="timeRange"
+          size="small"
+          @change="handleTimeRangeChange"
+          style="margin-right: 16px"
+        >
           <a-radio-button value="today">今日</a-radio-button>
           <a-radio-button value="week">本周</a-radio-button>
           <a-radio-button value="month">本月</a-radio-button>
@@ -23,9 +28,7 @@
       <a-col :xs="24" :sm="12" :md="6">
         <a-card hoverable class="stat-card">
           <div class="stat-item">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);">
-              📊
-            </div>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%)">📊</div>
             <div class="stat-info">
               <div class="stat-value">{{ workflowStats.total }}</div>
               <div class="stat-label">总流程数</div>
@@ -37,9 +40,7 @@
       <a-col :xs="24" :sm="12" :md="6">
         <a-card hoverable class="stat-card">
           <div class="stat-item">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);">
-              ✅
-            </div>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%)">✅</div>
             <div class="stat-info">
               <div class="stat-value">{{ workflowStats.completed }}</div>
               <div class="stat-label">已完成</div>
@@ -51,9 +52,7 @@
       <a-col :xs="24" :sm="12" :md="6">
         <a-card hoverable class="stat-card">
           <div class="stat-item">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #faad14 0%, #d48806 100%);">
-              ⏳
-            </div>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #faad14 0%, #d48806 100%)">⏳</div>
             <div class="stat-info">
               <div class="stat-value">{{ workflowStats.inProgress }}</div>
               <div class="stat-label">进行中</div>
@@ -65,9 +64,7 @@
       <a-col :xs="24" :sm="12" :md="6">
         <a-card hoverable class="stat-card">
           <div class="stat-item">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);">
-              ❌
-            </div>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%)">❌</div>
             <div class="stat-info">
               <div class="stat-value">{{ workflowStats.pending }}</div>
               <div class="stat-label">待处理</div>
@@ -79,12 +76,14 @@
     </a-row>
 
     <!-- 效率指标 -->
-    <a-row :gutter="[16, 16]" style="margin-bottom: 24px;">
+    <a-row :gutter="[16, 16]" style="margin-bottom: 24px">
       <a-col :span="8">
         <a-card title="平均处理时长" class="metric-card">
           <div class="metric-content">
             <div class="metric-value">{{ efficiencyMetrics.avgDuration }}</div>
-            <div class="metric-desc">较上周 {{ efficiencyMetrics.durationChange > 0 ? '+' : '' }}{{ efficiencyMetrics.durationChange }}%</div>
+            <div class="metric-desc">
+              较上周 {{ efficiencyMetrics.durationChange > 0 ? '+' : '' }}{{ efficiencyMetrics.durationChange }}%
+            </div>
           </div>
         </a-card>
       </a-col>
@@ -110,22 +109,22 @@
     <a-card class="filter-card">
       <a-form layout="inline" :model="filterForm">
         <a-form-item label="关键词">
-          <a-input 
-            v-model:value="filterForm.keyword" 
+          <a-input
+            v-model:value="filterForm.keyword"
             placeholder="搜索工作流名称/编号"
             allow-clear
-            style="width: 200px;"
+            style="width: 200px"
             @pressEnter="handleSearch"
           >
             <template #prefix>🔍</template>
           </a-input>
         </a-form-item>
         <a-form-item label="状态">
-          <a-select 
-            v-model:value="filterForm.status" 
+          <a-select
+            v-model:value="filterForm.status"
             placeholder="全部状态"
             allow-clear
-            style="width: 120px;"
+            style="width: 120px"
             @change="handleSearch"
           >
             <a-select-option value="">全部</a-select-option>
@@ -136,11 +135,11 @@
           </a-select>
         </a-form-item>
         <a-form-item label="类型">
-          <a-select 
-            v-model:value="filterForm.type" 
+          <a-select
+            v-model:value="filterForm.type"
             placeholder="全部类型"
             allow-clear
-            style="width: 140px;"
+            style="width: 140px"
             @change="handleSearch"
           >
             <a-select-option value="">全部</a-select-option>
@@ -152,11 +151,11 @@
           </a-select>
         </a-form-item>
         <a-form-item label="优先级">
-          <a-select 
-            v-model:value="filterForm.priority" 
+          <a-select
+            v-model:value="filterForm.priority"
             placeholder="全部优先级"
             allow-clear
-            style="width: 120px;"
+            style="width: 120px"
             @change="handleSearch"
           >
             <a-select-option value="">全部</a-select-option>
@@ -197,10 +196,10 @@
           </a-button>
         </a-space>
       </template>
-      
-      <a-table 
-        :columns="columns" 
-        :data-source="filteredWorkflowList" 
+
+      <a-table
+        :columns="columns"
+        :data-source="filteredWorkflowList"
         :pagination="pagination"
         :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
         @change="handleTableChange"
@@ -210,9 +209,9 @@
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'name'">
             <div class="workflow-name-cell">
-              <a-tag :color="getTypeColor(record.type)" style="margin-right: 8px;">{{ getTypeText(record.type) }}</a-tag>
+              <a-tag :color="getTypeColor(record.type)" style="margin-right: 8px">{{ getTypeText(record.type) }}</a-tag>
               <a class="workflow-name-link" @click="handleView(record)">{{ record.name }}</a>
-              <a-tag v-if="record.urgent" color="red" style="margin-left: 8px;">紧急</a-tag>
+              <a-tag v-if="record.urgent" color="red" style="margin-left: 8px">紧急</a-tag>
             </div>
           </template>
           <template v-else-if="column.key === 'status'">
@@ -222,9 +221,11 @@
             <a-tag :color="getPriorityColor(record.priority)">{{ getPriorityText(record.priority) }}</a-tag>
           </template>
           <template v-else-if="column.key === 'progress'">
-            <a-progress 
-              :percent="record.progress" 
-              :status="record.status === 'completed' ? 'success' : record.status === 'rejected' ? 'exception' : 'active'"
+            <a-progress
+              :percent="record.progress"
+              :status="
+                record.status === 'completed' ? 'success' : record.status === 'rejected' ? 'exception' : 'active'
+              "
               size="small"
             />
           </template>
@@ -254,13 +255,7 @@
     </a-card>
 
     <!-- 工作流详情模态框 -->
-    <a-modal
-      v-model:open="detailModalVisible"
-      title="工作流详情"
-      width="900px"
-      :footer="null"
-      destroyOnClose
-    >
+    <a-modal v-model:open="detailModalVisible" title="工作流详情" width="900px" :footer="null" destroyOnClose>
       <div v-if="selectedWorkflow" class="workflow-detail">
         <a-descriptions :column="3" bordered size="small">
           <a-descriptions-item label="流程编号">{{ selectedWorkflow.code }}</a-descriptions-item>
@@ -269,7 +264,7 @@
             <a-tag :color="getTypeColor(selectedWorkflow.type)">{{ getTypeText(selectedWorkflow.type) }}</a-tag>
           </a-descriptions-item>
           <a-descriptions-item label="发起人">
-            <a-avatar :size="20" :src="selectedWorkflow.creatorAvatar" style="margin-right: 8px;">
+            <a-avatar :size="20" :src="selectedWorkflow.creatorAvatar" style="margin-right: 8px">
               {{ selectedWorkflow.creator.charAt(0) }}
             </a-avatar>
             {{ selectedWorkflow.creator }}
@@ -280,7 +275,9 @@
             <a-badge :status="getStatusBadge(selectedWorkflow.status)" :text="getStatusText(selectedWorkflow.status)" />
           </a-descriptions-item>
           <a-descriptions-item label="优先级">
-            <a-tag :color="getPriorityColor(selectedWorkflow.priority)">{{ getPriorityText(selectedWorkflow.priority) }}</a-tag>
+            <a-tag :color="getPriorityColor(selectedWorkflow.priority)">{{
+              getPriorityText(selectedWorkflow.priority)
+            }}</a-tag>
           </a-descriptions-item>
           <a-descriptions-item label="预计完成时间">{{ selectedWorkflow.expectedTime }}</a-descriptions-item>
         </a-descriptions>
@@ -309,7 +306,9 @@
                 <div class="step-subtitle">
                   <span>{{ step.approver }}</span>
                   <span class="step-time">{{ step.time }}</span>
-                  <a-tag v-if="step.action" :color="getActionColor(step.action)" size="small">{{ getActionText(step.action) }}</a-tag>
+                  <a-tag v-if="step.action" :color="getActionColor(step.action)" size="small">{{
+                    getActionText(step.action)
+                  }}</a-tag>
                 </div>
               </template>
             </a-step>
@@ -323,7 +322,7 @@
               <a-list-item>
                 <a-list-item-meta>
                   <template #avatar>
-                    <FileOutlined style="font-size: 24px; color: #1890ff;" />
+                    <FileOutlined style="font-size: 24px; color: #1890ff" />
                   </template>
                   <template #title>{{ item.name }}</template>
                   <template #description>{{ item.size }} · {{ item.uploadTime }}</template>
@@ -337,11 +336,7 @@
         <div class="detail-section">
           <h3>💬 操作记录</h3>
           <a-timeline>
-            <a-timeline-item 
-              v-for="(log, index) in selectedWorkflow.logs" 
-              :key="index"
-              :color="getLogColor(log.type)"
-            >
+            <a-timeline-item v-for="(log, index) in selectedWorkflow.logs" :key="index" :color="getLogColor(log.type)">
               <div class="log-content">
                 <div class="log-header">
                   <strong>{{ log.operator }}</strong>
@@ -354,7 +349,10 @@
           </a-timeline>
         </div>
 
-        <div class="detail-actions" v-if="selectedWorkflow.status !== 'completed' && selectedWorkflow.status !== 'rejected'">
+        <div
+          class="detail-actions"
+          v-if="selectedWorkflow.status !== 'completed' && selectedWorkflow.status !== 'rejected'"
+        >
           <a-space>
             <a-button type="primary" @click="handleApprove(selectedWorkflow)">✅ 通过</a-button>
             <a-button danger @click="handleReject(selectedWorkflow)">❌ 驳回</a-button>
@@ -397,14 +395,10 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item label="期望完成时间">
-          <a-date-picker v-model:value="createForm.expectedTime" show-time style="width: 100%;" />
+          <a-date-picker v-model:value="createForm.expectedTime" show-time style="width: 100%" />
         </a-form-item>
         <a-form-item label="附件上传">
-          <a-upload
-            v-model:file-list="createForm.attachments"
-            action="/api/upload"
-            :max-count="5"
-          >
+          <a-upload v-model:file-list="createForm.attachments" action="/api/upload" :max-count="5">
             <a-button>📎 上传文件</a-button>
           </a-upload>
         </a-form-item>
@@ -416,7 +410,14 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { DownOutlined, ReloadOutlined, EyeOutlined, EditOutlined, DeleteOutlined, FileOutlined } from '@ant-design/icons-vue';
+import {
+  DownOutlined,
+  ReloadOutlined,
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  FileOutlined
+} from '@ant-design/icons-vue';
 
 const timeRange = ref('week');
 const loading = ref(false);
@@ -493,16 +494,44 @@ const workflowList = ref([
     currentStep: 2,
     description: '因业务扩展需要，申请采购5台高性能服务器用于生产环境部署。',
     steps: [
-      { title: '提交申请', description: '张三提交采购申请', status: 'finish', approver: '张三', time: '2023-10-10 09:30', avatar: '', action: 'submit' },
-      { title: '部门经理审批', description: '李四已批准', status: 'finish', approver: '李四', time: '2023-10-11 14:20', avatar: '', action: 'approve' },
+      {
+        title: '提交申请',
+        description: '张三提交采购申请',
+        status: 'finish',
+        approver: '张三',
+        time: '2023-10-10 09:30',
+        avatar: '',
+        action: 'submit'
+      },
+      {
+        title: '部门经理审批',
+        description: '李四已批准',
+        status: 'finish',
+        approver: '李四',
+        time: '2023-10-11 14:20',
+        avatar: '',
+        action: 'approve'
+      },
       { title: '财务审核', description: '等待王五审核预算', status: 'process', approver: '王五', avatar: '' },
       { title: '总经理审批', description: '等待最终审批', status: 'wait' },
       { title: '完成采购', description: '等待采购执行', status: 'wait' }
     ],
     logs: [
-      { operator: '张三', time: '2023-10-10 09:30', action: '提交了采购申请', comment: '急需设备支持新业务上线', type: 'info' },
+      {
+        operator: '张三',
+        time: '2023-10-10 09:30',
+        action: '提交了采购申请',
+        comment: '急需设备支持新业务上线',
+        type: 'info'
+      },
       { operator: '系统', time: '2023-10-11 08:45', action: '自动分配给部门经理李四审批', type: 'system' },
-      { operator: '李四', time: '2023-10-11 14:20', action: '已批准该申请', comment: '同意采购，预算合理', type: 'success' },
+      {
+        operator: '李四',
+        time: '2023-10-11 14:20',
+        action: '已批准该申请',
+        comment: '同意采购，预算合理',
+        type: 'success'
+      },
       { operator: '系统', time: '2023-10-11 14:21', action: '流转至财务部审核', type: 'system' }
     ],
     attachments: [
@@ -527,13 +556,43 @@ const workflowList = ref([
     currentStep: 4,
     description: '计划于10月16日-10月20日休年假5天，已完成工作交接。',
     steps: [
-      { title: '提交申请', description: '李四提交年假申请', status: 'finish', approver: '李四', time: '2023-10-09 14:20', avatar: '', action: 'submit' },
-      { title: '直属领导审批', description: '赵六已批准', status: 'finish', approver: '赵六', time: '2023-10-09 16:30', avatar: '', action: 'approve' },
-      { title: 'HR确认', description: 'HR确认年假余额充足', status: 'finish', approver: '钱七', time: '2023-10-10 10:00', avatar: '', action: 'approve' },
+      {
+        title: '提交申请',
+        description: '李四提交年假申请',
+        status: 'finish',
+        approver: '李四',
+        time: '2023-10-09 14:20',
+        avatar: '',
+        action: 'submit'
+      },
+      {
+        title: '直属领导审批',
+        description: '赵六已批准',
+        status: 'finish',
+        approver: '赵六',
+        time: '2023-10-09 16:30',
+        avatar: '',
+        action: 'approve'
+      },
+      {
+        title: 'HR确认',
+        description: 'HR确认年假余额充足',
+        status: 'finish',
+        approver: '钱七',
+        time: '2023-10-10 10:00',
+        avatar: '',
+        action: 'approve'
+      },
       { title: '完成', description: '年假申请已通过', status: 'finish' }
     ],
     logs: [
-      { operator: '李四', time: '2023-10-09 14:20', action: '提交了年假申请', comment: '需提前安排好手头工作', type: 'info' },
+      {
+        operator: '李四',
+        time: '2023-10-09 14:20',
+        action: '提交了年假申请',
+        comment: '需提前安排好手头工作',
+        type: 'info'
+      },
       { operator: '赵六', time: '2023-10-09 16:30', action: '已批准', comment: '注意保持手机畅通', type: 'success' },
       { operator: '钱七', time: '2023-10-10 10:00', action: '确认年假余额并批准', type: 'success' }
     ],
@@ -581,15 +640,37 @@ const workflowList = ref([
     currentStep: 3,
     description: '与ABC公司年度服务框架合同评审，金额500万元。',
     steps: [
-      { title: '起草合同', description: '合同已起草完成', status: 'finish', approver: '赵六', time: '2023-10-07 11:15', avatar: '', action: 'submit' },
-      { title: '法务初审', description: '法务部已审核通过', status: 'finish', approver: '孙八', time: '2023-10-08 10:30', avatar: '', action: 'approve' },
+      {
+        title: '起草合同',
+        description: '合同已起草完成',
+        status: 'finish',
+        approver: '赵六',
+        time: '2023-10-07 11:15',
+        avatar: '',
+        action: 'submit'
+      },
+      {
+        title: '法务初审',
+        description: '法务部已审核通过',
+        status: 'finish',
+        approver: '孙八',
+        time: '2023-10-08 10:30',
+        avatar: '',
+        action: 'approve'
+      },
       { title: '商务谈判', description: '商务条款确认中', status: 'process', approver: '周九', avatar: '' },
       { title: '总经理终审', description: '等待最终审批', status: 'wait' },
       { title: '签署归档', description: '等待签署', status: 'wait' }
     ],
     logs: [
       { operator: '赵六', time: '2023-10-07 11:15', action: '起草了合同初稿', type: 'info' },
-      { operator: '孙八', time: '2023-10-08 10:30', action: '法务审核通过', comment: '条款合规，建议补充违约责任细则', type: 'success' },
+      {
+        operator: '孙八',
+        time: '2023-10-08 10:30',
+        action: '法务审核通过',
+        comment: '条款合规，建议补充违约责任细则',
+        type: 'success'
+      },
       { operator: '周九', time: '2023-10-09 09:00', action: '开始商务条款谈判', type: 'info' }
     ],
     attachments: [
@@ -614,17 +695,61 @@ const workflowList = ref([
     currentStep: 4,
     description: '智能数据分析平台V2.0版本研发立项，预计周期6个月，预算200万元。',
     steps: [
-      { title: '立项申请', description: '钱七提交立项报告', status: 'finish', approver: '钱七', time: '2023-10-06 09:00', avatar: '', action: 'submit' },
-      { title: '技术评审', description: '技术委员会评审通过', status: 'finish', approver: '技术委员会', time: '2023-10-06 15:00', avatar: '', action: 'approve' },
-      { title: '预算审批', description: '财务部确认预算可行', status: 'finish', approver: '王五', time: '2023-10-07 11:00', avatar: '', action: 'approve' },
-      { title: '总经理批准', description: '总经理正式批准立项', status: 'finish', approver: '吴十', time: '2023-10-07 16:00', avatar: '', action: 'approve' },
+      {
+        title: '立项申请',
+        description: '钱七提交立项报告',
+        status: 'finish',
+        approver: '钱七',
+        time: '2023-10-06 09:00',
+        avatar: '',
+        action: 'submit'
+      },
+      {
+        title: '技术评审',
+        description: '技术委员会评审通过',
+        status: 'finish',
+        approver: '技术委员会',
+        time: '2023-10-06 15:00',
+        avatar: '',
+        action: 'approve'
+      },
+      {
+        title: '预算审批',
+        description: '财务部确认预算可行',
+        status: 'finish',
+        approver: '王五',
+        time: '2023-10-07 11:00',
+        avatar: '',
+        action: 'approve'
+      },
+      {
+        title: '总经理批准',
+        description: '总经理正式批准立项',
+        status: 'finish',
+        approver: '吴十',
+        time: '2023-10-07 16:00',
+        avatar: '',
+        action: 'approve'
+      },
       { title: '启动项目', description: '项目正式启动', status: 'finish' }
     ],
     logs: [
       { operator: '钱七', time: '2023-10-06 09:00', action: '提交了研发立项申请', type: 'info' },
-      { operator: '技术委员会', time: '2023-10-06 15:00', action: '技术评审通过', comment: '方案可行，建议分阶段实施', type: 'success' },
+      {
+        operator: '技术委员会',
+        time: '2023-10-06 15:00',
+        action: '技术评审通过',
+        comment: '方案可行，建议分阶段实施',
+        type: 'success'
+      },
       { operator: '王五', time: '2023-10-07 11:00', action: '预算审批通过', type: 'success' },
-      { operator: '吴十', time: '2023-10-07 16:00', action: '批准立项', comment: '尽快组建团队，下周启动', type: 'success' }
+      {
+        operator: '吴十',
+        time: '2023-10-07 16:00',
+        action: '批准立项',
+        comment: '尽快组建团队，下周启动',
+        type: 'success'
+      }
     ],
     attachments: [
       { name: '立项报告.pdf', size: '3.2MB', uploadTime: '2023-10-06 09:00' },
@@ -649,12 +774,34 @@ const workflowList = ref([
     currentStep: 1,
     description: '季度办公用品采购，包括纸张、笔、文件夹等日常消耗品。',
     steps: [
-      { title: '提交申请', description: '孙八提交采购申请', status: 'finish', approver: '孙八', time: '2023-10-11 10:00', avatar: '', action: 'submit' },
-      { title: '行政主管审批', description: '被驳回', status: 'error', approver: '郑十一', time: '2023-10-11 14:30', avatar: '', action: 'reject' }
+      {
+        title: '提交申请',
+        description: '孙八提交采购申请',
+        status: 'finish',
+        approver: '孙八',
+        time: '2023-10-11 10:00',
+        avatar: '',
+        action: 'submit'
+      },
+      {
+        title: '行政主管审批',
+        description: '被驳回',
+        status: 'error',
+        approver: '郑十一',
+        time: '2023-10-11 14:30',
+        avatar: '',
+        action: 'reject'
+      }
     ],
     logs: [
       { operator: '孙八', time: '2023-10-11 10:00', action: '提交了办公用品采购申请', type: 'info' },
-      { operator: '郑十一', time: '2023-10-11 14:30', action: '驳回了申请', comment: '库存还有剩余，下季度再采购', type: 'error' }
+      {
+        operator: '郑十一',
+        time: '2023-10-11 14:30',
+        action: '驳回了申请',
+        comment: '库存还有剩余，下季度再采购',
+        type: 'error'
+      }
     ],
     attachments: []
   }
@@ -671,126 +818,159 @@ const pagination = ref({
 
 const filteredWorkflowList = computed(() => {
   let list = [...workflowList.value];
-  
+
   if (filterForm.value.keyword) {
     const keyword = filterForm.value.keyword.toLowerCase();
-    list = list.filter(item => 
-      item.name.toLowerCase().includes(keyword) ||
-      item.code.toLowerCase().includes(keyword)
+    list = list.filter(
+      (item) => item.name.toLowerCase().includes(keyword) || item.code.toLowerCase().includes(keyword)
     );
   }
-  
+
   if (filterForm.value.status) {
-    list = list.filter(item => item.status === filterForm.value.status);
+    list = list.filter((item) => item.status === filterForm.value.status);
   }
-  
+
   if (filterForm.value.type) {
-    list = list.filter(item => item.type === filterForm.value.type);
+    list = list.filter((item) => item.type === filterForm.value.type);
   }
-  
+
   if (filterForm.value.priority) {
-    list = list.filter(item => item.priority === filterForm.value.priority);
+    list = list.filter((item) => item.priority === filterForm.value.priority);
   }
-  
+
   return list;
 });
 
-function getStatusColor(status) {
-  switch (status) {
-    case 'completed': return 'green';
-    case 'inProgress': return 'blue';
-    case 'pending': return 'orange';
-    case 'rejected': return 'red';
-    default: return 'default';
-  }
-}
-
 function getStatusBadge(status) {
   switch (status) {
-    case 'completed': return 'success';
-    case 'inProgress': return 'processing';
-    case 'pending': return 'warning';
-    case 'rejected': return 'error';
-    default: return 'default';
+    case 'completed':
+      return 'success';
+    case 'inProgress':
+      return 'processing';
+    case 'pending':
+      return 'warning';
+    case 'rejected':
+      return 'error';
+    default:
+      return 'default';
   }
 }
 
 function getStatusText(status) {
   switch (status) {
-    case 'completed': return '已完成';
-    case 'inProgress': return '进行中';
-    case 'pending': return '待处理';
-    case 'rejected': return '已驳回';
-    default: return '未知';
+    case 'completed':
+      return '已完成';
+    case 'inProgress':
+      return '进行中';
+    case 'pending':
+      return '待处理';
+    case 'rejected':
+      return '已驳回';
+    default:
+      return '未知';
   }
 }
 
 function getTypeColor(type) {
   switch (type) {
-    case 'purchase': return 'blue';
-    case 'leave': return 'cyan';
-    case 'reimbursement': return 'orange';
-    case 'contract': return 'purple';
-    case 'project': return 'geekblue';
-    default: return 'default';
+    case 'purchase':
+      return 'blue';
+    case 'leave':
+      return 'cyan';
+    case 'reimbursement':
+      return 'orange';
+    case 'contract':
+      return 'purple';
+    case 'project':
+      return 'geekblue';
+    default:
+      return 'default';
   }
 }
 
 function getTypeText(type) {
   switch (type) {
-    case 'purchase': return '采购';
-    case 'leave': return '请假';
-    case 'reimbursement': return '报销';
-    case 'contract': return '合同';
-    case 'project': return '项目';
-    default: return '其他';
+    case 'purchase':
+      return '采购';
+    case 'leave':
+      return '请假';
+    case 'reimbursement':
+      return '报销';
+    case 'contract':
+      return '合同';
+    case 'project':
+      return '项目';
+    default:
+      return '其他';
   }
 }
 
 function getPriorityColor(priority) {
   switch (priority) {
-    case 'high': return 'red';
-    case 'medium': return 'orange';
-    case 'low': return 'green';
-    default: return 'default';
+    case 'high':
+      return 'red';
+    case 'medium':
+      return 'orange';
+    case 'low':
+      return 'green';
+    default:
+      return 'default';
   }
 }
 
 function getPriorityText(priority) {
   switch (priority) {
-    case 'high': return '高';
-    case 'medium': return '中';
-    case 'low': return '低';
-    default: return '-';
+    case 'high':
+      return '高';
+    case 'medium':
+      return '中';
+    case 'low':
+      return '低';
+    default:
+      return '-';
   }
 }
 
 function getActionColor(action) {
   switch (action) {
-    case 'submit': return 'blue';
-    case 'approve': return 'green';
-    case 'reject': return 'red';
-    case 'transfer': return 'orange';
-    default: return 'default';
+    case 'submit':
+      return 'blue';
+    case 'approve':
+      return 'green';
+    case 'reject':
+      return 'red';
+    case 'transfer':
+      return 'orange';
+    default:
+      return 'default';
   }
 }
 
 function getActionText(action) {
   switch (action) {
-    case 'submit': return '提交';
-    case 'approve': return '通过';
-    case 'reject': return '驳回';
-    case 'transfer': return '转交';
-    default: return '';
+    case 'submit':
+      return '提交';
+    case 'approve':
+      return '通过';
+    case 'reject':
+      return '驳回';
+    case 'transfer':
+      return '转交';
+    default:
+      return '';
   }
 }
 
 function getLogColor(type) {
   switch (type) {
-    case 'success': return 'green';
-    case 'error': return 'red';
-    case 'system': return 'blue';
-    default: return 'gray';
+    case 'success':
+      return 'green';
+    case 'error':
+      return 'red';
+    case 'system':
+      return 'blue';
+    default:
+      return 'gray';
   }
 }
 
@@ -844,7 +1024,7 @@ function handleEdit(record) {
 }
 
 function handleDelete(record) {
-  const index = workflowList.value.findIndex(item => item.id === record.id);
+  const index = workflowList.value.findIndex((item) => item.id === record.id);
   if (index > -1) {
     workflowList.value.splice(index, 1);
     message.success('删除成功');
@@ -880,7 +1060,7 @@ function handleReject(record) {
   });
 }
 
-function handleTransfer(record) {
+function handleTransfer(_record) {
   message.info(`转交功能开发中...`);
 }
 
@@ -906,12 +1086,12 @@ async function handleCreateSubmit() {
     message.error('请输入流程名称');
     return;
   }
-  
+
   creating.value = true;
   setTimeout(() => {
-    const newId = Math.max(...workflowList.value.map(w => w.id)) + 1;
-    const newCode = `WF${new Date().toISOString().slice(0,10).replace(/-/g,'')}${String(newId).padStart(3,'0')}`;
-    
+    const newId = Math.max(...workflowList.value.map((w) => w.id)) + 1;
+    const newCode = `WF${new Date().toISOString().slice(0, 10).replace(/-/g, '')}${String(newId).padStart(3, '0')}`;
+
     const newWorkflow = {
       id: newId,
       code: newCode,
@@ -932,7 +1112,7 @@ async function handleCreateSubmit() {
       logs: [{ operator: '当前用户', time: new Date().toLocaleString('zh-CN'), action: '创建了此流程', type: 'info' }],
       attachments: []
     };
-    
+
     workflowList.value.unshift(newWorkflow);
     showCreateModal.value = false;
     createForm.value = { type: '', name: '', description: '', priority: 'medium', expectedTime: null, attachments: [] };
@@ -949,7 +1129,7 @@ function getDefaultSteps(type) {
     contract: ['起草合同', '法务审核', '商务谈判', '总经理审批', '签署'],
     project: ['立项申请', '技术评审', '预算审批', '总经理批准', '启动']
   };
-  return (stepMap[type] || ['步骤一', '步骤二', '步骤三']).map(title => ({
+  return (stepMap[type] || ['步骤一', '步骤二', '步骤三']).map((title) => ({
     title,
     description: '等待处理',
     status: 'wait'
@@ -1051,9 +1231,15 @@ function handleCreateCancel() {
   margin-top: 4px;
 }
 
-.stat-trend.positive { color: #52c41a; }
-.stat-trend.negative { color: #ff4d4f; }
-.stat-trend.neutral { color: #999; }
+.stat-trend.positive {
+  color: #52c41a;
+}
+.stat-trend.negative {
+  color: #ff4d4f;
+}
+.stat-trend.neutral {
+  color: #999;
+}
 
 .metric-card {
   text-align: center;
@@ -1065,8 +1251,12 @@ function handleCreateCancel() {
   color: #1f2f3d;
 }
 
-.metric-content .metric-value.green { color: #52c41a; }
-.metric-content .metric-value.blue { color: #1890ff; }
+.metric-content .metric-value.green {
+  color: #52c41a;
+}
+.metric-content .metric-value.blue {
+  color: #1890ff;
+}
 
 .metric-content .metric-desc {
   font-size: 13px;

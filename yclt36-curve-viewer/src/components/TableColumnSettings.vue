@@ -38,12 +38,7 @@
       <template #content>
         <div class="column-settings-panel">
           <div class="settings-header">
-            <a-checkbox
-              v-model:checked="allChecked"
-              :indeterminate="isIndeterminate"
-            >
-              全部
-            </a-checkbox>
+            <a-checkbox v-model:checked="allChecked" :indeterminate="isIndeterminate"> 全部 </a-checkbox>
           </div>
           <div class="settings-list">
             <div
@@ -53,7 +48,7 @@
               :class="{
                 dragging: dragIndex === index,
                 'drag-over': dragOverIndex === index,
-                disabled: !item.visible,
+                disabled: !item.visible
               }"
               draggable="true"
               @dragstart="handleDragStart($event, index)"
@@ -106,7 +101,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { SettingOutlined, MenuOutlined, PushpinOutlined, ReloadOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons-vue';
+import {
+  SettingOutlined,
+  MenuOutlined,
+  PushpinOutlined,
+  ReloadOutlined,
+  FullscreenOutlined,
+  FullscreenExitOutlined
+} from '@ant-design/icons-vue';
 import type { TableColumnType } from 'ant-design-vue';
 
 export interface ColumnSetting {
@@ -135,7 +137,7 @@ const props = withDefaults(defineProps<Props>(), {
   modelValue: () => [],
   loading: false,
   fullscreen: false,
-  overlay: true,
+  overlay: true
 });
 
 const emit = defineEmits<{
@@ -155,7 +157,7 @@ const dragOverIndex = ref<number | null>(null);
 /** 根据原始列生成默认设置 */
 function buildDefaultSettings(columns: TableColumnType[]): ColumnSetting[] {
   return columns.map((col) => {
-    const key = (col.key as string) || ((col as any).dataIndex as string) || '';
+    const key = (col.key as string) || (typeof col.dataIndex === 'string' ? col.dataIndex : '') || '';
     const title = (col.title as string) || key;
     const fixed = (col.fixed as 'left' | 'right' | undefined) || undefined;
     return { key, title, visible: true, fixed };
@@ -196,7 +198,7 @@ function mergeSettings(defaults: ColumnSetting[], saved: ColumnSetting[] | null)
       result.push({
         ...def,
         visible: s.visible !== undefined ? s.visible : def.visible,
-        fixed: s.fixed !== undefined ? s.fixed : def.fixed,
+        fixed: s.fixed !== undefined ? s.fixed : def.fixed
       });
     }
   });
@@ -233,7 +235,7 @@ const allChecked = computed({
   get: () => draftList.value.length > 0 && draftList.value.every((i) => i.visible),
   set: (val: boolean) => {
     draftList.value.forEach((item) => (item.visible = val));
-  },
+  }
 });
 
 function setFixed(item: ColumnSetting, direction: 'left' | 'right') {

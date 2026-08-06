@@ -26,12 +26,7 @@
           <a-row :gutter="16">
             <a-col :span="12">
               <a-form-item name="userName" label="用户名">
-                <a-input
-                  v-model:value="formState.userName"
-                  size="large"
-                  placeholder="请输入用户名"
-                  allow-clear
-                >
+                <a-input v-model:value="formState.userName" size="large" placeholder="请输入用户名" allow-clear>
                   <template #prefix>
                     <UserOutlined class="input-icon" />
                   </template>
@@ -55,11 +50,7 @@
           </a-row>
 
           <a-form-item name="password" label="密码">
-            <a-input-password
-              v-model:value="formState.password"
-              size="large"
-              placeholder="请输入密码（至少 6 位）"
-            >
+            <a-input-password v-model:value="formState.password" size="large" placeholder="请输入密码（至少 6 位）">
               <template #prefix>
                 <LockOutlined class="input-icon" />
               </template>
@@ -67,11 +58,7 @@
           </a-form-item>
 
           <a-form-item name="confirmPassword" label="确认密码">
-            <a-input-password
-              v-model:value="formState.confirmPassword"
-              size="large"
-              placeholder="请再次输入密码"
-            >
+            <a-input-password v-model:value="formState.confirmPassword" size="large" placeholder="请再次输入密码">
               <template #prefix>
                 <SafetyOutlined class="input-icon" />
               </template>
@@ -81,12 +68,7 @@
           <a-row :gutter="16">
             <a-col :span="12">
               <a-form-item name="email" label="邮箱">
-                <a-input
-                  v-model:value="formState.email"
-                  size="large"
-                  placeholder="example@yc.com"
-                  allow-clear
-                >
+                <a-input v-model:value="formState.email" size="large" placeholder="example@yc.com" allow-clear>
                   <template #prefix>
                     <MailOutlined class="input-icon" />
                   </template>
@@ -95,12 +77,7 @@
             </a-col>
             <a-col :span="12">
               <a-form-item name="phoneNumber" label="手机号">
-                <a-input
-                  v-model:value="formState.phoneNumber"
-                  size="large"
-                  placeholder="请输入手机号"
-                  allow-clear
-                >
+                <a-input v-model:value="formState.phoneNumber" size="large" placeholder="请输入手机号" allow-clear>
                   <template #prefix>
                     <PhoneOutlined class="input-icon" />
                   </template>
@@ -110,14 +87,7 @@
           </a-row>
 
           <a-form-item>
-            <a-button
-              type="primary"
-              size="large"
-              html-type="submit"
-              block
-              :loading="loading"
-              class="register-btn"
-            >
+            <a-button type="primary" size="large" html-type="submit" block :loading="loading" class="register-btn">
               注 册
             </a-button>
           </a-form-item>
@@ -133,10 +103,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import type { Rule } from 'ant-design-vue/es/form'
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { message } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
 import {
   UserOutlined,
   LockOutlined,
@@ -145,14 +115,14 @@ import {
   IdcardOutlined,
   SafetyOutlined,
   UserAddOutlined
-} from '@ant-design/icons-vue'
-import { useAuth } from '@/composables/useAuth'
+} from '@ant-design/icons-vue';
+import { useAuth } from '@/composables/useAuth';
 
-const router = useRouter()
-const { register } = useAuth()
+const router = useRouter();
+const { register } = useAuth();
 
-const formRef = ref()
-const loading = ref(false)
+const formRef = ref();
+const loading = ref(false);
 
 const formState = reactive({
   userName: '',
@@ -161,14 +131,14 @@ const formState = reactive({
   confirmPassword: '',
   email: '',
   phoneNumber: ''
-})
+});
 
 /** 二次密码校验 */
 const validateConfirmPassword = async (_rule: Rule, value: string) => {
   if (value && value !== formState.password) {
-    throw new Error('两次输入的密码不一致')
+    throw new Error('两次输入的密码不一致');
   }
-}
+};
 
 const rules: Record<string, Rule[]> = {
   userName: [
@@ -183,37 +153,29 @@ const rules: Record<string, Rule[]> = {
     { required: true, message: '请再次输入密码', trigger: 'blur' },
     { validator: validateConfirmPassword, trigger: 'blur' }
   ],
-  email: [
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
-  ],
-  phoneNumber: [
-    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
-  ]
-}
+  email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
+  phoneNumber: [{ pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }]
+};
 
 /** 提交注册 */
 async function handleRegister() {
   try {
-    loading.value = true
+    loading.value = true;
     await register({
       userName: formState.userName.trim(),
       password: formState.password,
       displayName: formState.displayName.trim() || undefined,
       email: formState.email.trim() || undefined,
       phoneNumber: formState.phoneNumber.trim() || undefined
-    })
+    });
 
-    message.success('注册成功，请登录')
-    router.replace('/login')
-  } catch (err: any) {
-    const msg =
-      err?.response?.data?.Message ||
-      err?.response?.data?.message ||
-      err?.message ||
-      '注册失败，请稍后重试'
-    message.error(msg)
+    message.success('注册成功，请登录');
+    router.replace('/login');
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '注册失败，请稍后重试';
+    message.error(msg);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -237,8 +199,18 @@ async function handleRegister() {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 60% at 75% 25%, rgba(167, 199, 255, 0.55) 0%, rgba(200, 220, 255, 0.30) 30%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(190, 215, 255, 0.45) 0%, rgba(220, 235, 255, 0.20) 35%, transparent 65%),
+    radial-gradient(
+      ellipse 70% 60% at 75% 25%,
+      rgba(167, 199, 255, 0.55) 0%,
+      rgba(200, 220, 255, 0.3) 30%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 60% 50% at 20% 80%,
+      rgba(190, 215, 255, 0.45) 0%,
+      rgba(220, 235, 255, 0.2) 35%,
+      transparent 65%
+    ),
     radial-gradient(ellipse 50% 40% at 50% 100%, rgba(180, 210, 255, 0.35) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
@@ -275,8 +247,13 @@ async function handleRegister() {
   animation-delay: -6s;
 }
 @keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(40px, -30px) scale(1.1); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(40px, -30px) scale(1.1);
+  }
 }
 
 .register-container {

@@ -9,22 +9,12 @@
     class="wecom-modal"
     @cancel="handleCancel"
   >
-    <a-form
-      ref="wechatFormRef"
-      :model="wechatForm"
-      :rules="wechatRules"
-      layout="vertical"
-      class="wecom-form"
-    >
+    <a-form ref="wechatFormRef" :model="wechatForm" :rules="wechatRules" layout="vertical" class="wecom-form">
       <!-- 发送类型选择 -->
       <a-form-item label="发送类型" name="sendType">
         <a-radio-group v-model:value="wechatForm.sendType" button-style="solid" @change="handleTypeChange">
-          <a-radio-button value="user">
-            <UserOutlined /> 发送给个人
-          </a-radio-button>
-          <a-radio-button value="chat">
-            <TeamOutlined /> 发送给群聊
-          </a-radio-button>
+          <a-radio-button value="user"> <UserOutlined /> 发送给个人 </a-radio-button>
+          <a-radio-button value="chat"> <TeamOutlined /> 发送给群聊 </a-radio-button>
         </a-radio-group>
       </a-form-item>
 
@@ -75,11 +65,7 @@
           <!-- 卡片内容 -->
           <template v-else>
             <a-form-item label="卡片标题" name="title">
-              <a-input
-                v-model:value="wechatForm.title"
-                :maxlength="128"
-                placeholder="请输入卡片标题"
-              />
+              <a-input v-model:value="wechatForm.title" :maxlength="128" placeholder="请输入卡片标题" />
             </a-form-item>
             <a-form-item label="卡片描述" name="description">
               <a-textarea
@@ -91,10 +77,7 @@
               />
             </a-form-item>
             <a-form-item label="跳转链接" name="url">
-              <a-input
-                v-model:value="wechatForm.url"
-                placeholder="请输入卡片点击后跳转的链接"
-              />
+              <a-input v-model:value="wechatForm.url" placeholder="请输入卡片点击后跳转的链接" />
             </a-form-item>
           </template>
         </template>
@@ -151,11 +134,7 @@
               <a-input v-model:value="wechatForm.chatName" placeholder="请输入群聊名称" />
             </a-form-item>
             <a-form-item label="卡片标题" name="title">
-              <a-input
-                v-model:value="wechatForm.title"
-                :maxlength="128"
-                placeholder="请输入卡片标题"
-              />
+              <a-input v-model:value="wechatForm.title" :maxlength="128" placeholder="请输入卡片标题" />
             </a-form-item>
             <a-form-item label="卡片描述" name="description">
               <a-textarea
@@ -167,10 +146,7 @@
               />
             </a-form-item>
             <a-form-item label="跳转链接" name="url">
-              <a-input
-                v-model:value="wechatForm.url"
-                placeholder="请输入卡片点击后跳转的链接"
-              />
+              <a-input v-model:value="wechatForm.url" placeholder="请输入卡片点击后跳转的链接" />
             </a-form-item>
           </template>
         </template>
@@ -179,12 +155,7 @@
       <!-- 个人模式 -->
       <template v-else>
         <a-form-item name="targets" class="hidden-form-item">
-          <a-select
-            v-model:value="wechatForm.targets"
-            mode="multiple"
-            :open="false"
-            style="width: 100%"
-          >
+          <a-select v-model:value="wechatForm.targets" mode="multiple" :open="false" style="width: 100%">
             <template #suffixIcon></template>
           </a-select>
         </a-form-item>
@@ -205,12 +176,8 @@
         <!-- 消息类型选择 -->
         <a-form-item label="消息类型" name="cardMode">
           <a-radio-group v-model:value="wechatForm.cardMode" button-style="solid">
-            <a-radio-button value="message">
-              <WechatOutlined /> 发送消息
-            </a-radio-button>
-            <a-radio-button value="card">
-              <CreditCardOutlined /> 发送卡片
-            </a-radio-button>
+            <a-radio-button value="message"> <WechatOutlined /> 发送消息 </a-radio-button>
+            <a-radio-button value="card"> <CreditCardOutlined /> 发送卡片 </a-radio-button>
           </a-radio-group>
         </a-form-item>
 
@@ -228,11 +195,7 @@
         <!-- 卡片内容 -->
         <template v-if="wechatForm.cardMode === 'card'">
           <a-form-item label="卡片标题" name="title">
-            <a-input
-              v-model:value="wechatForm.title"
-              :maxlength="128"
-              placeholder="请输入卡片标题"
-            />
+            <a-input v-model:value="wechatForm.title" :maxlength="128" placeholder="请输入卡片标题" />
           </a-form-item>
 
           <a-form-item label="卡片描述" name="description">
@@ -246,10 +209,7 @@
           </a-form-item>
 
           <a-form-item label="跳转链接" name="url">
-            <a-input
-              v-model:value="wechatForm.url"
-              placeholder="请输入卡片点击后跳转的链接"
-            />
+            <a-input v-model:value="wechatForm.url" placeholder="请输入卡片点击后跳转的链接" />
           </a-form-item>
         </template>
 
@@ -273,11 +233,7 @@
       <a-form-item class="form-actions">
         <a-space>
           <a-button @click="handleCancel">取消</a-button>
-          <a-button
-            type="primary"
-            :loading="sendingWechat"
-            @click="handleSendWeChat"
-          >
+          <a-button type="primary" :loading="sendingWechat" @click="handleSendWeChat">
             <template #icon>
               <WechatOutlined v-if="wechatForm.sendType === 'user' && wechatForm.cardMode === 'message'" />
               <CreditCardOutlined v-else-if="wechatForm.sendType === 'user' && wechatForm.cardMode === 'card'" />
@@ -292,40 +248,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
-import { message } from 'ant-design-vue'
-import type { FormInstance } from 'ant-design-vue/es/form'
-import { UserOutlined, TeamOutlined, WechatOutlined, CreditCardOutlined } from '@ant-design/icons-vue'
-import { weChatWorkService } from '@/services/wechatWorkService'
-import { SendMessageDto, GroupChatMessageDto, WechatWorkMessageType } from '@/api-generated/api'
-import OrgUserSelector from '@/components/OrgUserSelector.vue'
+import { ref, reactive, computed, watch } from 'vue';
+import { message } from 'ant-design-vue';
+import type { FormInstance } from 'ant-design-vue/es/form';
+import { UserOutlined, TeamOutlined, WechatOutlined, CreditCardOutlined } from '@ant-design/icons-vue';
+import { weChatWorkService, type WeChatChat, type WeChatUser } from '@/services/wechatWorkService';
+import { SendMessageDto, GroupChatMessageDto, WechatWorkMessageType } from '@/api-generated/api';
+import type { DefaultOptionType } from 'ant-design-vue/es/vc-select/Select';
+import OrgUserSelector from '@/components/OrgUserSelector.vue';
 
 const props = defineProps<{
-  visible: boolean
-  defaultContent?: string
-}>()
+  visible: boolean;
+  defaultContent?: string;
+}>();
 
-const emit = defineEmits(['update:visible', 'sendSuccess'])
+const emit = defineEmits<{
+  'update:visible': [value: boolean];
+  sendSuccess: [];
+}>();
 
 const localVisible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
-})
+});
 
-const wechatFormRef = ref<FormInstance>()
-const sendingWechat = ref(false)
-const loadingRecipients = ref(false)
-const recipientSearchText = ref('')
+const wechatFormRef = ref<FormInstance>();
+const sendingWechat = ref(false);
+const loadingRecipients = ref(false);
+const recipientSearchText = ref('');
 
-const selectedUserIds = ref<string[]>([])
-const orgSelectorRef = ref<InstanceType<typeof OrgUserSelector>>()
+const selectedUserIds = ref<string[]>([]);
+const orgSelectorRef = ref<InstanceType<typeof OrgUserSelector>>();
 
 const wechatForm = reactive({
   sendType: 'user' as 'user' | 'chat',
   cardMode: 'message' as 'message' | 'card',
   chatMode: 'existing' as 'existing' | 'new',
   groupMsgType: 'text' as 'text' | 'card',
-  targets: [] as any,
+  targets: undefined as string | string[] | undefined,
   chatName: '',
   ownerUserId: undefined as string | undefined,
   memberUserIds: [] as string[],
@@ -334,14 +294,14 @@ const wechatForm = reactive({
   description: '',
   url: '',
   msgType: 1 as number
-})
+});
 
 const wechatRules = computed(() => {
   if (wechatForm.sendType === 'chat') {
     const base = {
       sendType: [{ required: true, message: '请选择发送类型' }],
       chatMode: [{ required: true, message: '请选择群聊方式' }]
-    }
+    };
     if (wechatForm.chatMode === 'existing') {
       if (wechatForm.groupMsgType === 'card') {
         return {
@@ -349,13 +309,13 @@ const wechatRules = computed(() => {
           targets: [{ required: true, message: '请选择群聊', trigger: 'change' }],
           title: [{ required: true, message: '请输入卡片标题', trigger: 'change' }],
           url: [{ required: true, message: '请输入跳转链接', trigger: 'change' }]
-        }
+        };
       }
       return {
         ...base,
         targets: [{ required: true, message: '请选择群聊', trigger: 'change' }],
         content: [{ required: true, message: '请输入消息内容', trigger: 'change' }]
-      }
+      };
     }
     // new chat
     if (wechatForm.groupMsgType === 'card') {
@@ -369,7 +329,7 @@ const wechatRules = computed(() => {
         chatName: [{ required: true, message: '请输入群聊名称', trigger: 'change' }],
         title: [{ required: true, message: '请输入卡片标题', trigger: 'change' }],
         url: [{ required: true, message: '请输入跳转链接', trigger: 'change' }]
-      }
+      };
     }
     return {
       ...base,
@@ -379,7 +339,7 @@ const wechatRules = computed(() => {
         { type: 'array', min: 2, message: '群成员至少2人', trigger: 'change' }
       ],
       content: [{ required: true, message: '请输入消息内容', trigger: 'change' }]
-    }
+    };
   }
   return wechatForm.cardMode === 'card'
     ? {
@@ -394,97 +354,101 @@ const wechatRules = computed(() => {
         cardMode: [{ required: true, message: '请选择消息类型' }],
         targets: [{ required: true, message: '请选择接收目标', type: 'array' }],
         content: [{ required: true, message: '请输入内容', trigger: 'change' }]
-      }
-})
+      };
+});
 
-watch(() => wechatForm.cardMode, () => {
-  wechatFormRef.value?.clearValidate(['content', 'title', 'description', 'url'])
-})
+watch(
+  () => wechatForm.cardMode,
+  () => {
+    wechatFormRef.value?.clearValidate(['content', 'title', 'description', 'url']);
+  }
+);
 
-const allUsers = ref<any[]>([])
-const allChats = ref<any[]>([])
+const allUsers = ref<WeChatUser[]>([]);
+const allChats = ref<WeChatChat[]>([]);
 
 /** 用户选择变化时的回调，同步到 form.targets */
 function onUserSelect(userIds: string[]) {
-  wechatForm.targets = userIds
+  wechatForm.targets = userIds;
 }
 
 const loadChatData = async () => {
-  loadingRecipients.value = true
+  loadingRecipients.value = true;
   try {
-    allChats.value = await weChatWorkService.getChatList()
+    allChats.value = await weChatWorkService.getChatList();
     if (allUsers.value.length === 0) {
-      allUsers.value = await weChatWorkService.getUserList(1)
+      allUsers.value = await weChatWorkService.getUserList(1);
     }
-  } catch (error) {
-    message.error('加载群聊列表失败')
+  } catch {
+    message.error('加载群聊列表失败');
   } finally {
-    loadingRecipients.value = false
+    loadingRecipients.value = false;
   }
-}
+};
 
 const handleRecipientSearch = (val: string) => {
-  recipientSearchText.value = val
-}
+  recipientSearchText.value = val;
+};
 
 const filteredChats = computed(() => {
-  const keyword = recipientSearchText.value.toLowerCase().trim()
-  const chats = allChats.value.map(chat => ({ label: chat.name, value: chat.chatid }))
-  if (!keyword) return chats
-  return chats.filter(chat =>
-    chat.label.toLowerCase().includes(keyword) ||
-    chat.value.toLowerCase().includes(keyword)
-  )
-})
+  const keyword = recipientSearchText.value.toLowerCase().trim();
+  const chats = allChats.value.map((chat) => ({ label: chat.name, value: chat.chatid }));
+  if (!keyword) return chats;
+  return chats.filter(
+    (chat) => chat.label.toLowerCase().includes(keyword) || chat.value.toLowerCase().includes(keyword)
+  );
+});
 
-const userOptions = computed(() => allUsers.value.map(user => ({ label: `${user.name} (${user.userid})`, value: user.userid })))
+const userOptions = computed(() =>
+  allUsers.value.map((user) => ({ label: `${user.name} (${user.userid})`, value: user.userid }))
+);
 
-const filterUserByLabel = (inputValue: string, option: any) => {
-  return (option?.label || '').toLowerCase().includes(inputValue.toLowerCase())
-}
+const filterUserByLabel = (inputValue: string, option?: DefaultOptionType) => {
+  return (option?.label || '').toLowerCase().includes(inputValue.toLowerCase());
+};
 
 const sendButtonText = computed(() => {
   if (wechatForm.sendType === 'chat') {
     if (wechatForm.chatMode === 'new') {
-      return wechatForm.groupMsgType === 'card' ? '创建群聊并发送卡片' : '创建群聊并发送消息'
+      return wechatForm.groupMsgType === 'card' ? '创建群聊并发送卡片' : '创建群聊并发送消息';
     }
-    return wechatForm.groupMsgType === 'card' ? '发送卡片' : '发送消息'
+    return wechatForm.groupMsgType === 'card' ? '发送卡片' : '发送消息';
   }
-  return wechatForm.cardMode === 'card' ? '发送卡片' : '发送消息'
-})
+  return wechatForm.cardMode === 'card' ? '发送卡片' : '发送消息';
+});
 
 const handleTypeChange = async () => {
-  wechatForm.targets = wechatForm.sendType === 'user' ? [] : undefined
-  wechatForm.chatMode = 'existing'
-  wechatForm.groupMsgType = 'text'
-  wechatForm.chatName = ''
-  wechatForm.ownerUserId = undefined
-  wechatForm.memberUserIds = []
-  wechatForm.content = ''
-  recipientSearchText.value = ''
-  wechatFormRef.value?.clearValidate()
+  wechatForm.targets = wechatForm.sendType === 'user' ? [] : undefined;
+  wechatForm.chatMode = 'existing';
+  wechatForm.groupMsgType = 'text';
+  wechatForm.chatName = '';
+  wechatForm.ownerUserId = undefined;
+  wechatForm.memberUserIds = [];
+  wechatForm.content = '';
+  recipientSearchText.value = '';
+  wechatFormRef.value?.clearValidate();
   if (wechatForm.sendType === 'user') {
-    selectedUserIds.value = []
+    selectedUserIds.value = [];
   } else {
-    loadChatData()
+    loadChatData();
   }
-}
+};
 
 const messageTemplates = [
   { id: 1, name: '系统通知', content: '【系统通知】您好，系统将于今晚进行维护升级。' },
   { id: 2, name: '会议提醒', content: '【会议提醒】您好，明天上午9:00将召开部门例会。' }
-]
+];
 
 const applyTemplate = (content: string) => {
-  wechatForm.content = content
-}
+  wechatForm.content = content;
+};
 
 const initialFormState = {
   sendType: 'user' as 'user' | 'chat',
   cardMode: 'message' as 'message' | 'card',
   chatMode: 'existing' as 'existing' | 'new',
   groupMsgType: 'text' as 'text' | 'card',
-  targets: [] as any,
+  targets: undefined as string | string[] | undefined,
   chatName: '',
   ownerUserId: undefined as string | undefined,
   memberUserIds: [] as string[],
@@ -493,66 +457,66 @@ const initialFormState = {
   description: '',
   url: '',
   msgType: 1 as number
-}
+};
 
 const handleCancel = () => {
-  wechatForm.sendType = initialFormState.sendType
-  wechatForm.cardMode = initialFormState.cardMode
-  wechatForm.chatMode = initialFormState.chatMode
-  wechatForm.groupMsgType = initialFormState.groupMsgType
-  wechatForm.targets = initialFormState.targets
-  wechatForm.chatName = initialFormState.chatName
-  wechatForm.ownerUserId = initialFormState.ownerUserId
-  wechatForm.memberUserIds = initialFormState.memberUserIds
-  wechatForm.content = initialFormState.content
-  wechatForm.title = initialFormState.title
-  wechatForm.description = initialFormState.description
-  wechatForm.url = initialFormState.url
-  wechatForm.msgType = initialFormState.msgType
-  selectedUserIds.value = []
-  orgSelectorRef.value?.clearSelection()
-  wechatFormRef.value?.resetFields()
-  localVisible.value = false
-}
+  wechatForm.sendType = initialFormState.sendType;
+  wechatForm.cardMode = initialFormState.cardMode;
+  wechatForm.chatMode = initialFormState.chatMode;
+  wechatForm.groupMsgType = initialFormState.groupMsgType;
+  wechatForm.targets = initialFormState.targets;
+  wechatForm.chatName = initialFormState.chatName;
+  wechatForm.ownerUserId = initialFormState.ownerUserId;
+  wechatForm.memberUserIds = initialFormState.memberUserIds;
+  wechatForm.content = initialFormState.content;
+  wechatForm.title = initialFormState.title;
+  wechatForm.description = initialFormState.description;
+  wechatForm.url = initialFormState.url;
+  wechatForm.msgType = initialFormState.msgType;
+  selectedUserIds.value = [];
+  orgSelectorRef.value?.clearSelection();
+  wechatFormRef.value?.resetFields();
+  localVisible.value = false;
+};
 
 const handleSendWeChat = async () => {
   try {
-    await wechatFormRef.value?.validate()
-    sendingWechat.value = true
+    await wechatFormRef.value?.validate();
+    sendingWechat.value = true;
 
     if (wechatForm.sendType === 'chat') {
-      const isCard = wechatForm.groupMsgType === 'card'
+      const isCard = wechatForm.groupMsgType === 'card';
       // 卡片模式用标题+描述+链接拼接内容，文本模式直接取 content
       const content = isCard
         ? `【${wechatForm.title}】\n${wechatForm.description}\n详情链接: ${wechatForm.url}`
-        : wechatForm.content
+        : wechatForm.content;
 
       if (wechatForm.chatMode === 'existing') {
-        const chatId = Array.isArray(wechatForm.targets) ? wechatForm.targets[0] : wechatForm.targets
+        const chatId = Array.isArray(wechatForm.targets) ? wechatForm.targets[0] : wechatForm.targets;
         const dto = new GroupChatMessageDto({
           chatId,
           content,
           msgType: wechatForm.msgType as WechatWorkMessageType
-        })
-        await weChatWorkService.sendToGroupChat(dto)
-        message.success('发送群聊消息成功')
+        });
+        await weChatWorkService.sendToGroupChat(dto);
+        message.success('发送群聊消息成功');
       } else {
         const dto = new GroupChatMessageDto({
-          chatName: isCard ? (wechatForm.chatName || wechatForm.title) : wechatForm.chatName,
+          chatName: isCard ? wechatForm.chatName || wechatForm.title : wechatForm.chatName,
           ownerUserId: wechatForm.ownerUserId,
           userIds: wechatForm.memberUserIds,
           content,
           msgType: wechatForm.msgType as WechatWorkMessageType
-        })
-        await weChatWorkService.createChatAndSend(dto)
-        message.success(isCard ? '创建群聊并发送卡片成功' : '创建群聊并发送消息成功')
+        });
+        await weChatWorkService.createChatAndSend(dto);
+        message.success(isCard ? '创建群聊并发送卡片成功' : '创建群聊并发送消息成功');
       }
-      emit('sendSuccess')
-      handleCancel()
-      return
+      emit('sendSuccess');
+      handleCancel();
+      return;
     }
 
-    const targets = Array.isArray(wechatForm.targets) ? wechatForm.targets : [wechatForm.targets]
+    const targets = Array.isArray(wechatForm.targets) ? wechatForm.targets : [wechatForm.targets as string];
 
     if (wechatForm.cardMode === 'card') {
       const sendMessageDto = new SendMessageDto({
@@ -560,34 +524,42 @@ const handleSendWeChat = async () => {
         title: wechatForm.title,
         description: wechatForm.description,
         url: wechatForm.url
-      })
-      await weChatWorkService.sendCardMessage(sendMessageDto)
-      message.success('发送卡片成功')
+      });
+      await weChatWorkService.sendCardMessage(sendMessageDto);
+      message.success('发送卡片成功');
     } else {
-      const sendMessageDto = new SendMessageDto({ users: targets, content: wechatForm.content, msgType: wechatForm.msgType as WechatWorkMessageType });
+      const sendMessageDto = new SendMessageDto({
+        users: targets,
+        content: wechatForm.content,
+        msgType: wechatForm.msgType as WechatWorkMessageType
+      });
       await weChatWorkService.sendMessage(sendMessageDto);
-      message.success('发送成功')
+      message.success('发送成功');
     }
-    emit('sendSuccess')
-    handleCancel()
+    emit('sendSuccess');
+    handleCancel();
   } catch (error) {
-    console.error(error)
-    if (error && (error as any).errorFields) {
-      return
+    console.error(error);
+    // 表单校验失败（validate reject）时不显示"发送失败"
+    if (error && typeof error === 'object' && 'errorFields' in error) {
+      return;
     }
-    message.error('发送失败，请重试')
+    message.error('发送失败，请重试');
   } finally {
-    sendingWechat.value = false
+    sendingWechat.value = false;
   }
-}
+};
 
-watch(() => props.visible, (val) => {
-  if (val) {
-    if (wechatForm.sendType !== 'user') {
-      loadChatData()
+watch(
+  () => props.visible,
+  (val) => {
+    if (val) {
+      if (wechatForm.sendType !== 'user') {
+        loadChatData();
+      }
     }
   }
-})
+);
 </script>
 
 <style scoped>

@@ -46,3 +46,5 @@ Thumbs.db
 .Spotlight-V100
 .Trashes
 ehthumbs.db
+# Vite 验证构建目录
+dist-verify*

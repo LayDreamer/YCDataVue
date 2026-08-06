@@ -1,11 +1,5 @@
 <template>
-  <a-card
-    v-if="carded"
-    class="common-table-card"
-    :class="cardClasses"
-    :title="title"
-    size="small"
-  >
+  <a-card v-if="carded" class="common-table-card" :class="cardClasses" :title="title" size="small">
     <template #title>
       <slot name="title">{{ title }}</slot>
     </template>
@@ -63,11 +57,7 @@
     </div>
   </a-card>
 
-  <div
-    v-else
-    class="common-table common-table--flat"
-    :class="flatClasses"
-  >
+  <div v-else class="common-table common-table--flat" :class="flatClasses">
     <div class="common-table__header">
       <div class="common-table__title">
         <slot name="title">{{ title }}</slot>
@@ -128,25 +118,29 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends object">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import TableColumnSettings, { type ColumnSetting } from './TableColumnSettings.vue';
+import type { TableColumnType, TablePaginationConfig } from 'ant-design-vue';
+
+/** 通用表格行：以索引签名兜底未知字段，字段值统一按 unknown 处理 */
+type Row = Record<string, unknown>;
 
 interface Props {
   /** 卡片标题 */
   title?: string;
   /** 原始列配置 */
-  columns: any[];
+  columns: TableColumnType[];
   /** 表格数据源 */
-  dataSource: any[];
+  dataSource: T[];
   /** localStorage 缓存 key */
   storageKey: string;
   /** 加载状态 */
   loading?: boolean;
   /** 分页配置 */
-  pagination?: any;
+  pagination?: TablePaginationConfig | false;
   /** 行唯一标识 */
-  rowKey?: string | ((record: any) => string);
+  rowKey?: string | ((record: T) => string);
   /** 滚动配置（autoScrollX/Y 为 true 时会自动计算对应方向） */
   scroll?: { x?: number | string; y?: number | string };
   /** 表格尺寸 */
@@ -172,9 +166,9 @@ interface Props {
   /** 已展开行 keys */
   expandedRowKeys?: string[];
   /** 行类名 */
-  rowClassName?: string | ((record: any, index: number) => string);
+  rowClassName?: string | ((record: T, index: number) => string);
   /** 自定义行属性（如点击事件） */
-  customRow?: (record: any, index?: number) => any;
+  customRow?: (record: T, index?: number) => Row;
   /** 是否根据列宽自动计算横向滚动宽度 */
   autoScrollX?: boolean;
   /** 是否根据容器高度自动计算纵向滚动高度 */
@@ -194,13 +188,13 @@ const props = withDefaults(defineProps<Props>(), {
   overlay: true,
   autoScrollX: false,
   autoScrollY: false,
-  rowClickSelect: true,
+  rowClickSelect: true
 });
 
 const emit = defineEmits<{
   (e: 'refresh'): void;
   (e: 'change', settings: ColumnSetting[]): void;
-  (e: 'expand', expanded: boolean, record: any): void;
+  (e: 'expand', expanded: boolean, record: T): void;
   (e: 'update:fullscreen', value: boolean): void;
   (e: 'update:selectedRowKey', value: string | number | undefined): void;
 }>();
@@ -213,21 +207,18 @@ const selectedKey = computed<string | number | undefined>({
   set: (val) => {
     internalSelectedKey.value = val;
     emit('update:selectedRowKey', val);
-  },
+  }
 });
 
 // 取行 key（兼容 rowKey 为函数或字段名）
-function getRowKeyValue(record: any): any {
+function getRowKeyValue(record: T): unknown {
   if (typeof props.rowKey === 'function') return props.rowKey(record);
-  return record[props.rowKey as string];
+  return (record as Row)[props.rowKey];
 }
 
 // 合并外部传入的 rowClassName，并在选中时追加 selected-row
-function mergedRowClassName(record: any, index: number): string {
-  const base =
-    typeof props.rowClassName === 'function'
-      ? props.rowClassName(record, index)
-      : (props.rowClassName || '');
+function mergedRowClassName(record: T, index: number): string {
+  const base = typeof props.rowClassName === 'function' ? props.rowClassName(record, index) : props.rowClassName || '';
   const isSelected =
     selectedKey.value !== undefined &&
     selectedKey.value !== null &&
@@ -239,10 +230,10 @@ function mergedRowClassName(record: any, index: number): string {
 
 // 合并外部传入的 customRow，开启点击选中时包裹 onClick 实现自动选中
 // 点击交互元素（输入框、下拉、按钮等）不触发选中，避免与单元格内的编辑控件冲突
-function mergedCustomRow(record: any, index?: number) {
-  const base = props.customRow ? props.customRow(record, index) : {};
+function mergedCustomRow(record: T, index?: number) {
+  const base: Row = props.customRow ? props.customRow(record, index) : {};
   if (!props.rowClickSelect) return base;
-  const originalClick = base.onClick;
+  const originalClick = base.onClick as ((e: MouseEvent) => void) | undefined;
   return {
     ...base,
     onClick: (e: MouseEvent) => {
@@ -251,28 +242,28 @@ function mergedCustomRow(record: any, index?: number) {
         'input, select, textarea, button, a, [contenteditable="true"], .ant-input-number, .ant-select, .cell-input-small'
       );
       if (!inInteractive) {
-        selectedKey.value = getRowKeyValue(record);
+        selectedKey.value = getRowKeyValue(record) as string | number;
       }
       if (originalClick) originalClick(e);
-    },
+    }
   };
 }
 
 // ========== 列设置 ==========
-function getColKey(col: any): string {
+function getColKey(col: TableColumnType): string {
   return ((col?.key || col?.dataIndex) as string) || '';
 }
 
-function getColTitle(col: any): string {
+function getColTitle(col: TableColumnType): string {
   return (col?.title as string) || getColKey(col);
 }
 
-function buildDefaultSettings(cols: any[]): ColumnSetting[] {
+function buildDefaultSettings(cols: TableColumnType[]): ColumnSetting[] {
   return cols.map((col) => ({
     key: getColKey(col),
     title: getColTitle(col),
     visible: true,
-    fixed: (col?.fixed as 'left' | 'right' | undefined) || undefined,
+    fixed: (col?.fixed as 'left' | 'right' | undefined) || undefined
   }));
 }
 
@@ -294,7 +285,7 @@ function saveSettings(value: ColumnSetting[]) {
 }
 
 /** 按当前 columns 顺序，合并已保存设置，新增列默认显示 */
-function mergeSettings(cols: any[], saved: ColumnSetting[] | null): ColumnSetting[] {
+function mergeSettings(cols: TableColumnType[], saved: ColumnSetting[] | null): ColumnSetting[] {
   const defaults = buildDefaultSettings(cols);
   if (!saved || saved.length === 0) return defaults;
   const savedMap = new Map(saved.map((s) => [s.key, s]));
@@ -307,7 +298,7 @@ function mergeSettings(cols: any[], saved: ColumnSetting[] | null): ColumnSettin
       result.push({
         ...def,
         visible: s.visible !== undefined ? s.visible : def.visible,
-        fixed: s.fixed !== undefined ? s.fixed : def.fixed,
+        fixed: s.fixed !== undefined ? s.fixed : def.fixed
       });
     }
   });
@@ -322,7 +313,7 @@ function mergeSettings(cols: any[], saved: ColumnSetting[] | null): ColumnSettin
   return result;
 }
 
-function computeSettings(cols: any[], current?: ColumnSetting[]): ColumnSetting[] {
+function computeSettings(cols: TableColumnType[], current?: ColumnSetting[]): ColumnSetting[] {
   const currentMap = new Map((current || []).map((s) => [s.key, s]));
   return cols.map((col) => {
     const key = getColKey(col);
@@ -330,7 +321,12 @@ function computeSettings(cols: any[], current?: ColumnSetting[]): ColumnSetting[
     if (saved) {
       return { ...saved, title: getColTitle(col) };
     }
-    return { key, title: getColTitle(col), visible: true, fixed: col?.fixed };
+    return {
+      key,
+      title: getColTitle(col),
+      visible: true,
+      fixed: (col?.fixed as 'left' | 'right' | undefined) || undefined
+    };
   });
 }
 
@@ -345,7 +341,7 @@ watch(
 );
 
 const displayColumns = computed(() => {
-  const baseMap = new Map<string, any>();
+  const baseMap = new Map<string, TableColumnType>();
   props.columns.forEach((col) => {
     baseMap.set(getColKey(col), col);
   });
@@ -356,7 +352,7 @@ const displayColumns = computed(() => {
       const base = baseMap.get(s.key);
       return {
         ...(base || { title: s.title, dataIndex: s.key, key: s.key }),
-        fixed: s.fixed,
+        fixed: s.fixed
       };
     });
 
@@ -364,9 +360,9 @@ const displayColumns = computed(() => {
   const effectiveColumns = mapped.length > 0 ? mapped : props.columns;
 
   // 固定列分组：左侧固定在前，右侧固定在后，中间列保持设置顺序
-  const left = effectiveColumns.filter((c: any) => c.fixed === 'left');
-  const center = effectiveColumns.filter((c: any) => !c.fixed);
-  const right = effectiveColumns.filter((c: any) => c.fixed === 'right');
+  const left = effectiveColumns.filter((c) => c.fixed === 'left');
+  const center = effectiveColumns.filter((c) => !c.fixed);
+  const right = effectiveColumns.filter((c) => c.fixed === 'right');
   return [...left, ...center, ...right];
 });
 
@@ -378,9 +374,7 @@ function handleColumnSettingsChange(settings: ColumnSetting[]) {
 
 // ========== 全屏 ==========
 const internalFullscreen = ref(false);
-const isFullscreen = computed(() =>
-  props.fullscreen !== undefined ? props.fullscreen : internalFullscreen.value
-);
+const isFullscreen = computed(() => (props.fullscreen !== undefined ? props.fullscreen : internalFullscreen.value));
 
 function handleFullscreenChange(value: boolean) {
   if (props.fullscreen !== undefined) {
@@ -449,7 +443,7 @@ function updateScrollY() {
   }
 }
 
-function handleExpand(expanded: boolean, record: any) {
+function handleExpand(expanded: boolean, record: T) {
   // 树形展开/收起会改变表格可视内容，需要重新计算滚动尺寸
   nextTick(() => {
     scrollVersion.value++;
@@ -461,10 +455,10 @@ function handleExpand(expanded: boolean, record: any) {
 const effectiveScroll = computed(() => {
   // 读取 scrollVersion 使其成为依赖，展开/收起时强制生成新的 scroll 对象引用，
   // 触发 Ant Design Vue 表格重新应用滚动设置
-  scrollVersion.value;
+  void scrollVersion.value;
   return {
     x: props.autoScrollX ? computedScrollX.value : props.scroll?.x,
-    y: props.autoScrollY ? internalScrollY.value : props.scroll?.y,
+    y: props.autoScrollY ? internalScrollY.value : props.scroll?.y
   };
 });
 
@@ -498,12 +492,12 @@ watch(
 // ========== class 计算 ==========
 const cardClasses = computed(() => ({
   fullscreen: isFullscreen.value,
-  [props.cardClass || '']: !!props.cardClass,
+  [props.cardClass || '']: !!props.cardClass
 }));
 
 const flatClasses = computed(() => ({
   fullscreen: isFullscreen.value,
-  [props.cardClass || '']: !!props.cardClass,
+  [props.cardClass || '']: !!props.cardClass
 }));
 </script>
 

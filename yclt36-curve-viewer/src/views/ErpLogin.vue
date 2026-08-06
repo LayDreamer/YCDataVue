@@ -67,14 +67,7 @@
             </a-form-item>
 
             <a-form-item class="submit-item">
-              <a-button
-                type="primary"
-                size="large"
-                html-type="submit"
-                block
-                :loading="loading"
-                class="login-btn"
-              >
+              <a-button type="primary" size="large" html-type="submit" block :loading="loading" class="login-btn">
                 登 录
               </a-button>
             </a-form-item>
@@ -90,93 +83,87 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { message } from 'ant-design-vue'
-import {
-  UserOutlined,
-  LockOutlined,
-  AntCloudOutlined
-} from '@ant-design/icons-vue'
-import type { Rule } from 'ant-design-vue/es/form'
-import { useAuth } from '@/composables/useAuth'
-import { erpService } from '@/services/erpService'
+import { reactive, ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { message } from 'ant-design-vue';
+import { UserOutlined, LockOutlined, AntCloudOutlined } from '@ant-design/icons-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import { useAuth } from '@/composables/useAuth';
+import { erpService } from '@/services/erpService';
 
-const router = useRouter()
-const route = useRoute()
-const { erpLogin } = useAuth()
+const router = useRouter();
+const route = useRoute();
+const { erpLogin } = useAuth();
 
-const formRef = ref()
-const loading = ref(false)
-const loadingUsers = ref(false)
+const formRef = ref();
+const loading = ref(false);
+const loadingUsers = ref(false);
 
 const formState = reactive({
   userName: undefined as string | undefined,
   password: ''
-})
+});
 
-const userOptions = ref<{ value: string; label: string }[]>([])
+const userOptions = ref<{ value: string; label: string }[]>([]);
 
-const filterUser = (input: string, option: any) => {
-  const label = String(option?.label || '').toLowerCase()
-  const value = String(option?.value || '').toLowerCase()
-  const search = input.toLowerCase()
-  return label.includes(search) || value.includes(search)
-}
+const filterUser = (input: string, option?: { label?: unknown; value?: string | number | null }) => {
+  const label = String(option?.label || '').toLowerCase();
+  const value = String(option?.value || '').toLowerCase();
+  const search = input.toLowerCase();
+  return label.includes(search) || value.includes(search);
+};
 
 /** 加载 ERP 用户名列表 */
 async function loadUsernames() {
-  loadingUsers.value = true
+  loadingUsers.value = true;
   try {
-    const users = await erpService.getAllUsernames()
-    userOptions.value = users.map((name) => ({ value: name, label: name }))
-  } catch (err: any) {
-    message.error(err?.message || '获取 ERP 用户列表失败')
+    const users = await erpService.getAllUsernames();
+    userOptions.value = users.map((name) => ({ value: name, label: name }));
+  } catch (err) {
+    message.error(err instanceof Error ? err.message : '获取 ERP 用户列表失败');
     // 接口异常时保留几条模拟数据，避免页面空白
     userOptions.value = [
       { value: 'sunlei', label: 'sunlei' },
       { value: 'admin', label: 'admin' },
       { value: 'zhangsan', label: 'zhangsan' }
-    ]
+    ];
   } finally {
-    loadingUsers.value = false
+    loadingUsers.value = false;
   }
 }
 
-onMounted(loadUsernames)
+onMounted(loadUsernames);
 
 const rules: Record<string, Rule[]> = {
-  userName: [
-    { required: true, message: '请选择用户名', trigger: 'change' }
-  ],
+  userName: [{ required: true, message: '请选择用户名', trigger: 'change' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 4, max: 32, message: '密码长度需在 4-32 个字符', trigger: 'blur' }
   ]
-}
+};
 
 /** 提交 ERP 登录 */
 async function handleLogin() {
   if (!formState.userName) {
-    message.error('请选择用户名')
-    return
+    message.error('请选择用户名');
+    return;
   }
 
   try {
-    loading.value = true
+    loading.value = true;
 
     await erpLogin({
       username: formState.userName,
       password: formState.password
-    })
+    });
 
-    message.success('登录成功')
-    const redirect = (route.query.redirect as string) || '/'
-    router.replace(redirect)
-  } catch (err: any) {
-    message.error(err?.message || '登录失败')
+    message.success('登录成功');
+    const redirect = (route.query.redirect as string) || '/';
+    router.replace(redirect);
+  } catch (err) {
+    message.error(err instanceof Error ? err.message : '登录失败');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -190,8 +177,18 @@ async function handleLogin() {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse 80% 70% at 70% 20%, rgba(191, 219, 254, 0.55) 0%, rgba(219, 234, 254, 0.25) 40%, transparent 70%),
-    radial-gradient(ellipse 70% 60% at 15% 85%, rgba(191, 219, 254, 0.45) 0%, rgba(219, 234, 254, 0.18) 45%, transparent 75%),
+    radial-gradient(
+      ellipse 80% 70% at 70% 20%,
+      rgba(191, 219, 254, 0.55) 0%,
+      rgba(219, 234, 254, 0.25) 40%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 70% 60% at 15% 85%,
+      rgba(191, 219, 254, 0.45) 0%,
+      rgba(219, 234, 254, 0.18) 45%,
+      transparent 75%
+    ),
     linear-gradient(180deg, #f8fbff 0%, #eef4ff 50%, #e6f0ff 100%);
   overflow: hidden;
 }
@@ -237,8 +234,13 @@ async function handleLogin() {
   animation-delay: -12s;
 }
 @keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(50px, -35px) scale(1.12); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(50px, -35px) scale(1.12);
+  }
 }
 
 .login-container {
@@ -265,8 +267,12 @@ async function handleLogin() {
   flex: 1;
   padding: 52px 44px;
   color: #1e293b;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.55) 0%, rgba(239, 246, 255, 0.55) 55%, rgba(219, 234, 254, 0.55) 100%);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(239, 246, 255, 0.55) 55%,
+    rgba(219, 234, 254, 0.55) 100%
+  );
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -319,8 +325,21 @@ async function handleLogin() {
   animation: logoPulse 4s ease-in-out infinite;
 }
 @keyframes logoPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 12px 28px rgba(59, 130, 246, 0.45), 0 0 0 8px rgba(59, 130, 246, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
-  50% { transform: scale(1.03); box-shadow: 0 16px 34px rgba(59, 130, 246, 0.5), 0 0 0 12px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 12px 28px rgba(59, 130, 246, 0.45),
+      0 0 0 8px rgba(59, 130, 246, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow:
+      0 16px 34px rgba(59, 130, 246, 0.5),
+      0 0 0 12px rgba(59, 130, 246, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
 }
 .brand-title {
   font-size: 30px;
@@ -451,8 +470,16 @@ async function handleLogin() {
   .login-brand {
     padding: 32px 24px;
   }
-  .brand-title { font-size: 24px; }
-  .brand-logo { width: 60px; height: 60px; font-size: 28px; }
-  .login-form-wrap { padding: 32px 24px; }
+  .brand-title {
+    font-size: 24px;
+  }
+  .brand-logo {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+  .login-form-wrap {
+    padding: 32px 24px;
+  }
 }
 </style>

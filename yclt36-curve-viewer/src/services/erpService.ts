@@ -1,16 +1,16 @@
-import { get, post } from '@/api'
-import { toCamelCase, ApiResponse } from '@/services'
+import { get, post } from '@/api';
+import { toCamelCase, ApiResponse } from '@/utils/api';
 
 /** ERP 用户信息 */
 export interface ERPUser {
-  username?: string
-  displayName?: string
+  username?: string;
+  displayName?: string;
 }
 
 /** ERP 登录请求参数 */
 export interface ERPLoginRequest {
-  username: string
-  password: string
+  username: string;
+  password: string;
 }
 
 /**
@@ -24,13 +24,13 @@ export const erpService = {
    * 获取所有 ERP 用户名列表
    */
   async getAllUsernames(): Promise<string[]> {
-    const response = await get<ApiResponse<string[]>>('/api/ERP/users')
+    const response = await get<ApiResponse<string[]>>('/api/ERP/users');
 
     if (!response.Success) {
-      throw new Error(response.Message || '获取用户列表失败')
+      throw new Error(response.Message || '获取用户列表失败');
     }
 
-    return toCamelCase(response.Data) as string[]
+    return toCamelCase(response.Data) as string[];
   },
 
   /**
@@ -41,14 +41,14 @@ export const erpService = {
     const response = await post<ApiResponse<ERPUser>>('/api/ERP/validate', {
       Username: params.username,
       Upwd: params.password
-    })
+    });
 
     if (!response.Success) {
-      throw new Error(response.Message || '登录失败')
+      throw new Error(response.Message || '登录失败');
     }
 
-    return toCamelCase(response.Data) as ERPUser
+    return toCamelCase(response.Data) as ERPUser;
   }
-}
+};
 
-export default erpService
+export default erpService;

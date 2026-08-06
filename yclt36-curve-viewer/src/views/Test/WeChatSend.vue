@@ -8,22 +8,12 @@
     </div>
 
     <a-card class="form-card" :body-style="{ maxHeight: 'calc(100vh - 160px)', overflowY: 'auto' }">
-      <a-form
-        ref="wechatFormRef"
-        :model="wechatForm"
-        :rules="wechatRules"
-        layout="vertical"
-        class="wecom-form"
-      >
+      <a-form ref="wechatFormRef" :model="wechatForm" :rules="wechatRules" layout="vertical" class="wecom-form">
         <!-- 发送类型选择 -->
         <a-form-item label="发送类型" name="sendType">
           <a-radio-group v-model:value="wechatForm.sendType" button-style="solid" @change="handleTypeChange">
-            <a-radio-button value="user">
-              <UserOutlined /> 发送给个人
-            </a-radio-button>
-            <a-radio-button value="chat" >
-              <TeamOutlined /> 发送给群聊
-            </a-radio-button>
+            <a-radio-button value="user"> <UserOutlined /> 发送给个人 </a-radio-button>
+            <a-radio-button value="chat"> <TeamOutlined /> 发送给群聊 </a-radio-button>
           </a-radio-group>
         </a-form-item>
 
@@ -99,12 +89,7 @@
         <!-- 个人模式 -->
         <template v-else>
           <a-form-item name="targets" class="hidden-form-item">
-            <a-select
-              v-model:value="wechatForm.targets"
-              mode="multiple"
-              :open="false"
-              style="width: 100%"
-            >
+            <a-select v-model:value="wechatForm.targets" mode="multiple" :open="false" style="width: 100%">
               <template #suffixIcon></template>
             </a-select>
           </a-form-item>
@@ -136,11 +121,7 @@
               <template #icon><BugOutlined /></template>
               调试
             </a-button>
-            <a-button
-              type="primary"
-              :loading="sendingWechat"
-              @click="handleSend"
-            >
+            <a-button type="primary" :loading="sendingWechat" @click="handleSend">
               <template #icon><SendOutlined /></template>
               {{ sendButtonText }}
             </a-button>
@@ -150,14 +131,8 @@
     </a-card>
 
     <!-- 调试弹窗 -->
-    <a-modal
-      v-model:open="debugVisible"
-      title="调试面板"
-      width="680px"
-      :footer="null"
-      @cancel="closeDebugModal"
-    >
-      <a-space direction="vertical" style="width: 100%;" :size="16">
+    <a-modal v-model:open="debugVisible" title="调试面板" width="680px" :footer="null" @cancel="closeDebugModal">
+      <a-space direction="vertical" style="width: 100%" :size="16">
         <!-- 卡片预览 -->
         <a-card
           class="debug-card-preview"
@@ -165,15 +140,11 @@
           :bordered="false"
         >
           <template #title>
-            <span class="debug-card-title">
-              <MessageOutlined /> 待发送消息预览
-            </span>
+            <span class="debug-card-title"> <MessageOutlined /> 待发送消息预览 </span>
           </template>
           <template #extra>
-            <a-tag
-              :color="urlTooLong ? 'red' : (titleTooLong || descTooLong ? 'orange' : 'green')"
-            >
-              {{ urlTooLong ? '链接过长' : (titleTooLong ? '标题过长' : (descTooLong ? '描述过长' : '参数正常')) }}
+            <a-tag :color="urlTooLong ? 'red' : titleTooLong || descTooLong ? 'orange' : 'green'">
+              {{ urlTooLong ? '链接过长' : titleTooLong ? '标题过长' : descTooLong ? '描述过长' : '参数正常' }}
             </a-tag>
           </template>
 
@@ -206,14 +177,17 @@
             </a-descriptions-item>
 
             <a-descriptions-item label="群聊名称">
-              <a-typography-text :content="cardData.chatName || '（使用标题）'" :ellipsis="{ rows: 1, tooltip: true }" />
+              <a-typography-text
+                :content="cardData.chatName || '（使用标题）'"
+                :ellipsis="{ rows: 1, tooltip: true }"
+              />
             </a-descriptions-item>
 
             <a-descriptions-item label="链接">
               <a-typography-text
                 :class="['debug-url', { 'text-danger': urlTooLong }]"
                 :content="cardData.url || '（未设置）'"
-                style="max-width: 100%;"
+                style="max-width: 100%"
               />
               <a-typography-text v-if="urlTooLong" type="danger" class="text-tip">
                 超过 {{ MAX_URL }} 字，发送时将截断
@@ -258,14 +232,22 @@
             </template>
 
             <!-- 个人文本 / 群聊文本 → 消息内容 -->
-            <template v-if="(linkForm.linkType === 'user' && linkForm.userMsgType === 'text') || linkForm.linkType === 'chatText'">
+            <template
+              v-if="
+                (linkForm.linkType === 'user' && linkForm.userMsgType === 'text') || linkForm.linkType === 'chatText'
+              "
+            >
               <a-form-item label="消息内容">
                 <a-textarea v-model:value="linkForm.content" placeholder="输入消息内容" :rows="3" allow-clear />
               </a-form-item>
             </template>
 
             <!-- 个人卡片 / 群聊卡片 → 标题+描述+链接 -->
-            <template v-if="(linkForm.linkType === 'user' && linkForm.userMsgType === 'card') || linkForm.linkType === 'chatCard'">
+            <template
+              v-if="
+                (linkForm.linkType === 'user' && linkForm.userMsgType === 'card') || linkForm.linkType === 'chatCard'
+              "
+            >
               <a-row :gutter="16">
                 <a-col :span="12">
                   <a-form-item label="标题">
@@ -298,19 +280,10 @@
             </a-form-item>
           </a-form>
 
-          <a-collapse
-            v-if="generatedLink"
-            :bordered="false"
-            :active-key="['1']"
-            class="debug-result-collapse"
-          >
+          <a-collapse v-if="generatedLink" :bordered="false" :active-key="['1']" class="debug-result-collapse">
             <a-collapse-panel key="1" header="已生成的链接">
               <a-input-group compact>
-                <a-input
-                  v-model:value="generatedLink"
-                  readonly
-                  style="width: calc(100% - 76px);"
-                />
+                <a-input v-model:value="generatedLink" readonly style="width: calc(100% - 76px)" />
                 <a-button type="primary" @click="copyLink">复制</a-button>
               </a-input-group>
             </a-collapse-panel>
@@ -322,77 +295,85 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { message } from 'ant-design-vue'
-import type { FormInstance } from 'ant-design-vue/es/form'
-import { UserOutlined, TeamOutlined, SendOutlined, LinkOutlined, BugOutlined, MessageOutlined } from '@ant-design/icons-vue'
-import { weChatWorkService } from '@/services/wechatWorkService'
-import { SendMessageDto, GroupChatMessageDto, WechatWorkMessageType } from '@/api-generated/api'
-import OrgUserSelector from '@/components/OrgUserSelector.vue'
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { message } from 'ant-design-vue';
+import type { FormInstance } from 'ant-design-vue/es/form';
+import {
+  UserOutlined,
+  TeamOutlined,
+  SendOutlined,
+  LinkOutlined,
+  BugOutlined,
+  MessageOutlined
+} from '@ant-design/icons-vue';
+import { weChatWorkService, type WeChatChat, type WeChatUser } from '@/services/wechatWorkService';
+import { SendMessageDto, GroupChatMessageDto, WechatWorkMessageType } from '@/api-generated/api';
+import type { DefaultOptionType } from 'ant-design-vue/es/vc-select/Select';
+import OrgUserSelector from '@/components/OrgUserSelector.vue';
 
 // 长度限制
-const MAX_TITLE = 128
-const MAX_DESC = 512
-const MAX_URL = 2048
+const MAX_TITLE = 128;
+const MAX_DESC = 512;
+const MAX_URL = 2048;
 
 /** 安全解码 URL 参数 */
 function safeDecode(val: unknown): string {
-  if (!val) return ''
+  if (!val) return '';
   try {
-    return decodeURIComponent(decodeURIComponent(val as string))
+    return decodeURIComponent(decodeURIComponent(val as string));
   } catch {
     try {
       // 已经是解码后的，直接返回
-      const s = val as string
+      const s = val as string;
       // 尝试再解码一次
-      const d = decodeURIComponent(s)
-      return d === s ? s : d
+      const d = decodeURIComponent(s);
+      return d === s ? s : d;
     } catch {
-      return val as string
+      return val as string;
     }
   }
 }
 
 /** 从 query 读取参数，安全回退 */
-const route = useRoute()
+const route = useRoute();
 const cardData = reactive({
   title: safeDecode(route.query.title) || '系统通知',
   description: safeDecode(route.query.description) || '您好，请及时查看最新信息。',
   url: safeDecode(route.query.url) || 'https://www.example.com',
-  chatName: safeDecode(route.query.chatName) || (safeDecode(route.query.title) || '新建群聊'),
+  chatName: safeDecode(route.query.chatName) || safeDecode(route.query.title) || '新建群聊',
   content: safeDecode(route.query.content) || ''
-})
+});
 
 // 长度检查
-const titleTooLong = computed(() => cardData.title.length > MAX_TITLE)
-const descTooLong = computed(() => cardData.description.length > MAX_DESC)
-const urlTooLong = computed(() => cardData.url.length > MAX_URL)
+const titleTooLong = computed(() => cardData.title.length > MAX_TITLE);
+const descTooLong = computed(() => cardData.description.length > MAX_DESC);
+const urlTooLong = computed(() => cardData.url.length > MAX_URL);
 
 /** 按限制截断 */
 function truncate(str: string, max: number): string {
-  return str.length > max ? str.slice(0, max) : str
+  return str.length > max ? str.slice(0, max) : str;
 }
 
-const wechatFormRef = ref<FormInstance>()
-const sendingWechat = ref(false)
-const loadingRecipients = ref(false)
-const recipientSearchText = ref('')
-const debugVisible = ref(false)
+const wechatFormRef = ref<FormInstance>();
+const sendingWechat = ref(false);
+const loadingRecipients = ref(false);
+const recipientSearchText = ref('');
+const debugVisible = ref(false);
 
 const openDebugModal = () => {
-  debugVisible.value = true
-}
+  debugVisible.value = true;
+};
 
 const closeDebugModal = () => {
-  debugVisible.value = false
-}
+  debugVisible.value = false;
+};
 
-const selectedUserIds = ref<string[]>([])
-const allUsers = ref<any[]>([])
-const allChats = ref<any[]>([])
+const selectedUserIds = ref<string[]>([]);
+const allUsers = ref<WeChatUser[]>([]);
+const allChats = ref<WeChatChat[]>([]);
 
-const orgSelectorRef = ref<InstanceType<typeof OrgUserSelector>>()
+const orgSelectorRef = ref<InstanceType<typeof OrgUserSelector>>();
 
 /**
  * 统一 URL 参数规则（最简设计）：
@@ -409,48 +390,45 @@ const orgSelectorRef = ref<InstanceType<typeof OrgUserSelector>>()
  *   新建群聊·文本: ?sendType=chat&chatMode=new&msgMode=text&content=你好&chatName=群名
  *   新建群聊·卡片: ?sendType=chat&chatMode=new&msgMode=card&title=标题&url=https://...&chatName=群名
  */
-const sendTypeParam = route.query.sendType as string | undefined
-const chatModeParam = route.query.chatMode as string | undefined
-const msgModeParam = route.query.msgMode as string | undefined
-const initialSendType: 'user' | 'chat' =
-  sendTypeParam === 'chat' ? 'chat' : 'user'
-const initialChatMode: 'existing' | 'new' =
-  chatModeParam === 'new' ? 'new' : 'existing'
-const msgType: 'text' | 'card' =
-  msgModeParam === 'text' ? 'text' : 'card'
+const sendTypeParam = route.query.sendType as string | undefined;
+const chatModeParam = route.query.chatMode as string | undefined;
+const msgModeParam = route.query.msgMode as string | undefined;
+const initialSendType: 'user' | 'chat' = sendTypeParam === 'chat' ? 'chat' : 'user';
+const initialChatMode: 'existing' | 'new' = chatModeParam === 'new' ? 'new' : 'existing';
+const msgType: 'text' | 'card' = msgModeParam === 'text' ? 'text' : 'card';
 
-const initialGroupMsgType = msgType
-const initialUserMsgType = msgType
+const initialGroupMsgType = msgType;
+const initialUserMsgType = msgType;
 
 const wechatForm = reactive({
   sendType: initialSendType,
   chatMode: initialChatMode,
   groupMsgType: initialGroupMsgType,
   userMsgType: initialUserMsgType,
-  targets: [] as any,
+  targets: undefined as string | string[] | undefined,
   ownerUserId: undefined as string | undefined,
   memberUserIds: [] as string[]
-})
+});
 
 /** 根据当前消息类型动态计算 msgType：文本=1，卡片=5 */
 const currentMsgType = computed(() => {
   if (wechatForm.sendType === 'chat') {
-    return wechatForm.groupMsgType === 'card' ? 5 : 1
+    return wechatForm.groupMsgType === 'card' ? 5 : 1;
   }
-  return wechatForm.userMsgType === 'card' ? 5 : 1
-})
+  return wechatForm.userMsgType === 'card' ? 5 : 1;
+});
 
 const wechatRules = computed(() => {
   const base = {
     sendType: [{ required: true, message: '请选择发送类型' }],
     chatMode: [{ required: true, message: '请选择群聊方式' }]
-  }
+  };
   if (wechatForm.sendType === 'chat') {
     if (wechatForm.chatMode === 'existing') {
       return {
         ...base,
         targets: [{ required: true, message: '请选择群聊', trigger: 'change' }]
-      }
+      };
     }
     return {
       ...base,
@@ -459,197 +437,204 @@ const wechatRules = computed(() => {
         { required: true, message: '请选择群成员', type: 'array', trigger: 'change' },
         { type: 'array', min: 2, message: '群成员至少2人', trigger: 'change' }
       ]
-    }
+    };
   }
   return {
     ...base,
     targets: [{ required: true, message: '请选择接收目标', type: 'array' }]
-  }
-})
+  };
+});
 
 // 链接生成相关
 const linkForm = reactive({
   linkType: 'user' as 'user' | 'chatText' | 'chatCard',
   chatMode: 'existing' as 'existing' | 'new',
   userMsgType: 'card' as 'text' | 'card',
-  title: '', description: '', url: '', chatName: '', content: ''
-})
-const generatedLink = ref('')
+  title: '',
+  description: '',
+  url: '',
+  chatName: '',
+  content: ''
+});
+const generatedLink = ref('');
 
 function generateLink() {
-  const base = window.location.origin + '/#/test/wechatSend'
-  const params = new URLSearchParams()
+  const base = window.location.origin + '/#/test/wechatSend';
+  const params = new URLSearchParams();
 
   if (linkForm.linkType === 'user') {
-    params.set('sendType', 'user')
-    params.set('msgMode', linkForm.userMsgType)
+    params.set('sendType', 'user');
+    params.set('msgMode', linkForm.userMsgType);
   } else {
-    params.set('sendType', 'chat')
-    params.set('chatMode', linkForm.chatMode)
-    params.set('msgMode', linkForm.linkType === 'chatText' ? 'text' : 'card')
+    params.set('sendType', 'chat');
+    params.set('chatMode', linkForm.chatMode);
+    params.set('msgMode', linkForm.linkType === 'chatText' ? 'text' : 'card');
     if (linkForm.chatMode === 'new' && linkForm.chatName) {
-      params.set('chatName', linkForm.chatName)
+      params.set('chatName', linkForm.chatName);
     }
   }
 
   // 内容参数
-  const isText = (linkForm.linkType === 'user' && linkForm.userMsgType === 'text') || linkForm.linkType === 'chatText'
+  const isText = (linkForm.linkType === 'user' && linkForm.userMsgType === 'text') || linkForm.linkType === 'chatText';
   if (isText) {
-    if (linkForm.content) params.set('content', linkForm.content)
+    if (linkForm.content) params.set('content', linkForm.content);
   } else {
-    if (linkForm.title) params.set('title', linkForm.title)
-    if (linkForm.description) params.set('description', linkForm.description)
-    if (linkForm.url) params.set('url', linkForm.url)
+    if (linkForm.title) params.set('title', linkForm.title);
+    if (linkForm.description) params.set('description', linkForm.description);
+    if (linkForm.url) params.set('url', linkForm.url);
   }
 
-  generatedLink.value = base + '?' + params.toString()
+  generatedLink.value = base + '?' + params.toString();
 }
 
 async function copyLink() {
   try {
-    await navigator.clipboard.writeText(generatedLink.value)
-    message.success('链接已复制')
+    await navigator.clipboard.writeText(generatedLink.value);
+    message.success('链接已复制');
   } catch {
     try {
-      const ta = document.createElement('textarea')
-      ta.value = generatedLink.value
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      document.body.removeChild(ta)
-      message.success('链接已复制')
+      const ta = document.createElement('textarea');
+      ta.value = generatedLink.value;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      message.success('链接已复制');
     } catch {
-      message.error('复制失败，请手动复制')
+      message.error('复制失败，请手动复制');
     }
   }
 }
 
 /** 用户选择变化时的回调，同步到 form.targets */
 function onUserSelect(userIds: string[]) {
-  wechatForm.targets = userIds
+  wechatForm.targets = userIds;
 }
 
 const loadChatData = async () => {
-  loadingRecipients.value = true
+  loadingRecipients.value = true;
   try {
-    allChats.value = await weChatWorkService.getChatList()
+    allChats.value = await weChatWorkService.getChatList();
     if (allUsers.value.length === 0) {
-      allUsers.value = await weChatWorkService.getUserList(1)
+      allUsers.value = await weChatWorkService.getUserList(1);
     }
-  } catch (error: any) {
-    message.error(error.message || '加载群聊列表失败')
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '加载群聊列表失败');
   } finally {
-    loadingRecipients.value = false
+    loadingRecipients.value = false;
   }
-}
+};
 
 const handleRecipientSearch = (val: string) => {
-  recipientSearchText.value = val
-}
+  recipientSearchText.value = val;
+};
 
 const filteredChats = computed(() => {
-  const keyword = recipientSearchText.value.toLowerCase().trim()
-  const chats = allChats.value.map(chat => ({ label: chat.name, value: chat.chatid }))
-  if (!keyword) return chats
-  return chats.filter(chat =>
-    chat.label.toLowerCase().includes(keyword) ||
-    chat.value.toLowerCase().includes(keyword)
-  )
-})
+  const keyword = recipientSearchText.value.toLowerCase().trim();
+  const chats = allChats.value.map((chat) => ({ label: chat.name, value: chat.chatid }));
+  if (!keyword) return chats;
+  return chats.filter(
+    (chat) => chat.label.toLowerCase().includes(keyword) || chat.value.toLowerCase().includes(keyword)
+  );
+});
 
-const userOptions = computed(() => allUsers.value.map(user => ({ label: `${user.name} (${user.userid})`, value: user.userid })))
+const userOptions = computed(() =>
+  allUsers.value.map((user) => ({ label: `${user.name} (${user.userid})`, value: user.userid }))
+);
 
-const filterUserByLabel = (inputValue: string, option: any) => {
-  return (option?.label || '').toLowerCase().includes(inputValue.toLowerCase())
-}
+const filterUserByLabel = (inputValue: string, option?: DefaultOptionType) => {
+  return (option?.label || '').toLowerCase().includes(inputValue.toLowerCase());
+};
 
 const sendButtonText = computed(() => {
   if (wechatForm.sendType === 'chat') {
     if (wechatForm.chatMode === 'new') {
-      return wechatForm.groupMsgType === 'card' ? '创建群聊并发送卡片' : '创建群聊并发送消息'
+      return wechatForm.groupMsgType === 'card' ? '创建群聊并发送卡片' : '创建群聊并发送消息';
     }
-    return wechatForm.groupMsgType === 'card' ? '发送卡片' : '发送消息'
+    return wechatForm.groupMsgType === 'card' ? '发送卡片' : '发送消息';
   }
-  return wechatForm.userMsgType === 'card' ? '发送卡片' : '发送消息'
-})
+  return wechatForm.userMsgType === 'card' ? '发送卡片' : '发送消息';
+});
 
 const handleTypeChange = async () => {
-  wechatForm.targets = wechatForm.sendType === 'user' ? [] : undefined
-  wechatForm.chatMode = 'existing'
-  wechatForm.groupMsgType = 'text'
-  wechatForm.userMsgType = 'card'
-  wechatForm.ownerUserId = undefined
-  wechatForm.memberUserIds = []
-  recipientSearchText.value = ''
-  wechatFormRef.value?.clearValidate()
+  wechatForm.targets = wechatForm.sendType === 'user' ? [] : undefined;
+  wechatForm.chatMode = 'existing';
+  wechatForm.groupMsgType = 'text';
+  wechatForm.userMsgType = 'card';
+  wechatForm.ownerUserId = undefined;
+  wechatForm.memberUserIds = [];
+  recipientSearchText.value = '';
+  wechatFormRef.value?.clearValidate();
   if (wechatForm.sendType === 'user') {
-    selectedUserIds.value = []
+    selectedUserIds.value = [];
   } else {
-    loadChatData()
+    loadChatData();
   }
-}
+};
 
 const initialFormState = {
   sendType: initialSendType,
   chatMode: initialChatMode,
   groupMsgType: initialGroupMsgType,
   userMsgType: initialUserMsgType,
-  targets: [] as any,
+  targets: undefined as string | string[] | undefined,
   ownerUserId: undefined as string | undefined,
   memberUserIds: [] as string[]
-}
+};
 
 const handleReset = () => {
-  wechatForm.sendType = initialFormState.sendType
-  wechatForm.chatMode = initialFormState.chatMode
-  wechatForm.groupMsgType = initialFormState.groupMsgType
-  wechatForm.userMsgType = initialFormState.userMsgType
-  wechatForm.targets = initialFormState.targets
-  wechatForm.ownerUserId = initialFormState.ownerUserId
-  wechatForm.memberUserIds = initialFormState.memberUserIds
-  selectedUserIds.value = []
-  orgSelectorRef.value?.clearSelection()
-  wechatFormRef.value?.resetFields()
-}
+  wechatForm.sendType = initialFormState.sendType;
+  wechatForm.chatMode = initialFormState.chatMode;
+  wechatForm.groupMsgType = initialFormState.groupMsgType;
+  wechatForm.userMsgType = initialFormState.userMsgType;
+  wechatForm.targets = initialFormState.targets;
+  wechatForm.ownerUserId = initialFormState.ownerUserId;
+  wechatForm.memberUserIds = initialFormState.memberUserIds;
+  selectedUserIds.value = [];
+  orgSelectorRef.value?.clearSelection();
+  wechatFormRef.value?.resetFields();
+};
 
 const handleSend = async () => {
   // 发送给个人：先预判接收人，避免被表单必填校验拦截
   if (wechatForm.sendType === 'user') {
     const targets = Array.isArray(wechatForm.targets)
       ? wechatForm.targets.filter(Boolean)
-      : (wechatForm.targets ? [wechatForm.targets] : [])
+      : wechatForm.targets
+        ? [wechatForm.targets]
+        : [];
     if (!targets.length) {
-      message.warning('请选择接收人')
-      return
+      message.warning('请选择接收人');
+      return;
     }
   }
 
   try {
-    await wechatFormRef.value?.validate()
-    sendingWechat.value = true
+    await wechatFormRef.value?.validate();
+    sendingWechat.value = true;
 
     if (wechatForm.sendType === 'chat') {
-      const isCard = wechatForm.groupMsgType === 'card'
+      const isCard = wechatForm.groupMsgType === 'card';
       // 消息内容：卡片模式用标题+描述+链接拼接，文本模式直接取 content 参数
-      const title = truncate(cardData.title, MAX_TITLE)
-      const description = truncate(cardData.description, MAX_DESC)
-      const url = truncate(cardData.url, MAX_URL)
+      const title = truncate(cardData.title, MAX_TITLE);
+      const description = truncate(cardData.description, MAX_DESC);
+      const url = truncate(cardData.url, MAX_URL);
       const content = isCard
         ? `【${title}】\n${description}\n详情链接: ${url}`
-        : (cardData.content || `【${title}】\n${description}\n详情链接: ${url}`)
+        : cardData.content || `【${title}】\n${description}\n详情链接: ${url}`;
 
       if (wechatForm.chatMode === 'existing') {
-        const chatId = Array.isArray(wechatForm.targets) ? wechatForm.targets[0] : wechatForm.targets
+        const chatId = Array.isArray(wechatForm.targets) ? wechatForm.targets[0] : wechatForm.targets;
         const dto = new GroupChatMessageDto({
           chatId,
           content,
           msgType: currentMsgType.value as WechatWorkMessageType,
           ...(isCard ? { title, description, url } : {})
-        })
-        await weChatWorkService.sendToGroupChat(dto)
-        message.success('发送群聊消息成功')
+        });
+        await weChatWorkService.sendToGroupChat(dto);
+        message.success('发送群聊消息成功');
       } else {
-        const chatName = cardData.chatName
+        const chatName = cardData.chatName;
         const dto = new GroupChatMessageDto({
           chatName,
           ownerUserId: wechatForm.ownerUserId,
@@ -657,28 +642,30 @@ const handleSend = async () => {
           content,
           msgType: currentMsgType.value as WechatWorkMessageType,
           ...(isCard ? { title, description, url } : {})
-        })
-        await weChatWorkService.createChatAndSend(dto)
-        message.success('创建群聊并发送成功')
+        });
+        await weChatWorkService.createChatAndSend(dto);
+        message.success('创建群聊并发送成功');
       }
     } else {
       // 发送给个人：上面已校验过接收人
-      const targets = (Array.isArray(wechatForm.targets) ? wechatForm.targets : [wechatForm.targets]).filter(Boolean)
+      const targets = (Array.isArray(wechatForm.targets) ? wechatForm.targets : [wechatForm.targets as string]).filter(
+        Boolean
+      );
 
       // 发送前对超长内容截断
-      const title = truncate(cardData.title, MAX_TITLE)
-      const description = truncate(cardData.description, MAX_DESC)
-      const url = truncate(cardData.url, MAX_URL)
+      const title = truncate(cardData.title, MAX_TITLE);
+      const description = truncate(cardData.description, MAX_DESC);
+      const url = truncate(cardData.url, MAX_URL);
 
       if (wechatForm.userMsgType === 'text') {
-        const content = cardData.content || `【${title}】\n${description}\n详情链接: ${url}`
+        const content = cardData.content || `【${title}】\n${description}\n详情链接: ${url}`;
         const sendMessageDto = new SendMessageDto({
           users: targets,
           content,
           msgType: currentMsgType.value as WechatWorkMessageType
-        })
-        await weChatWorkService.sendMessage(sendMessageDto)
-        message.success('发送消息成功')
+        });
+        await weChatWorkService.sendMessage(sendMessageDto);
+        message.success('发送消息成功');
       } else {
         const sendMessageDto = new SendMessageDto({
           users: targets,
@@ -686,30 +673,30 @@ const handleSend = async () => {
           description,
           url,
           msgType: currentMsgType.value as WechatWorkMessageType
-        })
-        console.log('Sending card:', { targets, title, description, url })
-        await weChatWorkService.sendCardMessage(sendMessageDto)
-        message.success('发送卡片成功')
+        });
+        console.log('Sending card:', { targets, title, description, url });
+        await weChatWorkService.sendCardMessage(sendMessageDto);
+        message.success('发送卡片成功');
       }
     }
-    handleReset()
+    handleReset();
   } catch (error) {
-    console.error(error)
+    console.error(error);
     // 表单校验失败（validate reject）时不显示"发送失败"
-    if (error && (error as any).errorFields) {
-      return
+    if (error && typeof error === 'object' && 'errorFields' in error) {
+      return;
     }
-    message.error('发送失败，请重试')
+    message.error('发送失败，请重试');
   } finally {
-    sendingWechat.value = false
+    sendingWechat.value = false;
   }
-}
+};
 
 onMounted(() => {
   if (wechatForm.sendType !== 'user') {
-    loadChatData()
+    loadChatData();
   }
-})
+});
 </script>
 
 <style scoped>
@@ -879,5 +866,4 @@ onMounted(() => {
 .debug-result-collapse :deep(.ant-collapse-content-box) {
   padding: 12px;
 }
-
 </style>

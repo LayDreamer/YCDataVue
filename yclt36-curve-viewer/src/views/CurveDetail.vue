@@ -9,19 +9,19 @@
           </template>
           <span class="back-text">返回</span>
         </a-button>
-        
+
         <div class="page-title">
           <h2>曲线详情</h2>
           <span class="page-subtitle">工单号: {{ recordData?.workOrderNumber || '加载中...' }}</span>
           <span class="page-subtitle">比例阀编号: {{ recordData?.blfNumber || '加载中...' }}</span>
         </div>
-        
+
         <div class="nav-controls">
-          <a-button 
-            type="text" 
-            @click="toggleDataSidebar" 
+          <a-button
+            type="text"
+            @click="toggleDataSidebar"
             class="sidebar-toggle"
-            :class="{ 'active': !isDataSidebarCollapsed }"
+            :class="{ active: !isDataSidebarCollapsed }"
           >
             <template #icon>
               <DatabaseOutlined />
@@ -48,25 +48,21 @@
             <a-card class="chart-card" :bordered="false">
               <div class="chart-section">
                 <!-- 这里的 CurveChart 组件内部需要处理 options 变化 -->
-                <CurveChart 
-                  :options="chartOptions" 
-                  :is-loading="isLoading" 
-                  ref="chartRef" 
-                />
-              </div>              
+                <CurveChart :options="chartOptions" :is-loading="isLoading" ref="chartRef" />
+              </div>
             </a-card>
           </div>
         </div>
       </a-layout-content>
 
       <!-- 数据列表侧边栏 -->
-      <a-layout-sider 
-        class="right-sidebar data-sidebar" 
-        :width="400" 
-        theme="light" 
+      <a-layout-sider
+        class="right-sidebar data-sidebar"
+        :width="400"
+        theme="light"
         collapsed-width="0"
-        v-model:collapsed="isDataSidebarCollapsed" 
-        :trigger="null" 
+        v-model:collapsed="isDataSidebarCollapsed"
+        :trigger="null"
         collapsible
       >
         <div class="sidebar-header">
@@ -77,19 +73,19 @@
             </h3>
           </div>
         </div>
-        
+
         <div class="sidebar-content">
-          <a-table 
-            :columns="tableColumns" 
+          <a-table
+            :columns="tableColumns"
             :data-source="tableData"
-            :pagination="{ 
-              pageSize: 10, 
-              showTotal: (total: any) => `共 ${total} 条数据` 
-            }" 
-            :loading="isLoading" 
+            :pagination="{
+              pageSize: 10,
+              showTotal: (total: number) => `共 ${total} 条数据`
+            }"
+            :loading="isLoading"
             size="middle"
-            bordered 
-            :scroll="{ y: 'calc(100vh - 280px)' }" 
+            bordered
+            :scroll="{ y: 'calc(100vh - 280px)' }"
             class="data-table"
           />
         </div>
@@ -99,83 +95,94 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, shallowRef, inject, onActivated, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import type { TableColumnsType } from 'ant-design-vue'
+import { ref, computed, onMounted, watch, shallowRef, inject, onActivated, nextTick } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { message } from 'ant-design-vue';
+import type { TableColumnsType } from 'ant-design-vue';
 import type { EChartsOption } from 'echarts';
-import { LeftOutlined, DatabaseOutlined, LineChartOutlined } from '@ant-design/icons-vue'
-import CurveChart from '@/components/CurveChart.vue'
-import { useChartOptions } from '@/composables/useChartOptions'
-import { blfParameterService, type BLFParameter } from '@/services/blfParameterService'
+import { LeftOutlined, DatabaseOutlined, LineChartOutlined } from '@ant-design/icons-vue';
+import CurveChart from '@/components/CurveChart.vue';
+import { useChartOptions } from '@/composables/useChartOptions';
+import { CloseTabKey } from '@/keys';
+import {
+  blfParameterService,
+  type BLFParameter,
+  type CurrentFlowRate,
+  type PressureFlowRate
+} from '@/services/blfParameterService';
 
 // 路由和导航
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
 // 状态管理
-const isLoading = ref(false)
-const chartRef = ref()
-const isDataSidebarCollapsed = ref(false)
-const chartOptions = shallowRef<EChartsOption>({})
-const recordData = ref<BLFParameter | null>(null)
+const isLoading = ref(false);
+const chartRef = ref();
+const isDataSidebarCollapsed = ref(false);
+const chartOptions = shallowRef<EChartsOption>({});
+const recordData = ref<BLFParameter | null>(null);
 
 // 从路由参数获取数据 (实时计算)
-const blfNumber = computed(() => route.query.id as string)
-const curveIndex = computed(() => route.query.index as string)
+const blfNumber = computed(() => route.query.id as string);
+const curveIndex = computed(() => route.query.index as string);
 
 // 表格列定义
 const tableColumns = computed<TableColumnsType>(() => {
-  const isPressureCurve = curveIndex.value === 'pressureFlowRateCurve'
+  const isPressureCurve = curveIndex.value === 'pressureFlowRateCurve';
   return [
     { title: '序号', dataIndex: 'index', key: 'index', width: 60, align: 'center', fixed: 'left' },
-    { 
+    {
       title: isPressureCurve ? '压力值 (Pa)' : '电流值 (A)',
-      dataIndex: isPressureCurve ? 'pressure' : 'current', 
-      key: isPressureCurve ? 'pressure' : 'current', 
-      align: 'right', width: 120
+      dataIndex: isPressureCurve ? 'pressure' : 'current',
+      key: isPressureCurve ? 'pressure' : 'current',
+      align: 'right',
+      width: 120
     },
     { title: '流量值 (L/min)', dataIndex: 'flow', key: 'flow', align: 'right', width: 120 }
-  ]
-})
+  ];
+});
 
 // 表格数据处理
+/** 曲线数据点：电流流量与压力流量字段的并集（按需可空），避免对联合类型直接取值报错 */
+type CurvePoint = Partial<CurrentFlowRate> & Partial<PressureFlowRate>;
+
 const tableData = computed(() => {
-  if (!recordData.value) return []
-  const dataSource = curveIndex.value === 'pressureFlowRateCurve' 
-    ? recordData.value.pressureFlowRateCurve 
-    : recordData.value.currentFlowRateCurve
-  
-  if (!dataSource || !dataSource.length) return []
+  if (!recordData.value) return [];
+  const dataSource =
+    curveIndex.value === 'pressureFlowRateCurve'
+      ? recordData.value.pressureFlowRateCurve
+      : recordData.value.currentFlowRateCurve;
+
+  if (!dataSource || !dataSource.length) return [];
 
   return dataSource.map((item, index) => ({
     key: index,
     index: index + 1,
-    current: (item as any).current?.toFixed(3) || '0.000',
-    pressure: (item as any).pressure?.toFixed(3) || '0.000',
+    current: (item as CurvePoint).current?.toFixed(3) || '0.000',
+    pressure: (item as CurvePoint).pressure?.toFixed(3) || '0.000',
     flow: item.flowRate?.toFixed(2) || '0.00'
-  }))
-})
+  }));
+});
 
 // 数据加载核心逻辑
 const loadData = async () => {
   // 多标签页模式下，非当前活跃页不跑逻辑
-  if (route.name !== 'CurveDetail') return; 
+  if (route.name !== 'CurveDetail') return;
   if (!blfNumber.value) return;
 
-  isLoading.value = true
+  isLoading.value = true;
   try {
-    const data = await blfParameterService.getByNumber(blfNumber.value)
+    const data = await blfParameterService.getByNumber(blfNumber.value);
     if (data) {
-      recordData.value = data
-      updateChartOptions()
+      recordData.value = data;
+      updateChartOptions();
     }
-  } catch (error) {
-    message.error('加载曲线数据失败')
+  } catch {
+    message.error('加载曲线数据失败');
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 // 更新图表配置
 const updateChartOptions = () => {
@@ -185,74 +192,75 @@ const updateChartOptions = () => {
     return;
   }
 
-  const dataSource = curveIndex.value === 'pressureFlowRateCurve'
-    ? recordData.value.pressureFlowRateCurve
-    : recordData.value.currentFlowRateCurve
+  const dataSource =
+    curveIndex.value === 'pressureFlowRateCurve'
+      ? recordData.value.pressureFlowRateCurve
+      : recordData.value.currentFlowRateCurve;
 
   // --- 【修改：核心修复】 ---
   if (!dataSource || dataSource.length === 0) {
     // 1. 设置为空对象 {}。这通常会触发子组件 ECharts 的 setOption({}, true) 从而清空画布
-    chartOptions.value = {}; 
-    
+    chartOptions.value = {};
+
     // 2. 如果你的子组件 CurveChart 支持 ref 调用，也可以直接清空
     if (chartRef.value?.chartInstance) {
-       chartRef.value.chartInstance.clear();
+      chartRef.value.chartInstance.clear();
     }
     return;
   }
   // -------------------------
 
-  const safeData = JSON.parse(JSON.stringify(dataSource))
-  chartOptions.value = useChartOptions(safeData, curveIndex.value).createChartOptions.value
-}
+  const safeData = JSON.parse(JSON.stringify(dataSource));
+  chartOptions.value = useChartOptions(safeData, curveIndex.value).createChartOptions.value;
+};
 
 // 刷新图表尺寸 (关键：解决切换标签显示问题)
 const refreshChart = () => {
   nextTick(() => {
     if (chartRef.value) {
       setTimeout(() => {
-        chartRef.value?.resize?.()
-      }, 150) // 延迟确保 DOM 容器完全展开
+        chartRef.value?.resize?.();
+      }, 150); // 延迟确保 DOM 容器完全展开
     }
-  })
-}
+  });
+};
 
 // 标签页切回来时触发
 onActivated(() => {
-  refreshChart()
-})
+  refreshChart();
+});
 
 // 导航操作
-const closeTab = inject('closeTab') as (path?: string) => void;
+const closeTab = inject(CloseTabKey, () => {});
 const goBack = () => {
-  const currentPath = route.fullPath; 
+  const currentPath = route.fullPath;
   router.push({ name: 'Products' }).then(() => {
     if (closeTab) closeTab(currentPath);
   });
-}
+};
 
 const toggleDataSidebar = () => {
-  isDataSidebarCollapsed.value = !isDataSidebarCollapsed.value
-  refreshChart() // 侧边栏切换时重绘图表
-}
+  isDataSidebarCollapsed.value = !isDataSidebarCollapsed.value;
+  refreshChart(); // 侧边栏切换时重绘图表
+};
 
 // 生命周期
 onMounted(async () => {
-  await loadData()
-})
+  await loadData();
+});
 
 // 监听路由参数：同时监听 ID 和 Index 的变化
 watch(
-  () => [route.query.id, route.query.index], 
+  () => [route.query.id, route.query.index],
   async ([newId, newIndex]) => {
     // 只有在当前组件确实处于活跃状态（当前路由）且参数有效时才触发
     if (newId && newIndex && route.name === 'CurveDetail') {
-      await loadData()
-      refreshChart()
+      await loadData();
+      refreshChart();
     }
-  }, 
+  },
   { immediate: false }
-)
+);
 </script>
 
 <style scoped>
@@ -400,9 +408,16 @@ watch(
 }
 
 /* 响应式动画 */
-.fade-slide-enter-active, .fade-slide-leave-active {
+.fade-slide-enter-active,
+.fade-slide-leave-active {
   transition: all 0.3s;
 }
-.fade-slide-enter-from { opacity: 0; transform: translateX(-10px); }
-.fade-slide-leave-to { opacity: 0; transform: translateX(10px); }
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(10px);
+}
 </style>

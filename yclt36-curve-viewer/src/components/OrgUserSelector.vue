@@ -27,7 +27,7 @@
             :closable="true"
             @close="removeSelectedUser(user.userid)"
           >
-            <a-avatar :size="16" :style="{ backgroundColor: getAvatarColor(user.name) }" style="margin-right: 4px;">
+            <a-avatar :size="16" :style="{ backgroundColor: getAvatarColor(user.name) }" style="margin-right: 4px">
               {{ user.name?.charAt(0) }}
             </a-avatar>
             {{ user.name }}
@@ -75,124 +75,126 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import type { TableProps } from 'ant-design-vue'
-import { weChatWorkService, WeChatDepartment, WeChatUser } from '@/services/wechatWorkService'
+import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { message } from 'ant-design-vue';
+import type { TableProps, TablePaginationConfig } from 'ant-design-vue';
+import { weChatWorkService, WeChatDepartment, WeChatUser } from '@/services/wechatWorkService';
 
 // ==================== Props ====================
 
-const props = withDefaults(defineProps<{
-  /** 已选中的用户 ID 列表（v-model:selectedUserIds） */
-  selectedUserIds?: string[]
-  /** 是否显示已选标签栏（默认显示） */
-  showSelectedTags?: boolean
-  /** 人员表格最大高度 */
-  maxTableHeight?: string
-  /** 是否允许多选（默认 true，false 为单选 radio） */
-  multiple?: boolean
-}>(), {
-  selectedUserIds: () => [],
-  showSelectedTags: true,
-  maxTableHeight: 'calc(100vh - 480px)',
-  multiple: true,
-})
+const props = withDefaults(
+  defineProps<{
+    /** 已选中的用户 ID 列表（v-model:selectedUserIds） */
+    selectedUserIds?: string[];
+    /** 是否显示已选标签栏（默认显示） */
+    showSelectedTags?: boolean;
+    /** 人员表格最大高度 */
+    maxTableHeight?: string;
+    /** 是否允许多选（默认 true，false 为单选 radio） */
+    multiple?: boolean;
+  }>(),
+  {
+    selectedUserIds: () => [],
+    showSelectedTags: true,
+    maxTableHeight: 'calc(100vh - 480px)',
+    multiple: true
+  }
+);
 
 // ==================== Emits ====================
 
 const emit = defineEmits<{
-  'update:selectedUserIds': [ids: string[]]
-  'deptChange': [deptId: string]
-  'userSelect': [userIds: string[]]
+  'update:selectedUserIds': [ids: string[]];
+  deptChange: [deptId: string];
+  userSelect: [userIds: string[]];
   /** 部门列表加载失败（含空数据） */
-  'deptLoadFailed': [errorMessage: string]
+  deptLoadFailed: [errorMessage: string];
   /** 部门列表加载成功 */
-  'deptLoadSuccess': []
-}>()
+  deptLoadSuccess: [];
+}>();
 
 // ==================== 部门数据 ====================
 
-const departments = ref<WeChatDepartment[]>([])
-const currentDeptKeys = ref<string[]>([])
-const deptLoading = ref(false)
+const departments = ref<WeChatDepartment[]>([]);
+const currentDeptKeys = ref<string[]>([]);
+const deptLoading = ref(false);
 
 async function loadDepartments() {
-  deptLoading.value = true
+  deptLoading.value = true;
   try {
-    const list = await weChatWorkService.getDepartmentList()
-    departments.value = list
+    const list = await weChatWorkService.getDepartmentList();
+    departments.value = list;
     if (!list || list.length === 0) {
       // 后端可能返回空数据但未抛错，也视为加载失败
-      emit('deptLoadFailed', '未获取到组织架构数据')
+      emit('deptLoadFailed', '未获取到组织架构数据');
     } else {
-      emit('deptLoadSuccess')
+      emit('deptLoadSuccess');
     }
-  } catch (error: any) {
-    const msg = error?.message || '加载部门列表失败'
-    emit('deptLoadFailed', msg)
-    message.error(msg)
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '加载部门列表失败';
+    emit('deptLoadFailed', msg);
+    message.error(msg);
   } finally {
-    deptLoading.value = false
+    deptLoading.value = false;
   }
 }
 
 async function handleDeptSelect(selectedKeys: string[]) {
   if (!selectedKeys.length) {
-    deptUsers.value = []
-    currentDeptKeys.value = []
-    return
+    deptUsers.value = [];
+    currentDeptKeys.value = [];
+    return;
   }
-  const deptId = selectedKeys[0]
-  currentDeptKeys.value = [deptId]
-  emit('deptChange', deptId)
-  userLoading.value = true
+  const deptId = selectedKeys[0];
+  currentDeptKeys.value = [deptId];
+  emit('deptChange', deptId);
+  userLoading.value = true;
   try {
-    deptUsers.value = await weChatWorkService.getUserList(Number(deptId))
-  } catch (error: any) {
-    message.error(error?.message || '加载人员列表失败')
+    deptUsers.value = await weChatWorkService.getUserList(Number(deptId));
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : '加载人员列表失败');
   } finally {
-    userLoading.value = false
+    userLoading.value = false;
   }
 }
 
 // ==================== 用户数据 ====================
 
-const deptUsers = ref<WeChatUser[]>([])
-const userLoading = ref(false)
-const searchKeyword = ref('')
+const deptUsers = ref<WeChatUser[]>([]);
+const userLoading = ref(false);
+const searchKeyword = ref('');
 
 const filteredUserList = computed(() => {
-  const keyword = searchKeyword.value.toLowerCase().trim()
-  if (!keyword) return deptUsers.value
-  return deptUsers.value.filter(user =>
-    user.name.toLowerCase().includes(keyword) ||
-    user.userid.toLowerCase().includes(keyword)
-  )
-})
+  const keyword = searchKeyword.value.toLowerCase().trim();
+  if (!keyword) return deptUsers.value;
+  return deptUsers.value.filter(
+    (user) => user.name.toLowerCase().includes(keyword) || user.userid.toLowerCase().includes(keyword)
+  );
+});
 
 // ==================== 所有用户（用于显示已选标签） ====================
 
-const allUsers = ref<WeChatUser[]>([])
+const allUsers = ref<WeChatUser[]>([]);
 
 async function loadAllUsers() {
   try {
-    allUsers.value = await weChatWorkService.getUserList(1)
+    allUsers.value = await weChatWorkService.getUserList(1);
   } catch {
     // 静默失败
   }
 }
 
 const selectedUserInfos = computed(() => {
-  if (!props.selectedUserIds.length) return []
-  return allUsers.value.filter(u => props.selectedUserIds.includes(u.userid))
-})
+  if (!props.selectedUserIds.length) return [];
+  return allUsers.value.filter((u) => props.selectedUserIds.includes(u.userid));
+});
 
 // ==================== 表格配置 ====================
 
 const columns = [
   { title: '姓名', dataIndex: 'name', key: 'name', width: 180 },
-  { title: '账号Id', dataIndex: 'userid', key: 'userid', width: 160 },
-]
+  { title: '账号Id', dataIndex: 'userid', key: 'userid', width: 160 }
+];
 
 const rowSelectionConfig = computed<TableProps['rowSelection']>(() => ({
   type: props.multiple ? 'checkbox' : 'radio',
@@ -200,11 +202,11 @@ const rowSelectionConfig = computed<TableProps['rowSelection']>(() => ({
   preserveSelectedRowKeys: true,
   onChange: (keys: (string | number)[]) => {
     // 单选模式下只保留最后一项
-    const finalKeys = props.multiple ? (keys as string[]) : (keys as string[]).slice(-1)
-    emit('update:selectedUserIds', finalKeys)
-    emit('userSelect', finalKeys)
-  },
-}))
+    const finalKeys = props.multiple ? (keys as string[]) : (keys as string[]).slice(-1);
+    emit('update:selectedUserIds', finalKeys);
+    emit('userSelect', finalKeys);
+  }
+}));
 
 const paginationConfig = reactive({
   current: 1,
@@ -212,44 +214,44 @@ const paginationConfig = reactive({
   showSizeChanger: true,
   pageSizeOptions: ['5', '10', '20'],
   showTotal: (total: number) => `共 ${total} 条`,
-  size: 'small' as const,
-})
+  size: 'small' as const
+});
 
 // ==================== 事件处理 ====================
 
 function handleSearch() {
-  paginationConfig.current = 1
+  paginationConfig.current = 1;
 }
 
 function handleSearchChange() {
-  paginationConfig.current = 1
+  paginationConfig.current = 1;
 }
 
-function handleTableChange(pag: any) {
-  paginationConfig.current = pag.current
-  paginationConfig.pageSize = pag.pageSize
+function handleTableChange(pag: TablePaginationConfig) {
+  paginationConfig.current = pag.current ?? paginationConfig.current;
+  paginationConfig.pageSize = pag.pageSize ?? paginationConfig.pageSize;
 }
 
 function removeSelectedUser(userId: string) {
-  const newIds = props.selectedUserIds.filter(id => id !== userId)
-  emit('update:selectedUserIds', newIds)
-  emit('userSelect', newIds)
+  const newIds = props.selectedUserIds.filter((id) => id !== userId);
+  emit('update:selectedUserIds', newIds);
+  emit('userSelect', newIds);
 }
 
 function clearSelection() {
-  emit('update:selectedUserIds', [])
-  emit('userSelect', [])
+  emit('update:selectedUserIds', []);
+  emit('userSelect', []);
 }
 
 // ==================== 工具函数 ====================
 
 function getAvatarColor(name: string): string {
-  const colors = ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16']
-  let hash = 0
+  const colors = ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'];
+  let hash = 0;
   for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return colors[Math.abs(hash) % colors.length]
+  return colors[Math.abs(hash) % colors.length];
 }
 
 // ==================== 暴露方法 ====================
@@ -259,20 +261,23 @@ defineExpose({
   loadAllUsers,
   clearSelection,
   deptUsers,
-  searchKeyword,
-})
+  searchKeyword
+});
 
 // 监听外部 selectedUserIds 变化，自动加载全量用户
-watch(() => props.selectedUserIds, (ids) => {
-  if (ids.length > 0 && allUsers.value.length === 0) {
-    loadAllUsers()
+watch(
+  () => props.selectedUserIds,
+  (ids) => {
+    if (ids.length > 0 && allUsers.value.length === 0) {
+      loadAllUsers();
+    }
   }
-})
+);
 
 onMounted(() => {
-  loadDepartments()
-  loadAllUsers()
-})
+  loadDepartments();
+  loadAllUsers();
+});
 </script>
 
 <style scoped>

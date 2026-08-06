@@ -1,46 +1,45 @@
-import { ERPBase } from "../types";
-import { TableColumnsType } from "ant-design-vue";
-
+import { ERPBase } from '../types';
+import { TableColumnType, TableColumnsType } from 'ant-design-vue';
 
 export interface PMCProductInfo extends ERPBase {
-    /** 合同号 */
-    合同号?: string;
-    /** 排产编号 */
-    排产编号?: string;
-      /** 层 */
-    层?: string;
-    /** 货号 */
-    货号?: string;
-    /** 中文品名 */
-    中文品名?: string;
-    /** 中文规格 */
-    中文规格?: string;
-    /** 父编号 */
-    父编号?: string;
-    /** 分析单号 */
-    分析单号?: string;
-    /** 来源编号 */
-    来源编号?: string;
-    /** 来源 */
-    来源?: string;
-    /** 工单单号 */
-    工单单号?: string;
-    /** 线圈 */
-    线圈?: string;
-    /** 电压 */
-    电压?: string;
-    /** 交货日期 */
-    交货日期?: string;
-    /** 排产用户 */
-    排产用户?: string;
-    /** 状态 */
-    状态?: string;
-    /** 数量 */
-    数量?: string;
-    /** 发运数量 */
-    发运数量?: string;
-    /** 入库数量 */
-    入库数量?: string;
+  /** 合同号 */
+  合同号?: string;
+  /** 排产编号 */
+  排产编号?: string;
+  /** 层 */
+  层?: string;
+  /** 货号 */
+  货号?: string;
+  /** 中文品名 */
+  中文品名?: string;
+  /** 中文规格 */
+  中文规格?: string;
+  /** 父编号 */
+  父编号?: string;
+  /** 分析单号 */
+  分析单号?: string;
+  /** 来源编号 */
+  来源编号?: string;
+  /** 来源 */
+  来源?: string;
+  /** 工单单号 */
+  工单单号?: string;
+  /** 线圈 */
+  线圈?: string;
+  /** 电压 */
+  电压?: string;
+  /** 交货日期 */
+  交货日期?: string;
+  /** 排产用户 */
+  排产用户?: string;
+  /** 状态 */
+  状态?: string;
+  /** 数量 */
+  数量?: string;
+  /** 发运数量 */
+  发运数量?: string;
+  /** 入库数量 */
+  入库数量?: string;
 }
 
 export interface ProductDataAssembly extends ERPBase {
@@ -51,8 +50,6 @@ export interface ProductDataAssembly extends ERPBase {
   /** 创建人 */
   创建人?: string;
 }
-
-
 
 /**
  * 产品资料装配清单项
@@ -77,63 +74,60 @@ export interface ProductDataAssemblyList extends ERPBase {
 }
 
 export interface PMCDeliveryReview extends ERPBase {
-    /** 合同号 */
-    合同号?: string;
-    /** 排产编号 */
-    排产编号?: string;
-      /** 层 */
-    层?: string;
-    /** 货号 */
-    货号?: string;
-    /** 中文品名 */
-    中文品名?: string;
-    /** 中文规格 */
-    中文规格?: string;
-    /** 分析单号 */
-    分析单号?: string;
-    /** 来源编号 */
-    来源编号?: string;
-    /** 来源 */
-    来源?: string;
-    /** 工单单号 */
-    工单单号?: string;
-    /** 线圈 */
-    线圈货号?: string;
-    /** 电压 */
-    电压?: string;
-    /** 交货日期 */
-    交货日期?: string;
-    /** 排产用户 */
-    排产用户?: string;
-    /** 状态 */
-    状态?: string;
-    /** 物料货号 */
-    物料货号?: string;
-    备注?:string;
+  /** 合同号 */
+  合同号?: string;
+  /** 排产编号 */
+  排产编号?: string;
+  /** 层 */
+  层?: string;
+  /** 货号 */
+  货号?: string;
+  /** 中文品名 */
+  中文品名?: string;
+  /** 中文规格 */
+  中文规格?: string;
+  /** 分析单号 */
+  分析单号?: string;
+  /** 来源编号 */
+  来源编号?: string;
+  /** 来源 */
+  来源?: string;
+  /** 工单单号 */
+  工单单号?: string;
+  /** 线圈 */
+  线圈货号?: string;
+  /** 电压 */
+  电压?: string;
+  /** 交货日期 */
+  交货日期?: string;
+  /** 排产用户 */
+  排产用户?: string;
+  /** 状态 */
+  状态?: string;
+  /** 物料货号 */
+  物料货号?: string;
+  备注?: string;
 }
 
-
-
-
 export interface SchedulingAnalysis extends ERPBase {
-    分析单号?: string;
-    分析人?: string;
-    分析日期?: string;
-    生产方式?: string;
-    客户简称?: string;
-    排产编号?: string;
+  分析单号?: string;
+  分析人?: string;
+  分析日期?: string;
+  生产方式?: string;
+  客户简称?: string;
+  排产编号?: string;
 }
 
 // 排产分析表格列配置（交期评审详情弹窗使用，独立维护，不引用 SchedulingAnalysis/types）
 // 保持扁平列结构，避免影响 CommonTable 的列设置、显示与排序功能；通过列 class 做视觉分组。
 type SchedulingColumnGroup = 'identity' | 'material' | 'process' | 'inventory' | 'planning';
 
-function withColumnGroup(group: SchedulingColumnGroup, column: Record<string, any>, isGroupStart = false) {
+function withColumnGroup(group: SchedulingColumnGroup, column: TableColumnType, isGroupStart = false) {
   const className = `sch-col-group-${group}${isGroupStart ? ' sch-col-group-start' : ''}`;
   return {
     ...column,
     className,
-    customHeaderCell: () => ({ class: className }),
+    customHeaderCell: () => ({ class: className })
   };
 }
 
@@ -163,5 +157,5 @@ export const columns: TableColumnsType = [
   withColumnGroup('planning', { title: '配料数', dataIndex: 'pickedQty', width: 90, align: 'right' }, true),
   withColumnGroup('planning', { title: '生产数', key: 'produceQty', width: 100, align: 'right' }),
   withColumnGroup('planning', { title: '采购数', key: 'purchaseQty', width: 100, align: 'right' }),
-  withColumnGroup('planning', { title: '生产损耗', key: 'loss', width: 80, align: 'right' }),
+  withColumnGroup('planning', { title: '生产损耗', key: 'loss', width: 80, align: 'right' })
 ];

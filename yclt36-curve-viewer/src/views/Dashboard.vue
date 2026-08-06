@@ -1,4 +1,3 @@
-
 <template>
   <div class="dashboard">
     <!-- 加载状态 -->
@@ -7,27 +6,22 @@
         <div class="loading-content"></div>
       </a-spin>
     </div>
-    
+
     <!-- 仪表盘内容 -->
     <div v-else class="dashboard-content">
       <div class="dashboard-header">
         <h2 class="dashboard-title">仪表盘</h2>
       </div>
-      
+
       <!-- 统计卡片 -->
       <a-row :gutter="[16, 16]" class="dashboard-section">
-        <a-col :xs="24" :sm="12" :md="6" v-for="(item, index) in statCards" :key="item.title" class="stat-card-col">
-          <StatCard 
-            :title="item.title"
-            :value="item.value"
-            :prefix="item.prefix"
-            :type="item.type"
-          />
+        <a-col :xs="24" :sm="12" :md="6" v-for="item in statCards" :key="item.title" class="stat-card-col">
+          <StatCard :title="item.title" :value="item.value" :prefix="item.prefix" :type="item.type" />
         </a-col>
       </a-row>
 
       <!-- 主要内容区域 -->
-      <a-row :gutter="[16, 16]" style="margin-top: 24px;">
+      <a-row :gutter="[16, 16]" style="margin-top: 24px">
         <!-- 左侧区域：个人工作台主要内容 -->
         <a-col :xs="24" :lg="16">
           <!-- 快速操作栏 -->
@@ -35,7 +29,12 @@
             <a-col :span="24">
               <a-card title="快速操作" :bordered="false" hoverable>
                 <div class="quick-actions">
-                  <div class="action-item" v-for="action in quickActions" :key="action.title" @click="handleQuickAction(action)">
+                  <div
+                    class="action-item"
+                    v-for="action in quickActions"
+                    :key="action.title"
+                    @click="handleQuickAction(action)"
+                  >
                     <div class="action-icon" :style="{ backgroundColor: action.color }">
                       {{ action.icon }}
                     </div>
@@ -47,7 +46,7 @@
           </a-row>
 
           <!-- 今日日程和工作统计 -->
-          <a-row :gutter="[16, 16]" style="margin-top: 16px;">
+          <a-row :gutter="[16, 16]" style="margin-top: 16px">
             <a-col :xs="24" :md="12" class="dashboard-section">
               <a-card title="今日日程" :bordered="false" hoverable>
                 <a-list :data-source="todaySchedule" :split="false">
@@ -89,7 +88,7 @@
           </a-row>
 
           <!-- 团队成员动态 -->
-          <a-row :gutter="[16, 16]" style="margin-top: 16px;" class="dashboard-section">
+          <a-row :gutter="[16, 16]" style="margin-top: 16px" class="dashboard-section">
             <a-col :span="24">
               <a-card title="团队成员动态" :bordered="false" hoverable>
                 <div class="team-activities">
@@ -101,7 +100,10 @@
                           <div class="member-name">{{ member.name }}</div>
                           <div class="member-role">{{ member.role }}</div>
                           <div class="member-status">
-                            <a-badge :status="member.online ? 'success' : 'default'" :text="member.online ? '在线' : '离线'" />
+                            <a-badge
+                              :status="member.online ? 'success' : 'default'"
+                              :text="member.online ? '在线' : '离线'"
+                            />
                           </div>
                         </div>
                       </div>
@@ -121,7 +123,7 @@
           </div>
 
           <!-- 快捷链接 -->
-          <div class="dashboard-section" style="margin-top: 16px;">
+          <div class="dashboard-section" style="margin-top: 16px">
             <a-card title="快捷链接" :bordered="false" hoverable>
               <div class="quick-links">
                 <a href="#" class="link-item" v-for="link in quickLinks" :key="link.title">
@@ -133,12 +135,12 @@
           </div>
 
           <!-- 系统公告 -->
-          <div class="dashboard-section" style="margin-top: 16px;">
+          <div class="dashboard-section" style="margin-top: 16px">
             <a-card title="系统公告" :bordered="false" hoverable>
               <a-list :data-source="systemNotices" :split="false">
                 <template #renderItem="{ item }">
                   <a-list-item class="notice-item">
-                    <a-tag :color="item.type === 'important' ? 'red' : 'blue'" style="margin-right: 8px;">
+                    <a-tag :color="item.type === 'important' ? 'red' : 'blue'" style="margin-right: 8px">
                       {{ item.type === 'important' ? '重要' : '通知' }}
                     </a-tag>
                     <div class="notice-content">
@@ -156,12 +158,10 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import StatCard from '../components/StatCard.vue';
 import PersonalWorkbench from '../components/PersonalWorkbench.vue';
-
-
 
 // 状态管理
 const isLoading = ref(true);
@@ -218,14 +218,18 @@ const systemNotices = ref([
 ]);
 
 // 统计卡片数据
-const statCards = ref([
+interface StatCardItem {
+  title: string;
+  value: number;
+  prefix: string;
+  type: 'user' | 'order' | 'income' | 'visit';
+}
+const statCards = ref<StatCardItem[]>([
   { title: '用户总数', value: 1234, prefix: '👥', type: 'user' },
   { title: '订单总数', value: 345, prefix: '📦', type: 'order' },
   { title: '收入总额', value: 234567, prefix: '💰', type: 'income' },
   { title: '访问量', value: 45600, prefix: '👀', type: 'visit' }
 ]);
-
-
 
 // 生命周期钩子
 onMounted(() => {
@@ -236,7 +240,13 @@ onMounted(() => {
 });
 
 // 事件处理函数
-function handleQuickAction(action) {
+interface QuickAction {
+  title: string;
+  icon: string;
+  color: string;
+  action: string;
+}
+function handleQuickAction(action: QuickAction) {
   console.log('执行快速操作:', action.title);
   // 这里可以根据 action.action 来执行不同的操作
   switch (action.action) {
@@ -323,9 +333,6 @@ function handleQuickAction(action) {
   color: #1f2f3d;
   margin: 0;
 }
-
-
-
 
 /* 动画定义 */
 @keyframes fadeIn {

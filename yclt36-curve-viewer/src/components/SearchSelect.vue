@@ -22,12 +22,7 @@
     </a-input>
 
     <template #dropdownRender>
-      <div
-        class="ss-dropdown-scroll"
-        :class="{ 'ss-scrolled-x': scrolledX }"
-        :style="scrollStyle"
-        @scroll="onScroll"
-      >
+      <div class="ss-dropdown-scroll" :class="{ 'ss-scrolled-x': scrolledX }" :style="scrollStyle" @scroll="onScroll">
         <div class="ss-dropdown-table">
           <div class="ss-dropdown-header">
             <span
@@ -36,10 +31,11 @@
               class="ss-option-cell"
               :class="{ 'ss-option-fixed': col.fixed }"
               :style="cellStyle(col)"
-            >{{ col.title }}</span>
+              >{{ col.title }}</span
+            >
           </div>
           <div
-            v-for="(row, i) in displayData"1
+            v-for="(row, i) in displayData"
             :key="rowKey(row, i)"
             class="ss-option-row"
             @mousedown.prevent.stop="selectRow(row)"
@@ -51,7 +47,8 @@
               :class="{ 'ss-option-fixed': col.fixed }"
               :title="String(row[col.dataIndex] ?? '')"
               :style="cellStyle(col)"
-            >{{ row[col.dataIndex] }}</span>
+              >{{ row[col.dataIndex] }}</span
+            >
           </div>
           <div v-if="displayData.length === 0" class="ss-dropdown-empty">{{ emptyText }}</div>
         </div>
@@ -75,7 +72,7 @@ defineOptions({ inheritAttrs: false });
 const attrs = useAttrs();
 const rootAttrs = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { 'onUpdate:value': _drop1, onUpdateValue: _drop2, ...rest } = attrs as Record<string, any>;
+  const { 'onUpdate:value': _drop1, onUpdateValue: _drop2, ...rest } = attrs as Record<string, unknown>;
   return rest;
 });
 
@@ -92,13 +89,18 @@ export interface SearchSelectColumn {
   color?: string;
 }
 
+/** 下拉数据源行的内部表示：字段名对应 columns.dataIndex，按使用处动态取值 */
+export type SearchSelectRow = Record<string, unknown>;
+
 const props = defineProps<{
   /** 当前选中值（v-model:value） */
   value?: string;
   /** 列定义 */
   columns: SearchSelectColumn[];
-  /** 远程搜索函数：传入关键字，返回数据源数组（对象 key 对应 columns.dataIndex） */
-  search: (keyword: string) => Promise<Record<string, any>[]>;
+  /** 远程搜索函数：传入关键字，返回数据源数组（对象 key 对应 columns.dataIndex）。
+   *  返回行声明为 object：调用方通常传具体 interface，而 interface 无法赋值给含索引签名的类型，
+   *  组件内部再收窄为 SearchSelectRow */
+  search: (keyword: string) => Promise<object[]>;
   /** 选中后回填到输入框的字段，默认取第一列的 dataIndex */
   valueField?: string;
   placeholder?: string;
@@ -114,7 +116,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:value', val: string): void;
-  (e: 'select', record: Record<string, any>): void;
+  (e: 'select', record: SearchSelectRow): void;
 }>();
 
 const inputValue = ref(props.value ?? '');
@@ -126,7 +128,7 @@ watch(
 );
 
 const valueField = computed(() => props.valueField || props.columns[0]?.dataIndex || '');
-const displayData = ref<Record<string, any>[]>([]);
+const displayData = ref<SearchSelectRow[]>([]);
 const loading = ref(false);
 const scrolledX = ref(false);
 // 远程数据异步返回后主动展开面板，避免 options 初始为空时自动完成组件不再打开下拉。
@@ -136,7 +138,7 @@ const dropdownOpen = ref(false);
 const options = computed(() =>
   displayData.value.map((d) => ({
     value: String(d[valueField.value] ?? ''),
-    label: String(d[valueField.value] ?? ''),
+    label: String(d[valueField.value] ?? '')
   }))
 );
 
@@ -145,16 +147,16 @@ const dropdownStyle = computed(() => ({ width: `${props.dropdownWidth ?? 560}px`
 const scrollStyle = computed(() => ({
   width: `${props.dropdownWidth ?? 560}px`,
   maxWidth: 'calc(100vw - 48px)',
-  maxHeight: `${props.maxHeight ?? 380}px`,
+  maxHeight: `${props.maxHeight ?? 380}px`
 }));
 
 function cellStyle(col: SearchSelectColumn) {
-  const style: Record<string, string> = { minWidth: `${(col.width ?? 120)}px` };
+  const style: Record<string, string> = { minWidth: `${col.width ?? 120}px` };
   if (col.color) style.color = col.color;
   return style;
 }
 
-function rowKey(row: Record<string, any>, i: number) {
+function rowKey(row: SearchSelectRow, i: number) {
   return String(row[valueField.value] ?? i);
 }
 
@@ -169,7 +171,8 @@ async function doSearch(kw: string) {
   scrolledX.value = false;
   try {
     const data = await props.search(kw.trim());
-    displayData.value = Array.isArray(data) ? data : [];
+    // 调用方返回的是具体行 interface，这里收窄为内部行类型 SearchSelectRow
+    displayData.value = Array.isArray(data) ? (data as unknown as SearchSelectRow[]) : [];
     dropdownOpen.value = displayData.value.length > 0;
   } catch {
     displayData.value = [];
@@ -217,7 +220,7 @@ function onScroll(e: Event) {
   scrolledX.value = el.scrollLeft > 0;
 }
 
-function applySelect(row: Record<string, any>) {
+function applySelect(row: SearchSelectRow) {
   const val = String(row[valueField.value] ?? '');
   inputValue.value = val;
   emit('update:value', val);
@@ -233,7 +236,7 @@ function onSelect(value: string) {
   if (row) applySelect(row);
 }
 
-function selectRow(row: Record<string, any>) {
+function selectRow(row: SearchSelectRow) {
   applySelect(row);
 }
 

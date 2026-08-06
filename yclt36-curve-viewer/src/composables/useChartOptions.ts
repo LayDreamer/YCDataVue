@@ -1,25 +1,45 @@
-import { ref, computed } from 'vue'
-import * as echarts from 'echarts'
-import type { EChartsOption } from 'echarts'
-import type { PressureCurve } from '@/types'
+import { ref, computed } from 'vue';
+import { graphic } from 'echarts/core';
+import type { EChartsOption } from 'echarts';
+import type { CallbackDataParams } from 'echarts/types/dist/shared';
+import type { PressureCurve } from '@/types';
+import '@/plugins/echarts';
+
+/**
+ * 曲线数据点：电流曲线与压力曲线共用，字段可缺失（与数据源保持一致）
+ */
+interface CurvePoint {
+  current?: number;
+  pressure?: number;
+  flowRate?: number;
+}
+
+/**
+ * tooltip 回调参数：echarts 未在 CallbackDataParams 中声明 axisValue，此处补充
+ */
+interface TooltipAxisParam extends CallbackDataParams {
+  axisValue?: string | number;
+}
 
 /**
  * ECharts 配置组合式函数
  * 提供图表选项的创建和更新逻辑
  */
-export function useChartOptions(data: any, curveIndex: string) {
+export function useChartOptions(data: CurvePoint[], curveIndex: string) {
   // 创建本地副本，避免修改原始数据
-  const safeData = JSON.parse(JSON.stringify(data))
+  const safeData = JSON.parse(JSON.stringify(data));
   // 当前可见的曲线压力值集合
-  const visiblePressures = ref<Set<number>>(new Set([1, 3, 5, 7]))
+  const visiblePressures = ref<Set<number>>(new Set([1, 3, 5, 7]));
 
   // 构建压力曲线数据
-  const pressureCurves: PressureCurve[] = [{
-    pressure: 1,
-    color: '#ef4444',
-    name: '1bar',
-    data: safeData
-  }]
+  const pressureCurves: PressureCurve[] = [
+    {
+      pressure: 1,
+      color: '#ef4444',
+      name: '1bar',
+      data: safeData
+    }
+  ];
 
   /**
    * 获取 X 轴配置
@@ -46,9 +66,9 @@ export function useChartOptions(data: any, curveIndex: string) {
           color: '#e2e8f0'
         }
       }
-    }
+    };
 
-    if (curveIndex == "currentFlowRateCurve") {
+    if (curveIndex == 'currentFlowRateCurve') {
       // 曲线类型1: 电流-流量曲线
       return {
         ...baseConfig,
@@ -63,7 +83,7 @@ export function useChartOptions(data: any, curveIndex: string) {
           formatter: (value: number) => (Number(value) || 0).toFixed(0),
           color: '#64748b'
         }
-      }
+      };
     } else {
       // 曲线类型2: 压力-流量曲线
       return {
@@ -78,9 +98,9 @@ export function useChartOptions(data: any, curveIndex: string) {
           formatter: (value: number) => (Number(value) || 0).toFixed(1),
           color: '#64748b'
         }
-      }
+      };
     }
-  }
+  };
 
   /**
    * 获取图表标题
@@ -98,20 +118,20 @@ export function useChartOptions(data: any, curveIndex: string) {
         fontSize: 14,
         color: '#64748b'
       }
-    }
+    };
 
-    if (curveIndex == "currentFlowRateCurve") {
+    if (curveIndex == 'currentFlowRateCurve') {
       return {
         ...baseTitle,
-        text: '电流-流量数据曲线',
-      }
+        text: '电流-流量数据曲线'
+      };
     } else {
       return {
         ...baseTitle,
-        text: '压力-流量数据曲线',
-      }
+        text: '压力-流量数据曲线'
+      };
     }
-  }
+  };
 
   /**
    * 获取 Y 轴配置
@@ -149,83 +169,80 @@ export function useChartOptions(data: any, curveIndex: string) {
           color: '#e2e8f0'
         }
       }
-    }
-  }
+    };
+  };
 
   /**
    * 获取系列数据点
    */
   const getSeriesData = (curve: PressureCurve) => {
-    if (curveIndex == "currentFlowRateCurve") {
+    if (curveIndex == 'currentFlowRateCurve') {
       // 曲线类型1: 使用 current 作为 x 轴
-      return curve.data.map((point: any) => [
-        Number(point.current) || 0,
-        Number(point.flowRate) || 0
-      ])
+      return curve.data.map((point: CurvePoint) => [Number(point.current) || 0, Number(point.flowRate) || 0]);
     } else {
       // 曲线类型2: 使用 pressure 作为 x 轴
-      return curve.data.map((point: any) => [
-        Number(point.pressure) || 0,
-        Number(point.flowRate) || 0
-      ])
+      return curve.data.map((point: CurvePoint) => [Number(point.pressure) || 0, Number(point.flowRate) || 0]);
     }
-  }
+  };
 
   /**
    * 获取 tooltip 格式化函数
    */
   const getTooltipFormatter = () => {
-    if (curveIndex == "currentFlowRateCurve") {
-      return (params: any) => {
-        if (!params || params.length === 0) return ''
+    if (curveIndex == 'currentFlowRateCurve') {
+      return (params: TooltipAxisParam | TooltipAxisParam[]) => {
+        if (!params) return '';
+        const list = Array.isArray(params) ? params : [params];
+        if (list.length === 0) return '';
 
-        const current = params[0].axisValue
+        const current = list[0].axisValue;
         let content = `<div style="font-weight: bold; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;">
           电流: ${current} A
-        </div>`
-        params.forEach((param: any) => {
-          const color = param.color
-          // const seriesName = param.seriesName
-          const value = param.value[1]
-           // <span style="flex: 1;">${seriesName}:</span>
+        </div>`;
+        list.forEach((param) => {
+          const color = param.color;
+          const raw = param.value;
+          const value = Array.isArray(raw) ? (raw[1] as number) : (raw as number);
+          // <span style="flex: 1;">${seriesName}:</span>
           content += `<div style="display: flex; align-items: center; margin: 4px 0;">
             <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 50%; margin-right: 8px;"></span>           
             <span style="font-weight: bold; margin-left: 8px;">${value?.toFixed(2) || '0.00'} L/min</span>
-          </div>`
-        })
+          </div>`;
+        });
 
-        return content
-      }
+        return content;
+      };
     } else {
-      return (params: any) => {
-        if (!params || params.length === 0) return ''
+      return (params: TooltipAxisParam | TooltipAxisParam[]) => {
+        if (!params) return '';
+        const list = Array.isArray(params) ? params : [params];
+        if (list.length === 0) return '';
 
-        const pressure = params[0].axisValue
+        const pressure = list[0].axisValue;
         let content = `<div style="font-weight: bold; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;">
           压力: ${pressure} Pa
-        </div>`
-        params.forEach((param: any) => {
-          const color = param.color
-          const value = param.value[1]
+        </div>`;
+        list.forEach((param) => {
+          const color = param.color;
+          const raw = param.value;
+          const value = Array.isArray(raw) ? (raw[1] as number) : (raw as number);
           content += `<div style="display: flex; align-items: center; margin: 4px 0;">
             <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 50%; margin-right: 8px;"></span>
             <span style="font-weight: bold; margin-left: 8px;">${value?.toFixed(2) || '0.00'} L/min</span>
-          </div>`
-        })
+          </div>`;
+        });
 
-        return content
-      }
+        return content;
+      };
     }
-  }
+  };
 
   /**
    * 创建 ECharts 图表配置选项
    */
   const createChartOptions = computed((): EChartsOption => {
     // 筛选可见的曲线数据
-    const visibleCurves = pressureCurves.filter(curve =>
-      visiblePressures.value.has(curve.pressure)
-    )
+    const visibleCurves = pressureCurves.filter((curve) => visiblePressures.value.has(curve.pressure));
 
     // 构建系列数据
     const series = visibleCurves.map((curve: PressureCurve) => ({
@@ -237,14 +254,14 @@ export function useChartOptions(data: any, curveIndex: string) {
         color: curve.color
       },
       areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        color: new graphic.LinearGradient(0, 0, 0, 1, [
           { offset: 0, color: curve.color },
           { offset: 1, color: 'rgba(255, 255, 255, 0)' }
         ]),
         opacity: 0.15
       },
       data: getSeriesData(curve)
-    }))
+    }));
 
     return {
       title: getChartTitle(),
@@ -293,33 +310,33 @@ export function useChartOptions(data: any, curveIndex: string) {
         }
       ],
       series: series
-    }
-  })
+    };
+  });
 
   /**
    * 切换曲线的可见性
    */
   const toggleCurve = (pressure: number): void => {
     if (visiblePressures.value.has(pressure)) {
-      visiblePressures.value.delete(pressure)
+      visiblePressures.value.delete(pressure);
     } else {
-      visiblePressures.value.add(pressure)
+      visiblePressures.value.add(pressure);
     }
     // 触发响应式更新
-    visiblePressures.value = new Set(visiblePressures.value)
-  }
+    visiblePressures.value = new Set(visiblePressures.value);
+  };
 
   /**
    * 检查曲线是否可见
    */
   const isCurveVisible = (pressure: number): boolean => {
-    return visiblePressures.value.has(pressure)
-  }
+    return visiblePressures.value.has(pressure);
+  };
 
   /**
    * 获取所有压力值
    */
-  const allPressures = pressureCurves.map(curve => curve.pressure)
+  const allPressures = pressureCurves.map((curve) => curve.pressure);
 
   return {
     visiblePressures,
@@ -328,5 +345,5 @@ export function useChartOptions(data: any, curveIndex: string) {
     isCurveVisible,
     allPressures,
     pressureCurves
-  }
+  };
 }

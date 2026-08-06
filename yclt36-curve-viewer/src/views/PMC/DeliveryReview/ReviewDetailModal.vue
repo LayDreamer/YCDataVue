@@ -26,7 +26,7 @@
           <div class="info-grid">
             <div class="info-item">
               <span class="info-label">排产编号</span>
-              <span class="info-value ">{{ record?.排产编号 || '--' }}</span>
+              <span class="info-value">{{ record?.排产编号 || '--' }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">货号</span>
@@ -58,11 +58,7 @@
             </div>
             <div class="info-item full-width">
               <span class="info-label">特殊要求</span>
-              <a-textarea
-                v-model:value="reviewForm.specialRequirement"
-                placeholder="请输入特殊要求..."
-                :rows="2"
-              />
+              <a-textarea v-model:value="reviewForm.specialRequirement" placeholder="请输入特殊要求..." :rows="2" />
             </div>
           </div>
         </a-card>
@@ -82,18 +78,11 @@
               </a-tag>
             </div>
             <div class="preset-user-action">
-              <a-button
-                v-if="canChangeSchedulingUser"
-                type="link"
-                size="small"
-                @click="showUserSelector = true"
-              >
+              <a-button v-if="canChangeSchedulingUser" type="link" size="small" @click="showUserSelector = true">
                 <SwapOutlined /> 更换用户
               </a-button>
               <a-tooltip v-else title="已提交评审，排产用户不可再修改">
-                <span class="readonly-hint">
-                  <LockOutlined /> 已锁定
-                </span>
+                <span class="readonly-hint"> <LockOutlined /> 已锁定 </span>
               </a-tooltip>
             </div>
           </div>
@@ -114,9 +103,7 @@
               :maxlength="50"
               :disabled="!canChangeSchedulingUser"
             />
-            <div v-if="!canChangeSchedulingUser" class="readonly-hint-inline">
-              <LockOutlined /> 已锁定
-            </div>
+            <div v-if="!canChangeSchedulingUser" class="readonly-hint-inline"><LockOutlined /> 已锁定</div>
           </div>
 
           <!-- 无预设用户 或 点击更换后：显示选择器 -->
@@ -148,9 +135,7 @@
               v-if="hasPresetSchedulingUser && showUserSelector && canChangeSchedulingUser"
               class="cancel-change-hint"
             >
-              <a-button type="text" size="small" @click="cancelUserChange">
-                恢复默认用户
-              </a-button>
+              <a-button type="text" size="small" @click="cancelUserChange"> 恢复默认用户 </a-button>
             </div>
           </div>
         </a-card>
@@ -173,26 +158,12 @@
               />
             </div>
             <div v-if="verifyStatus !== 'none'" class="verify-result">
-              <a-alert
-                v-if="verifyStatus === 'success'"
-                message="校验通过"
-                type="success"
-                show-icon
-                size="small"
-              />
-              <a-alert
-                v-if="verifyStatus === 'error'"
-                message="匹配失败"
-                type="error"
-                show-icon
-                size="small"
-              />
+              <a-alert v-if="verifyStatus === 'success'" message="校验通过" type="success" show-icon size="small" />
+              <a-alert v-if="verifyStatus === 'error'" message="匹配失败" type="error" show-icon size="small" />
             </div>
             <!-- 提交评审后整卡锁定：遮罩覆盖在卡片内容上，统一表达锁定状态 -->
             <a-tooltip v-if="!canChangeSchedulingUser" title="已提交评审，核心要素校验不可再修改">
-              <div class="user-selector-mask">
-                <LockOutlined class="user-selector-mask-icon" /> 已锁定
-              </div>
+              <div class="user-selector-mask"><LockOutlined class="user-selector-mask-icon" /> 已锁定</div>
             </a-tooltip>
           </div>
         </a-card>
@@ -228,7 +199,11 @@
               <a-form-item label="评审备注" class="remark-item" :required="reviewForm.resultStatus === 'reject'">
                 <a-textarea
                   v-model:value="reviewForm.remark"
-                  :placeholder="reviewForm.resultStatus === 'reject' ? '驳回时评审备注为必填项，请说明驳回原因...' : '请输入评审意见或异常说明...'"
+                  :placeholder="
+                    reviewForm.resultStatus === 'reject'
+                      ? '驳回时评审备注为必填项，请说明驳回原因...'
+                      : '请输入评审意见或异常说明...'
+                  "
                   :auto-size="{ minRows: 3, maxRows: 8 }"
                   :disabled="showSchedulingPanel || reviewSubmitted"
                 />
@@ -238,9 +213,7 @@
                  让\"最终生产交期/评审结果/评审备注\"控件不再依赖单独的灰显样式，
                  视觉上整卡片被锁定标识统一表达 -->
             <a-tooltip v-if="!canChangeSchedulingUser" title="已提交评审，评审结论不可再修改">
-              <div class="user-selector-mask">
-                <LockOutlined class="user-selector-mask-icon" /> 已锁定
-              </div>
+              <div class="user-selector-mask"><LockOutlined class="user-selector-mask-icon" /> 已锁定</div>
             </a-tooltip>
           </div>
         </a-card>
@@ -252,326 +225,308 @@
           </div>
           <div class="footer-actions">
             <a-button @click="handleVisibleUpdate(false)">取消</a-button>
-            <a-button type="primary" :loading="confirmLoading" @click="submitReview">
-              提交评审结果
-            </a-button>
+            <a-button type="primary" :loading="confirmLoading" @click="submitReview"> 提交评审结果 </a-button>
           </div>
         </div>
       </div>
 
       <!-- 右侧：排产分析单详情（未展开时不渲染，避免右侧出现空白占位条） -->
       <div v-if="showSchedulingPanel || reviewSubmitted" class="right-panel" :class="{ expanded: showSchedulingPanel }">
-      <!-- 展开态：排产分析单详情（排产分析入口已改为由提交评审结果打开） -->
-      <template v-if="showSchedulingPanel || reviewSubmitted">
-        <a-spin :spinning="schedulingLoading" tip="加载排产分析数据...">
-          <CommonTable
-            card-class="scheduling-card"
-            :columns="rawColumns"
-            :data-source="filteredSchDataSource"
-            storage-key="review-detail-scheduling-column-settings"
-            :loading="schedulingLoading"
-            :pagination="false"
-            row-key="key"
-            :auto-scroll-x="true"
-            :auto-scroll-y="true"
-            table-wrapper-class="scheduling-table-wrap"
-            :expand-icon-column-index="1"
-            :indent-size="20"
-            :expanded-row-keys="schExpandedKeys"
-            v-model:selected-row-key="selectedRowKey"
-            :row-click-select="false"
-            :custom-row="(record: any) => ({
-              onClick: (e: MouseEvent) => handleRowClick(record, e),
-              onContextmenu: (e: MouseEvent) => handleRowContextMenu(record, e)
-            })"
-            v-model:fullscreen="isSchedulingFullscreen"
-            :overlay="false"
-            @expand="(expanded: boolean, record: any) => handleSchExpand(expanded, record)"
-            @refresh="loadSchedulingData"
-          >
-            <template #title>
-              <div class="sch-card-title">
-                <span class="sch-title-left">
-                  <LeftOutlined v-if="!reviewSubmitted" class="sch-collapse-icon" @click="toggleSchedulingPanel" />
-                  <span>排产分析单详情</span>
-                </span>
-              </div>
-            </template>
-            <template #top>
-              <!-- 排产分析控制区 -->
-              <div class="scheduling-controls">
-                <!-- 第一行：基础信息 -->
-                <div class="sch-row sch-input-row">
-                  <div class="sch-info-item">
-                    <span class="sch-label">货号</span>
-                    <a-tooltip :title="schedulingProduct.partNo || '--'" placement="top">
-                      <span class="sch-value w-220">{{ schedulingProduct.partNo || '--' }}</span>
-                    </a-tooltip>
-                  </div>
-                  <div class="sch-info-item">
-                    <span class="sch-label">品名</span>
-                    <a-tooltip :title="schedulingProduct.productName || '--'" placement="top">
-                      <span class="sch-value w-300">{{ schedulingProduct.productName || '--' }}</span>
-                    </a-tooltip>
-                  </div>
-                  <div class="sch-info-item">
-                    <span class="sch-label">规格</span>
-                    <a-tooltip :title="schedulingProduct.spec || '--'" placement="top">
-                      <span class="sch-value w-200">{{ schedulingProduct.spec || '--' }}</span>
-                    </a-tooltip>
-                  </div>
-                  <div class="sch-info-item">
-                    <span class="sch-label">成品数量</span>
-                    <a-input-number
-                      v-model:value="schedulingProduct.qty"
-                      :min="0"
-                      :precision="0"
-                      style="width: 120px"
-                      @change="onSchQtyChange"
-                    />
-                  </div>
-                  <div class="sch-info-item">
-                    <span class="sch-label">交货日期</span>
-                    <a-date-picker
-                      v-model:value="schedulingForm.deliveryDate"
-                      placeholder="选择交期"
-                      format="YYYY-MM-DD"
-                      value-format="YYYY-MM-DD"
-                      style="width: 170px"
-                    />
-                  </div>
-                </div>
-                <!-- 操作行1：分析模式 + 核心操作按钮 -->
-              <div class="sch-card">
-                <!-- 操作行：所有控件在同一行，根据宽度自动换行 -->
-                <div class="sch-row sch-action-row">
-                  <div class="sch-analysis-modes">
-                    <a-radio-group v-model:value="schedulingForm.analysisType">
-                      <a-radio value="normal">
-                        <span class="sch-radio-content"><BarChartOutlined /> 普通分析</span>
-                      </a-radio>
-                      <a-radio value="limit">
-                        <span class="sch-radio-content"><LineChartOutlined /> 库存上限分析 (减下限)</span>
-                      </a-radio>
-                    </a-radio-group>
-                  </div>
-                  <div class="sch-btn-group">
-                    <span class="sch-control-label">范围</span>
-                    <a-radio-group
-                      v-model:value="materialScopeAll"
-                      button-style="solid"
-                    >
-                      <a-radio-button value="current">当前数据</a-radio-button>
-                      <a-radio-button value="all">所有数据</a-radio-button>
-                    </a-radio-group>
-
-                    <a-button
-                      type="primary"
-                      :disabled="!selectedRowKey"
-                      @click="handleMaterialAnalysis"
-                    >
-                      <template #icon><SearchOutlined /></template>
-                      物料分析
-                    </a-button>
-
-                  </div>
-                  <div class="sch-btn-group sch-btn-group-2">
-                    <a-button type="primary" @click="handleSchExpandAll">
-                      <template #icon><FolderOpenOutlined /></template>
-                      全部展开
-                    </a-button>
-                    <a-button type="primary" @click="handleSchCollapseAll">
-                      <template #icon><FolderOutlined /></template>
-                      全部收缩
-                    </a-button>
-                    <a-button type="primary" @click="handleSchSave" :loading="schSaveLoading">
-                      <template #icon><SaveOutlined /></template>
-                      保存分析
-                    </a-button>
-                  </div>
-                </div>
-              </div>
-              </div>
-            </template>
-
-            <template #expandIcon="{ expanded, onExpand, record }">
-              <div class="product-symbol-wrapper">
-                <template v-if="record.children && record.children.length">
-                  <span class="tree-icon-box" @click="e => onExpand(record, e)">
-                    <FolderOpenOutlined v-if="expanded" />
-                    <FolderOutlined v-else />
+        <!-- 展开态：排产分析单详情（排产分析入口已改为由提交评审结果打开） -->
+        <template v-if="showSchedulingPanel || reviewSubmitted">
+          <a-spin :spinning="schedulingLoading" tip="加载排产分析数据...">
+            <CommonTable
+              card-class="scheduling-card"
+              :columns="rawColumns"
+              :data-source="filteredSchDataSource"
+              storage-key="review-detail-scheduling-column-settings"
+              :loading="schedulingLoading"
+              :pagination="false"
+              row-key="key"
+              :auto-scroll-x="true"
+              :auto-scroll-y="true"
+              table-wrapper-class="scheduling-table-wrap"
+              :expand-icon-column-index="1"
+              :indent-size="20"
+              :expanded-row-keys="schExpandedKeys"
+              v-model:selected-row-key="selectedRowKey"
+              :row-click-select="false"
+              :custom-row="
+                (record: ProductionItem) => ({
+                  onClick: (e: MouseEvent) => handleRowClick(record, e),
+                  onContextmenu: (e: MouseEvent) => handleRowContextMenu(record, e)
+                })
+              "
+              v-model:fullscreen="isSchedulingFullscreen"
+              :overlay="false"
+              @expand="(expanded: boolean, record: ProductionItem) => handleSchExpand(expanded, record)"
+              @refresh="loadSchedulingData"
+            >
+              <template #title>
+                <div class="sch-card-title">
+                  <span class="sch-title-left">
+                    <LeftOutlined v-if="!reviewSubmitted" class="sch-collapse-icon" @click="toggleSchedulingPanel" />
+                    <span>排产分析单详情</span>
                   </span>
-                </template>
-                <template v-else>
-                  <FileTextOutlined class="tree-leaf-icon" />
-                </template>
-              </div>
-            </template>
-
-            <template #bodyCell="{ column, record, index }">
-              <template v-if="column.key === 'index'">
-                {{ index + 1 }}
-              </template>
-              <template v-if="column.key === 'level'">
-                <span class="level-badge">{{ record.level }}</span>
-              </template>
-              <template v-if="column.dataIndex === 'levelIndex'">
-                <span class="level-index-text">{{ record.levelIndex }}</span>
-              </template>
-              <template v-if="column.key === 'partNo'">
-                <span class="partno-text">{{ record.partNo || '' }}</span>
-              </template>
-              <template v-if="column.key === 'name'">
-                <span class="product-text">{{ record.name }}</span>
-              </template>
-              <template v-if="column.key === 'spec'">
-                <a-tooltip :title="record.spec || record.unit || ''" placement="topLeft">
-                  <span class="spec-text">{{ record.spec || record.unit || '' }}</span>
-                </a-tooltip>
-              </template>
-              <template v-if="column.key === 'source'">
-                <a-tag :color="getSchSourceColor(record.source)" class="m-0">{{ record.source }}</a-tag>
-              </template>
-              <template v-if="['produceQty', 'purchaseQty', 'loss'].includes(column.key as string)">
-                <div @click.stop>
-                  <a-input-number
-                    v-model:value="record[column.key]"
-                    class="cell-input-small"
-                    :controls="false"
-                    @change="(val: any) => handleSchLossChange(record, column.key as string, val)"
-                  />
                 </div>
               </template>
-              <template v-if="column.key === 'workshop'">
-                <div @click.stop>
-                  <a-select
-                    :value="record.workshop"
-                    class="cell-input-small"
-                    :options="workshopOptions"
-                    placeholder="选择车间"
-                    allow-clear
-                    size="small"
-                    @change="(val: any) => handleSchWorkshopChange(record, val)"
-                  />
+              <template #top>
+                <!-- 排产分析控制区 -->
+                <div class="scheduling-controls">
+                  <!-- 第一行：基础信息 -->
+                  <div class="sch-row sch-input-row">
+                    <div class="sch-info-item">
+                      <span class="sch-label">货号</span>
+                      <a-tooltip :title="schedulingProduct.partNo || '--'" placement="top">
+                        <span class="sch-value w-220">{{ schedulingProduct.partNo || '--' }}</span>
+                      </a-tooltip>
+                    </div>
+                    <div class="sch-info-item">
+                      <span class="sch-label">品名</span>
+                      <a-tooltip :title="schedulingProduct.productName || '--'" placement="top">
+                        <span class="sch-value w-300">{{ schedulingProduct.productName || '--' }}</span>
+                      </a-tooltip>
+                    </div>
+                    <div class="sch-info-item">
+                      <span class="sch-label">规格</span>
+                      <a-tooltip :title="schedulingProduct.spec || '--'" placement="top">
+                        <span class="sch-value w-200">{{ schedulingProduct.spec || '--' }}</span>
+                      </a-tooltip>
+                    </div>
+                    <div class="sch-info-item">
+                      <span class="sch-label">成品数量</span>
+                      <a-input-number
+                        v-model:value="schedulingProduct.qty"
+                        :min="0"
+                        :precision="0"
+                        style="width: 120px"
+                        @change="onSchQtyChange"
+                      />
+                    </div>
+                    <div class="sch-info-item">
+                      <span class="sch-label">交货日期</span>
+                      <a-date-picker
+                        v-model:value="schedulingForm.deliveryDate"
+                        placeholder="选择交期"
+                        format="YYYY-MM-DD"
+                        value-format="YYYY-MM-DD"
+                        style="width: 170px"
+                      />
+                    </div>
+                  </div>
+                  <!-- 操作行1：分析模式 + 核心操作按钮 -->
+                  <div class="sch-card">
+                    <!-- 操作行：所有控件在同一行，根据宽度自动换行 -->
+                    <div class="sch-row sch-action-row">
+                      <div class="sch-analysis-modes">
+                        <a-radio-group v-model:value="schedulingForm.analysisType">
+                          <a-radio value="normal">
+                            <span class="sch-radio-content"><BarChartOutlined /> 普通分析</span>
+                          </a-radio>
+                          <a-radio value="limit">
+                            <span class="sch-radio-content"><LineChartOutlined /> 库存上限分析 (减下限)</span>
+                          </a-radio>
+                        </a-radio-group>
+                      </div>
+                      <div class="sch-btn-group">
+                        <span class="sch-control-label">范围</span>
+                        <a-radio-group v-model:value="materialScopeAll" button-style="solid">
+                          <a-radio-button value="current">当前数据</a-radio-button>
+                          <a-radio-button value="all">所有数据</a-radio-button>
+                        </a-radio-group>
+
+                        <a-button type="primary" :disabled="!selectedRowKey" @click="handleMaterialAnalysis">
+                          <template #icon><SearchOutlined /></template>
+                          物料分析
+                        </a-button>
+                      </div>
+                      <div class="sch-btn-group sch-btn-group-2">
+                        <a-button type="primary" @click="handleSchExpandAll">
+                          <template #icon><FolderOpenOutlined /></template>
+                          全部展开
+                        </a-button>
+                        <a-button type="primary" @click="handleSchCollapseAll">
+                          <template #icon><FolderOutlined /></template>
+                          全部收缩
+                        </a-button>
+                        <a-button type="primary" @click="handleSchSave" :loading="schSaveLoading">
+                          <template #icon><SaveOutlined /></template>
+                          保存分析
+                        </a-button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </template>
-            </template>
 
-            <template #bottom>
-              <!-- 公式提示 -->
-              <div class="scheduling-formula-bar">
-                <SettingOutlined />
-                <span>需求量 = 成品数量 × 累计用量 × (1+损耗)</span>
+              <template #expandIcon="{ expanded, onExpand, record }">
+                <div class="product-symbol-wrapper">
+                  <template v-if="record.children && record.children.length">
+                    <span class="tree-icon-box" @click="(e) => onExpand(record, e)">
+                      <FolderOpenOutlined v-if="expanded" />
+                      <FolderOutlined v-else />
+                    </span>
+                  </template>
+                  <template v-else>
+                    <FileTextOutlined class="tree-leaf-icon" />
+                  </template>
+                </div>
+              </template>
+
+              <template #bodyCell="{ column, record, index }">
+                <template v-if="column.key === 'index'">
+                  {{ index + 1 }}
+                </template>
+                <template v-if="column.key === 'level'">
+                  <span class="level-badge">{{ record.level }}</span>
+                </template>
+                <template v-if="column.dataIndex === 'levelIndex'">
+                  <span class="level-index-text">{{ record.levelIndex }}</span>
+                </template>
+                <template v-if="column.key === 'partNo'">
+                  <span class="partno-text">{{ record.partNo || '' }}</span>
+                </template>
+                <template v-if="column.key === 'name'">
+                  <span class="product-text">{{ record.name }}</span>
+                </template>
+                <template v-if="column.key === 'spec'">
+                  <a-tooltip :title="record.spec || record.unit || ''" placement="topLeft">
+                    <span class="spec-text">{{ record.spec || record.unit || '' }}</span>
+                  </a-tooltip>
+                </template>
+                <template v-if="column.key === 'source'">
+                  <a-tag :color="getSchSourceColor(record.source)" class="m-0">{{ record.source }}</a-tag>
+                </template>
+                <template v-if="['produceQty', 'purchaseQty', 'loss'].includes(column.key as string)">
+                  <div @click.stop>
+                    <a-input-number
+                      v-model:value="record[column.key]"
+                      class="cell-input-small"
+                      :controls="false"
+                      @change="
+                        (val: string | number) =>
+                          handleSchLossChange(record, column.key as string, val as number | null)
+                      "
+                    />
+                  </div>
+                </template>
+                <template v-if="column.key === 'workshop'">
+                  <div @click.stop>
+                    <a-select
+                      :value="record.workshop"
+                      class="cell-input-small"
+                      :options="workshopOptions"
+                      placeholder="选择车间"
+                      allow-clear
+                      size="small"
+                      @change="(val: SelectValue) => handleSchWorkshopChange(record, val as string | undefined)"
+                    />
+                  </div>
+                </template>
+              </template>
+
+              <template #bottom>
+                <!-- 公式提示 -->
+                <div class="scheduling-formula-bar">
+                  <SettingOutlined />
+                  <span>需求量 = 成品数量 × 累计用量 × (1+损耗)</span>
+                </div>
+              </template>
+            </CommonTable>
+
+            <!-- 右键菜单（原生定位，稳定可靠） -->
+            <div
+              v-if="contextMenuVisible"
+              class="sch-row-context-menu"
+              :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+              @click.stop
+            >
+              <div class="ctx-menu-item" :class="{ 'is-disabled': !rightClickRowKey }" @click="onCtxAddChild">
+                <PlusOutlined /> 新增子级
               </div>
-            </template>
-          </CommonTable>
+              <div class="ctx-menu-item" :class="{ 'is-disabled': !rightClickRowKey }" @click="onCtxDelete">
+                <DeleteOutlined /> 删除选中
+              </div>
+              <div class="ctx-menu-item" :class="{ 'is-disabled': !rightClickRowKey }" @click="onCtxDeleteRoot">
+                <DeleteOutlined /> 删除根节点
+              </div>
+            </div>
+            <!-- 右键菜单关闭遮罩 -->
+            <div
+              v-if="contextMenuVisible"
+              class="ctx-menu-mask"
+              @click="closeContextMenu"
+              @contextmenu.prevent="closeContextMenu"
+            ></div>
 
-          <!-- 右键菜单（原生定位，稳定可靠） -->
-          <div
-            v-if="contextMenuVisible"
-            class="sch-row-context-menu"
-            :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
-            @click.stop
-          >
-            <div
-              class="ctx-menu-item"
-              :class="{ 'is-disabled': !rightClickRowKey }"
-              @click="onCtxAddChild"
+            <a-modal
+              v-model:open="addChildModalVisible"
+              title="新增子级物料"
+              ok-text="新增"
+              cancel-text="取消"
+              :mask-closable="false"
+              :confirm-loading="addChildLoading"
+              @ok="handleAddChild"
             >
-              <PlusOutlined /> 新增子级
+              <a-form layout="vertical">
+                <a-form-item label="货号" required>
+                  <SearchSelect
+                    v-model:value="addChildForm.partNo"
+                    :columns="productDataColumns"
+                    :search="searchProductData"
+                    value-field="value"
+                    :dropdown-width="560"
+                    :max-height="380"
+                    placeholder="输入货号模糊查询产品资料"
+                    @select="onChildProductSelected"
+                  />
+                </a-form-item>
+                <a-form-item label="品名">
+                  <div class="add-child-source-text">{{ addChildForm.name || '--' }}</div>
+                </a-form-item>
+                <a-form-item label="规格">
+                  <div class="add-child-source-text">{{ addChildForm.spec || '--' }}</div>
+                </a-form-item>
+                <a-row :gutter="12">
+                  <a-col :span="12">
+                    <a-form-item label="来源">
+                      <div class="add-child-source-text">{{ addChildForm.source || '--' }}</div>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="用量" required>
+                      <a-input-number v-model:value="addChildForm.usage" :min="0" :precision="4" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-form-item label="单位">
+                  <a-input v-model:value="addChildForm.unit" placeholder="例如：个、件、米" />
+                </a-form-item>
+              </a-form>
+            </a-modal>
+          </a-spin>
+
+          <!-- 底部操作栏（提交评审后隐藏） -->
+          <div v-if="!reviewSubmitted" class="footer-bar">
+            <div class="footer-left">
+              <span>展开查看物料BOM结构，编辑损耗和数量会自动计算需求量</span>
             </div>
-            <div
-              class="ctx-menu-item"
-              :class="{ 'is-disabled': !rightClickRowKey }"
-              @click="onCtxDelete"
-            >
-              <DeleteOutlined /> 删除选中
-            </div>
-            <div
-              class="ctx-menu-item"
-              :class="{ 'is-disabled': !rightClickRowKey }"
-              @click="onCtxDeleteRoot"
-            >
-              <DeleteOutlined /> 删除根节点
+            <div class="footer-actions">
+              <a-button @click="handleVisibleUpdate(false)">取消</a-button>
+              <a-button type="primary" :loading="confirmLoading" @click="submitReview"> 提交评审结果 </a-button>
             </div>
           </div>
-          <!-- 右键菜单关闭遮罩 -->
-          <div
-            v-if="contextMenuVisible"
-            class="ctx-menu-mask"
-            @click="closeContextMenu"
-            @contextmenu.prevent="closeContextMenu"
-          ></div>
-
-          <a-modal
-            v-model:open="addChildModalVisible"
-            title="新增子级物料"
-            ok-text="新增"
-            cancel-text="取消"
-            :mask-closable="false"
-            :confirm-loading="addChildLoading"
-            @ok="handleAddChild"
-          >
-            <a-form layout="vertical">
-              <a-form-item label="货号" required>
-                <SearchSelect
-                  v-model:value="addChildForm.partNo"
-                  :columns="productDataColumns"
-                  :search="searchProductData"
-                  value-field="value"
-                  :dropdown-width="560"
-                  :max-height="380"
-                  placeholder="输入货号模糊查询产品资料"
-                  @select="onChildProductSelected"
-                />
-              </a-form-item>
-              <a-form-item label="品名">
-                <div class="add-child-source-text">{{ addChildForm.name || '--' }}</div>
-              </a-form-item>
-              <a-form-item label="规格">
-                <div class="add-child-source-text">{{ addChildForm.spec || '--' }}</div>
-              </a-form-item>
-              <a-row :gutter="12">
-                <a-col :span="12">
-                  <a-form-item label="来源">
-                    <div class="add-child-source-text">{{ addChildForm.source || '--' }}</div>
-                  </a-form-item>
-                </a-col>
-                <a-col :span="12">
-                  <a-form-item label="用量" required>
-                    <a-input-number v-model:value="addChildForm.usage" :min="0" :precision="4" style="width: 100%" />
-                  </a-form-item>
-                </a-col>
-              </a-row>
-              <a-form-item label="单位">
-                <a-input v-model:value="addChildForm.unit" placeholder="例如：个、件、米" />
-              </a-form-item>
-            </a-form>
-          </a-modal>
-        </a-spin>
-
-        <!-- 底部操作栏（提交评审后隐藏） -->
-        <div v-if="!reviewSubmitted" class="footer-bar">
-          <div class="footer-left">
-            <span>展开查看物料BOM结构，编辑损耗和数量会自动计算需求量</span>
-          </div>
-          <div class="footer-actions">
-            <a-button @click="handleVisibleUpdate(false)">取消</a-button>
-            <a-button type="primary" :loading="confirmLoading" @click="submitReview">
-              提交评审结果
-            </a-button>
-          </div>
-        </div>
-      </template>
+        </template>
+      </div>
     </div>
-    </div>
-</a-drawer>
+  </a-drawer>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, watch, computed, nextTick } from 'vue';
 import { message, Modal, Grid } from 'ant-design-vue';
 import type { Dayjs } from 'dayjs';
+import type { SelectValue } from 'ant-design-vue/es/select';
 import dayjs from 'dayjs';
 import {
   FolderOpenOutlined,
@@ -586,7 +541,7 @@ import {
   PlusOutlined,
   LeftOutlined,
   SwapOutlined,
-  LockOutlined,
+  LockOutlined
 } from '@ant-design/icons-vue';
 import { deliveryReviewService } from '@/services/deliveryReviewService';
 import { schedulingAnalysisService } from '@/services/schedulingAnalysisService';
@@ -594,7 +549,17 @@ import { workOrderSalesControlService } from '@/services/workOrderSalesControlSe
 import { externalProductionService } from '@/services/externalProductionService';
 import { bomStructureProcessService } from '@/services/bomStructureProcessService';
 import { type WeChatUser } from '@/services/wechatWorkService';
-import { PMCRequestDto, PMCDeliveryReview, WorkOrderSalesControl, ExternalProduction, WorkOrderSalesControlDetail, ExternalProductionBOM, ExternalProductionPickMaterial, ExternalProductionWarehousing, ExternalProductionShipment } from '@/api-generated/api';
+import {
+  PMCRequestDto,
+  PMCDeliveryReview,
+  WorkOrderSalesControl,
+  ExternalProduction,
+  WorkOrderSalesControlDetail,
+  ExternalProductionBOM,
+  ExternalProductionPickMaterial,
+  ExternalProductionWarehousing,
+  ExternalProductionShipment
+} from '@/api-generated/api';
 import { columns as rawColumns } from './types';
 import CommonTable from '@/components/CommonTable.vue';
 import OrgUserSelector from '@/components/OrgUserSelector.vue';
@@ -633,6 +598,52 @@ interface ProductionItem {
   mid?: number | string;
 }
 
+/** 线圈货号搜索下拉返回行（SearchSelect 数据源） */
+interface CoilSearchRow {
+  value: string;
+  中文品名: string;
+  中文规格: string;
+}
+
+/** 产品资料搜索下拉返回行（SearchSelect 数据源） */
+interface ProductDataSearchRow {
+  value: string;
+  中文品名: string;
+  中文规格: string;
+  制造方式: string;
+}
+
+/** 排产分析接口返回的原始 BOM 行（字段类型按使用处推断） */
+interface SchedulingBomRow {
+  层?: string | number;
+  用量?: string | number;
+  损耗?: string | number;
+  仓库数?: string | number;
+  在途数?: string | number;
+  在产需求?: string | number;
+  库存下限?: string | number;
+  库存上限?: string | number;
+  产品属性?: string;
+  品名?: string;
+  来源?: string;
+  规格?: string;
+  货号?: string;
+  单位?: string;
+  工序名称?: string;
+  工序车间?: string;
+  仓库名称?: string;
+  备注?: string;
+  中间件?: string | number;
+  子集?: SchedulingBomRow[];
+}
+
+/** 保存工单销控表后返回的行（字段以使用处为准） */
+interface SavedWorkOrderRow {
+  货号?: string;
+  编号?: string;
+  id?: string;
+}
+
 const props = defineProps<{
   visible: boolean;
   record: PMCDeliveryReview | null;
@@ -643,9 +654,6 @@ const emit = defineEmits<{
   (e: 'confirm', payload: { id: string; status: string }): void;
   (e: 'refresh'): void;
 }>();
-
-
-
 
 // ========== 响应式尺寸 ==========
 const screens = Grid.useBreakpoint();
@@ -666,9 +674,9 @@ const reviewSubmitted = ref(false);
 // 线圈货号是否已修改（与主表不一致且校验通过）
 const isCoilModified = computed(() => {
   const original = props.record?.线圈货号 || '';
-  return verifyStatus.value === 'success' &&
-    reviewForm.coilItemNo.trim() !== '' &&
-    reviewForm.coilItemNo.trim() !== original;
+  return (
+    verifyStatus.value === 'success' && reviewForm.coilItemNo.trim() !== '' && reviewForm.coilItemNo.trim() !== original
+  );
 });
 
 // 根据原货号替换括号内线圈货号，生成新货号
@@ -687,9 +695,7 @@ const toggleSchedulingPanel = () => {
   showSchedulingPanel.value = !showSchedulingPanel.value;
   if (showSchedulingPanel.value) {
     // 展开排产分析时：交货日期默认同步最终生产交期
-    schedulingForm.deliveryDate = reviewForm.finalDate
-      ? dayjs(reviewForm.finalDate).format('YYYY-MM-DD')
-      : undefined;
+    schedulingForm.deliveryDate = reviewForm.finalDate ? dayjs(reviewForm.finalDate).format('YYYY-MM-DD') : undefined;
     // 线圈货号已修改且校验通过时，替换货号括号内线圈货号部分作为请求参数
     if (isCoilModified.value) {
       schedulingProduct.partNo = buildModifiedPartNo(props.record?.货号 || '', reviewForm.coilItemNo.trim());
@@ -711,7 +717,7 @@ const reviewForm = reactive({
   finalDate: null as Dayjs | null,
   resultStatus: 'pass',
   remark: '',
-  specialRequirement: '',
+  specialRequirement: ''
 });
 
 const validatingCoil = ref(false);
@@ -722,21 +728,19 @@ const confirmLoading = ref(false);
 const coilColumns: SearchSelectColumn[] = [
   { title: '货号', dataIndex: 'value', width: 160, fixed: true, color: '#1e3a5f' },
   { title: '中文品名', dataIndex: '中文品名', width: 220 },
-  { title: '中文规格', dataIndex: '中文规格', width: 260 },
+  { title: '中文规格', dataIndex: '中文规格', width: 260 }
 ];
 const productDataColumns: SearchSelectColumn[] = [
   { title: '货号', dataIndex: 'value', width: 160, fixed: true, color: '#1e3a5f' },
   { title: '中文品名', dataIndex: '中文品名', width: 220 },
-  { title: '中文规格', dataIndex: '中文规格', width: 260 },
+  { title: '中文规格', dataIndex: '中文规格', width: 260 }
 ];
 
-// 远程搜索：传入关键字，返回下拉所需的数据源 
-async function searchCoils(keyword: string): Promise<Record<string, any>[]> {
-  const data = await deliveryReviewService.searchCoilsByKeyword(
-    new PMCRequestDto({ 线圈货号: keyword.trim() })
-  );
+// 远程搜索：传入关键字，返回下拉所需的数据源
+async function searchCoils(keyword: string): Promise<CoilSearchRow[]> {
+  const data = await deliveryReviewService.searchCoilsByKeyword(new PMCRequestDto({ 线圈货号: keyword.trim() }));
   const list = Array.isArray(data) ? data : [];
-  return list.map((item: any) => {
+  return list.map((item) => {
     const partNo = item?.货号 || item?.value || '';
     const name = item?.中文品名 || item?.name || item?.产品名称 || '';
     const spec = item?.中文规格 || item?.spec || item?.规格 || '';
@@ -745,18 +749,16 @@ async function searchCoils(keyword: string): Promise<Record<string, any>[]> {
 }
 
 // 选中某条线圈后触发系统校验
-function onCoilSelected(row: Record<string, any>) {
+function onCoilSelected(row: Record<string, unknown>) {
   reviewForm.coilItemNo = String(row.value ?? '');
   validateCoil();
 }
 
 // 新增子级时的产品资料模糊查询（复用线圈查询的下拉控件）
-async function searchProductData(keyword: string): Promise<Record<string, any>[]> {
-  const data = await deliveryReviewService.searchProductDataByKeyword(
-    new PMCRequestDto({ 货号: keyword.trim() })
-  );
+async function searchProductData(keyword: string): Promise<ProductDataSearchRow[]> {
+  const data = await deliveryReviewService.searchProductDataByKeyword(new PMCRequestDto({ 货号: keyword.trim() }));
   const list = Array.isArray(data) ? data : [];
-  return list.map((item: any) => {
+  return list.map((item) => {
     const partNo = item?.货号 || item?.value || '';
     const name = item?.中文品名 || item?.name || item?.产品名称 || '';
     const spec = item?.中文规格 || item?.spec || item?.规格 || '';
@@ -766,14 +768,14 @@ async function searchProductData(keyword: string): Promise<Record<string, any>[]
 }
 
 // 选中产品资料后回填子级基础信息
-function onChildProductSelected(row: Record<string, any>) {
+function onChildProductSelected(row: Record<string, unknown>) {
   const partNo = String(row.value ?? '');
   const parent = findItemByKey(schDataSource.value, addChildParentKey.value);
   if (parent && hasDirectChildPartNo(parent.children || [], partNo)) {
     addChildForm.partNo = '';
     Modal.warning({
       title: '货号已存在',
-      content: `货号"${partNo}"已存在于当前节点的直接子级中，请选择其他货号。`,
+      content: `货号"${partNo}"已存在于当前节点的直接子级中，请选择其他货号。`
     });
     return;
   }
@@ -809,14 +811,19 @@ const canChangeSchedulingUser = computed(() => {
 // 预设排产用户名称列表
 const presetUserNames = computed(() => {
   if (!hasPresetSchedulingUser.value) return [];
-  return props.record?.排产用户?.split(/[,，]/).map(n => n.trim()).filter(Boolean) ?? [];
+  return (
+    props.record?.排产用户
+      ?.split(/[,，]/)
+      .map((n) => n.trim())
+      .filter(Boolean) ?? []
+  );
 });
 
 // 计算当前评审对应的排产用户（已手动选择优先，否则取主表预设；无默认且加载失败时取手动输入）
 function getSchedulingUserName(): string {
   // 1. 优先：手动从组织架构选中的用户
   if (schedulingSelectedUsers.value.length > 0) {
-    return schedulingSelectedUsers.value.map(u => u.name).join(',');
+    return schedulingSelectedUsers.value.map((u) => u.name).join(',');
   }
   // 2. 次之：主表预设的排产用户
   if (hasPresetSchedulingUser.value) {
@@ -843,7 +850,7 @@ function onOrgDeptLoadSuccess() {
 
 const onSchedulingUserSelect = (userIds: string[]) => {
   const allUsers = orgSelectorRef.value?.deptUsers || [];
-  schedulingSelectedUsers.value = allUsers.filter(u => userIds.includes(u.userid));
+  schedulingSelectedUsers.value = allUsers.filter((u) => userIds.includes(u.userid));
 };
 
 // 取消更换，恢复为默认预设用户
@@ -864,7 +871,7 @@ async function initPreselectedUsers() {
   while (retryCount < 10) {
     const allUsers = orgSelectorRef.value?.deptUsers || [];
     if (allUsers.length > 0) break;
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
     retryCount++;
   }
 
@@ -872,12 +879,15 @@ async function initPreselectedUsers() {
   if (allUsers.length === 0) return;
 
   // 按逗号分割已有用户名，匹配 WeChat 用户
-  const nameList = existingNames.split(/[,，]/).map(n => n.trim()).filter(Boolean);
+  const nameList = existingNames
+    .split(/[,，]/)
+    .map((n) => n.trim())
+    .filter(Boolean);
   const matchedIds: string[] = [];
   const matchedUsers: WeChatUser[] = [];
 
   for (const name of nameList) {
-    const found = allUsers.find(u => u.name === name || u.userid === name);
+    const found = allUsers.find((u) => u.name === name || u.userid === name);
     if (found && !matchedIds.includes(found.userid)) {
       matchedIds.push(found.userid);
       matchedUsers.push(found);
@@ -921,7 +931,21 @@ const validateCoil = async () => {
 // 真正提交评审结果到后端
 const doSubmitReview = async () => {
   const mappedStatus = reviewForm.resultStatus === 'pass' ? '评审通过' : '评审驳回';
-  const { 编号, 用户编号, 合同号, 排产编号, 中文品名, 中文规格, 分析单号, 来源编号, 来源, 工单单号, 电压, 数量, 生产类型 } = props.record!;
+  const {
+    编号,
+    用户编号,
+    合同号,
+    排产编号,
+    中文品名,
+    中文规格,
+    分析单号,
+    来源编号,
+    来源,
+    工单单号,
+    电压,
+    数量,
+    生产类型
+  } = props.record!;
   const 排产用户 = getSchedulingUserName();
 
   // 线圈货号已修改且校验通过时，无论是否展开排产分析，提交均使用替换括号内线圈货号后的新完整货号
@@ -951,7 +975,7 @@ const doSubmitReview = async () => {
     线圈货号: reviewForm.coilItemNo,
     交货日期: reviewForm.finalDate ? dayjs(reviewForm.finalDate).format('YYYY-MM-DD') : '',
     备注: reviewForm.remark,
-    特殊要求: reviewForm.specialRequirement,
+    特殊要求: reviewForm.specialRequirement
   });
 
   await deliveryReviewService.addPMCDeliveryReview(reviewData);
@@ -967,16 +991,8 @@ const submitReview = async () => {
   }
   // 校验排产用户：组织架构中选择 / 主表预设 / 组织架构加载失败时手动输入 三者至少有一个
   const hasManualUser = orgLoadFailed.value && manualSchedulingUser.value.trim().length > 0;
-  if (
-    schedulingSelectedUsers.value.length === 0
-    && !hasPresetSchedulingUser.value
-    && !hasManualUser
-  ) {
-    message.warning(
-      orgLoadFailed.value
-        ? '组织架构加载失败，请手动输入排产用户名'
-        : '请选择排产用户'
-    );
+  if (schedulingSelectedUsers.value.length === 0 && !hasPresetSchedulingUser.value && !hasManualUser) {
+    message.warning(orgLoadFailed.value ? '组织架构加载失败，请手动输入排产用户名' : '请选择排产用户');
     return;
   }
   // 驳回时评审备注必填
@@ -1008,9 +1024,7 @@ const submitReview = async () => {
   showSchedulingPanel.value = true;
 
   // 展开排产分析时：交货日期默认同步最终生产交期
-  schedulingForm.deliveryDate = reviewForm.finalDate
-    ? dayjs(reviewForm.finalDate).format('YYYY-MM-DD')
-    : undefined;
+  schedulingForm.deliveryDate = reviewForm.finalDate ? dayjs(reviewForm.finalDate).format('YYYY-MM-DD') : undefined;
 
   // 线圈货号已修改且校验通过时，替换货号括号内线圈货号部分作为请求参数
   if (isCoilModified.value) {
@@ -1032,10 +1046,10 @@ async function loadWorkshopOptions() {
     const data = await bomStructureProcessService.getBOMStructureProcessList();
     const uniqueWorkshops = new Set<string>();
     if (Array.isArray(data) && data.length > 0) {
-      data.forEach((item: any) => {
+      data.forEach((item) => {
         // 兼容多种可能的字段名
-        const workshop = item.执行车间 || item.工序车间 || item.workshop
-          || item.WorkShop || item.车间 || item.执行部门 || '';
+        const workshop =
+          item.执行车间 || item.工序车间 || item.workshop || item.WorkShop || item.车间 || item.执行部门 || '';
         if (workshop && typeof workshop === 'string') {
           uniqueWorkshops.add(workshop);
         }
@@ -1043,13 +1057,13 @@ async function loadWorkshopOptions() {
     }
     // 如果没从对象字段提取到，尝试数据本身就是字符串数组的情况
     if (uniqueWorkshops.size === 0 && Array.isArray(data)) {
-      data.forEach((item: any) => {
+      data.forEach((item) => {
         if (typeof item === 'string' && item.trim()) {
           uniqueWorkshops.add(item.trim());
         }
       });
     }
-    workshopOptions.value = Array.from(uniqueWorkshops).map(w => ({ label: w, value: w }));
+    workshopOptions.value = Array.from(uniqueWorkshops).map((w) => ({ label: w, value: w }));
   } catch (error) {
     console.error('加载BOM结构工序列表失败:', error);
   }
@@ -1060,12 +1074,12 @@ const schedulingProduct = reactive({
   productName: '',
   spec: '',
   qty: 1,
-  orderNo: '',
+  orderNo: ''
 });
 
 const schedulingForm = reactive({
   analysisType: 'normal' as 'normal' | 'limit',
-  deliveryDate: undefined as string | undefined,
+  deliveryDate: undefined as string | undefined
 });
 
 const schDataSource = ref<ProductionItem[]>([]);
@@ -1078,7 +1092,7 @@ const selectedLevel = ref(1);
 const availableLevels = computed(() => {
   const levels = new Set<number>();
   const traverse = (items: ProductionItem[]) => {
-    items.forEach(item => {
+    items.forEach((item) => {
       if (item.level > 0) levels.add(item.level);
       if (item.children) traverse(item.children);
     });
@@ -1090,8 +1104,8 @@ const availableLevels = computed(() => {
 // 根据层数过滤树
 function filterTreeByLevel(items: ProductionItem[], maxLevel: number): ProductionItem[] {
   return items
-    .filter(item => item.level <= maxLevel)
-    .map(item => {
+    .filter((item) => item.level <= maxLevel)
+    .map((item) => {
       const newItem = { ...item };
       if (item.children && item.children.length > 0) {
         const filteredChildren = filterTreeByLevel(item.children, maxLevel);
@@ -1145,7 +1159,7 @@ const addChildForm = reactive({
   spec: '',
   source: '',
   usage: 1,
-  unit: '',
+  unit: ''
 });
 // 用户编辑或清空货号时，不保留上一条产品资料的基础字段；仅在下拉选中后由 onChildProductSelected 回填。
 watch(
@@ -1164,10 +1178,10 @@ function handleRowClick(record: ProductionItem, e?: MouseEvent) {
   if (e) {
     const target = e.target as HTMLElement;
     if (
-      target.closest('.ant-input-number')
-      || target.closest('.ant-select')
-      || target.closest('.ant-select-dropdown')
-      || target.closest('.cell-input-small')
+      target.closest('.ant-input-number') ||
+      target.closest('.ant-select') ||
+      target.closest('.ant-select-dropdown') ||
+      target.closest('.cell-input-small')
     ) {
       return;
     }
@@ -1218,7 +1232,7 @@ function onCtxAddChild() {
     spec: '',
     source: '',
     usage: 1,
-    unit: parent.unit || '',
+    unit: parent.unit || ''
   });
   addChildModalVisible.value = true;
 }
@@ -1246,7 +1260,7 @@ async function handleAddChild() {
   if (hasDirectChildPartNo(parent.children || [], partNo)) {
     Modal.warning({
       title: '货号已存在',
-      content: `货号"${partNo}"已存在于当前节点的直接子级中，请选择其他货号。`,
+      content: `货号"${partNo}"已存在于当前节点的直接子级中，请选择其他货号。`
     });
     return;
   }
@@ -1254,12 +1268,8 @@ async function handleAddChild() {
   addChildLoading.value = true;
   try {
     // 新增产品资料仅提供基础字段；库存相关字段以排产分析根节点返回的数据为准。
-    const analysisList = await schedulingAnalysisService.getSchedulingAnalysisList(
-      new PMCRequestDto({ 货号: partNo })
-    );
-    const inventoryData = (analysisList || []).find(item => Number(item?.层) === 0)
-      || (analysisList || [])[0]
-      || {};
+    const analysisList = await schedulingAnalysisService.getSchedulingAnalysisList(new PMCRequestDto({ 货号: partNo }));
+    const inventoryData = (analysisList || []).find((item) => Number(item?.层) === 0) || (analysisList || [])[0] || {};
     const toNumber = (value: unknown) => {
       const result = Number(value);
       return Number.isFinite(result) ? result : 0;
@@ -1269,7 +1279,7 @@ async function handleAddChild() {
     const needQty = Math.ceil(Math.max(0, parentWorkQty || 0) * usage);
     let maxRowNum = 0;
     const findMaxRowNum = (items: ProductionItem[]) => {
-      items.forEach(item => {
+      items.forEach((item) => {
         maxRowNum = Math.max(maxRowNum, item.rowNum || 0);
         if (item.children?.length) findMaxRowNum(item.children);
       });
@@ -1302,10 +1312,8 @@ async function handleAddChild() {
       pickedQty: needQty,
       remark: '',
       // 中间件标识由排产分析接口按货号返回，表格"中间件"列会直接显示该值。
-      mid: inventoryData.中间件 !== undefined && inventoryData.中间件 !== ''
-        ? inventoryData.中间件
-        : '',
-      children: [],
+      mid: inventoryData.中间件 !== undefined && inventoryData.中间件 !== '' ? inventoryData.中间件 : '',
+      children: []
     };
     if (!parent.children) parent.children = [];
     parent.children.push(child);
@@ -1337,7 +1345,7 @@ function onCtxDelete() {
     content: '有子级物料将一并删除',
     okText: '确定',
     cancelText: '取消',
-    onOk: () => handleSchDelete(),
+    onOk: () => handleSchDelete()
   });
 }
 
@@ -1350,7 +1358,7 @@ function onCtxDeleteRoot() {
     content: '子级物料将自动提升一级',
     okText: '确定',
     cancelText: '取消',
-    onOk: () => handleSchDeleteRoot(),
+    onOk: () => handleSchDeleteRoot()
   });
 }
 
@@ -1442,11 +1450,11 @@ function getSchSourceColor(src: string) {
 }
 
 // ========== 展开/收缩 ==========
-function handleSchExpand(expanded: boolean, record: any) {
+function handleSchExpand(expanded: boolean, record: ProductionItem) {
   if (expanded) {
     schExpandedKeys.value.push(record.key);
   } else {
-    schExpandedKeys.value = schExpandedKeys.value.filter(k => k !== record.key);
+    schExpandedKeys.value = schExpandedKeys.value.filter((k) => k !== record.key);
   }
   // 展开/收起后重新计算层序号（只对可见节点计算）
   reassignLevelIndex(schDataSource.value);
@@ -1454,7 +1462,7 @@ function handleSchExpand(expanded: boolean, record: any) {
 
 function getAllParentKeys(items: ProductionItem[]): string[] {
   const keys: string[] = [];
-  items.forEach(item => {
+  items.forEach((item) => {
     if (item.children && item.children.length) {
       keys.push(item.key);
       keys.push(...getAllParentKeys(item.children));
@@ -1465,7 +1473,7 @@ function getAllParentKeys(items: ProductionItem[]): string[] {
 
 function handleSchExpandAll() {
   const allKeys = getAllParentKeys(filteredSchDataSource.value);
-  if (allKeys.length === schExpandedKeys.value.length && allKeys.every(k => schExpandedKeys.value.includes(k))) {
+  if (allKeys.length === schExpandedKeys.value.length && allKeys.every((k) => schExpandedKeys.value.includes(k))) {
     message.info('当前已是全部展开状态');
     return;
   }
@@ -1528,7 +1536,7 @@ function handleSchDelete() {
         // 收集所有将被删除的 key（含子孙）
         const keysToRemove = collectKeys(item);
         // 从展开列表中移除
-        schExpandedKeys.value = schExpandedKeys.value.filter(k => !keysToRemove.includes(k));
+        schExpandedKeys.value = schExpandedKeys.value.filter((k) => !keysToRemove.includes(k));
         // 删除节点
         items.splice(i, 1);
         return true;
@@ -1561,7 +1569,7 @@ function handleSchDelete() {
 function reassignLevelIndex(items: ProductionItem[]): void {
   // 先清空所有节点的 levelIndex（避免折叠父级的子集残留旧值）
   const clearAll = (list: ProductionItem[]) => {
-    list.forEach(item => {
+    list.forEach((item) => {
       item.levelIndex = undefined;
       if (item.children && item.children.length > 0) clearAll(item.children);
     });
@@ -1571,7 +1579,7 @@ function reassignLevelIndex(items: ProductionItem[]): void {
   // 只收集"可见"节点：顶层节点 + 已展开父级（schExpandedKeys）的子节点
   const all: ProductionItem[] = [];
   const collectVisible = (list: ProductionItem[]) => {
-    list.forEach(item => {
+    list.forEach((item) => {
       all.push(item);
       if (item.children && item.children.length > 0 && schExpandedKeys.value.includes(item.key)) {
         collectVisible(item.children);
@@ -1584,7 +1592,7 @@ function reassignLevelIndex(items: ProductionItem[]): void {
   all.sort((a, b) => (a.rowNum ?? 0) - (b.rowNum ?? 0));
   // 同层内按序号顺序递增编号（跨父级共享同一计数器，全树唯一）
   const levelCounters: Map<number, number> = new Map();
-  all.forEach(item => {
+  all.forEach((item) => {
     const next = (levelCounters.get(item.level) || 0) + 1;
     levelCounters.set(item.level, next);
     item.levelIndex = `${item.level}-${next}`;
@@ -1623,7 +1631,7 @@ function handleSchDeleteRoot() {
 
   // 递归降低子树中所有节点的层级
   const decreaseLevels = (items: ProductionItem[], decrement: number): void => {
-    items.forEach(item => {
+    items.forEach((item) => {
       item.level = item.level - decrement;
       if (item.children && item.children.length > 0) {
         decreaseLevels(item.children, decrement);
@@ -1635,7 +1643,7 @@ function handleSchDeleteRoot() {
   const reassignRowNums = (items: ProductionItem[]): void => {
     let counter = 0;
     const traverse = (list: ProductionItem[]) => {
-      list.forEach(item => {
+      list.forEach((item) => {
         counter++;
         item.rowNum = counter;
         if (item.children && item.children.length > 0) {
@@ -1654,7 +1662,7 @@ function handleSchDeleteRoot() {
 
       if (item.key === targetKey) {
         // 从展开列表中移除被删除节点自身
-        schExpandedKeys.value = schExpandedKeys.value.filter(k => k !== item.key);
+        schExpandedKeys.value = schExpandedKeys.value.filter((k) => k !== item.key);
 
         if (item.children && item.children.length > 0) {
           // 子级提升：将所有子级降低1层
@@ -1719,7 +1727,7 @@ function calculateProduceQty(needQty: number, avail: number): number {
 
 // ========== 递归更新仓库可用量 ==========
 function updateAvailInTree(items: ProductionItem[]) {
-  items.forEach(item => {
+  items.forEach((item) => {
     const stock = item.stock || 0;
     const transit = item.transit || 0;
     const wip = item.wip || 0;
@@ -1744,13 +1752,16 @@ function updateAvailInTree(items: ProductionItem[]) {
 }
 
 // ========== 监听分析类型变化 ==========
-watch(() => schedulingForm.analysisType, () => {
-  if (schDataSource.value.length > 0) {
-    updateAvailInTree(schDataSource.value);
-    // 分析模式变化会重算父级生产数/采购数，需同步子级
-    syncAllChildrenQty(schDataSource.value);
+watch(
+  () => schedulingForm.analysisType,
+  () => {
+    if (schDataSource.value.length > 0) {
+      updateAvailInTree(schDataSource.value);
+      // 分析模式变化会重算父级生产数/采购数，需同步子级
+      syncAllChildrenQty(schDataSource.value);
+    }
   }
-});
+);
 
 // ========== 排产分析交货日期变化时同步到最终生产交期 ==========
 watch(
@@ -1776,7 +1787,7 @@ function findItemByKey(items: ProductionItem[], key: string): ProductionItem | n
 
 // 仅检查当前节点的直接子级；孙级及更深层存在相同货号时仍允许新增。
 function hasDirectChildPartNo(children: ProductionItem[], partNo: string): boolean {
-  return children.some(item => item.partNo === partNo);
+  return children.some((item) => item.partNo === partNo);
 }
 
 // ========== 处理工序车间变化 ==========
@@ -1833,11 +1844,15 @@ function handleSchLossChange(record: ProductionItem, field: string, value: numbe
 }
 
 // ========== 构建树形数据 ==========
-function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
+function buildTreeFromData(bomData: SchedulingBomRow[], qty: number): ProductionItem[] {
   const treeData: ProductionItem[] = [];
   let rowCounter = 0;
 
-  const processBOMItem = (record: any, parentLevel: number = 0, parentUsage: number = 1): ProductionItem => {
+  const processBOMItem = (
+    record: SchedulingBomRow,
+    parentLevel: number = 0,
+    parentUsage: number = 1
+  ): ProductionItem => {
     const level = Number(record.层) || parentLevel;
     const key = generateKey('item', rowCounter++);
     const usage = Number(record.用量) || 1;
@@ -1849,7 +1864,10 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
     const _transit = record.在途数 !== undefined && record.在途数 !== '' ? Number(record.在途数) : 0;
     const _wip = record.在产需求 !== undefined && record.在产需求 !== '' ? Number(record.在产需求) : 0;
     const _min = record.库存下限 !== undefined && record.库存下限 !== '' ? Number(record.库存下限) : 0;
-    const _avail = Math.max(0, schedulingForm.analysisType === 'limit' ? _stock + _transit - _wip - _min : _stock + _transit - _wip);
+    const _avail = Math.max(
+      0,
+      schedulingForm.analysisType === 'limit' ? _stock + _transit - _wip - _min : _stock + _transit - _wip
+    );
 
     // 0 层，或 1 层且产品属性含"线圈"的节点：工序车间默认"包装车间"
     const isPackWorkshop = level === 0 || (level === 1 && (record.产品属性 || '').includes('线圈'));
@@ -1882,11 +1900,11 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
       pickedQty: 0,
       remark: record.备注 || '',
       mid: record.中间件 !== undefined && record.中间件 !== '' ? record.中间件 : '',
-      children: [],
+      children: []
     };
 
     if (record.子集 && Array.isArray(record.子集) && record.子集.length > 0) {
-      record.子集.forEach((childRecord: any) => {
+      record.子集.forEach((childRecord: SchedulingBomRow) => {
         const childItem = processBOMItem(childRecord, level + 1, cumulativeUsage);
         item.children!.push(childItem);
       });
@@ -1899,7 +1917,7 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
     if (!items || items.length <= 1) return items;
     const nonCoil: ProductionItem[] = [];
     const coilItems: ProductionItem[] = [];
-    items.forEach(item => {
+    items.forEach((item) => {
       if (item.level === 1 && item.attr === '线圈') {
         coilItems.push(item);
       } else {
@@ -1913,7 +1931,7 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
     treeData.push(processBOMItem(record, 0));
   });
 
-  treeData.forEach(item => {
+  treeData.forEach((item) => {
     if (item.children && item.children.length > 0) {
       item.children = sortLevel1Items(item.children);
     }
@@ -1921,7 +1939,7 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
 
   let reRowCounter = 0;
   const reassignRowNum = (items: ProductionItem[]) => {
-    items.forEach(item => {
+    items.forEach((item) => {
       reRowCounter++;
       item.rowNum = reRowCounter;
       if (item.children && item.children.length > 0) {
@@ -1939,7 +1957,7 @@ function buildTreeFromData(bomData: any[], qty: number): ProductionItem[] {
 
 // ========== 递归更新需求量 ==========
 function updateDemandQtyInTree(items: ProductionItem[], qty: number) {
-  items.forEach(item => {
+  items.forEach((item) => {
     const demandQty = calculateDemandQty(qty, item.usage || 1, item.loss || 0);
     item.needQty = demandQty;
     // 仅根节点（成品）随数量重算生产数/采购数；子节点保留用户手动值，由父子联动按需覆盖
@@ -1963,22 +1981,18 @@ function updateDemandQtyInTree(items: ProductionItem[], qty: number) {
 function syncChildrenPickQty(parentItem: ProductionItem) {
   // 用 item 自身做货量逐层驱动其子件配料数
   const sync = (item: ProductionItem) => {
-    const qty = (item.produceQty || 0) > 0
-      ? (item.produceQty || 0)
-      : (item.purchaseQty || 0);
+    const qty = (item.produceQty || 0) > 0 ? item.produceQty || 0 : item.purchaseQty || 0;
     if (item.children && item.children.length > 0) {
-      item.children.forEach(child => {
+      item.children.forEach((child) => {
         child.pickedQty = Math.ceil(qty * (child.usage || 0));
         sync(child);
       });
     }
   };
   // 先用 parentItem 自身做货量驱动其直接子件，再逐层递归
-  const parentQty = (parentItem.produceQty || 0) > 0
-    ? (parentItem.produceQty || 0)
-    : (parentItem.purchaseQty || 0);
+  const parentQty = (parentItem.produceQty || 0) > 0 ? parentItem.produceQty || 0 : parentItem.purchaseQty || 0;
   if (parentItem.children && parentItem.children.length > 0) {
-    parentItem.children.forEach(child => {
+    parentItem.children.forEach((child) => {
       child.pickedQty = Math.ceil(parentQty * (child.usage || 0));
       sync(child);
     });
@@ -1987,7 +2001,7 @@ function syncChildrenPickQty(parentItem: ProductionItem) {
 
 // 遍历整棵树，对所有父级节点同步其直接子级的配料数（数量变化等全局联动时使用）
 function syncAllChildrenPickQty(items: ProductionItem[]) {
-  items.forEach(item => {
+  items.forEach((item) => {
     syncChildrenPickQty(item);
     if (item.children && item.children.length > 0) {
       syncAllChildrenPickQty(item.children);
@@ -2003,11 +2017,9 @@ function syncAllChildrenPickQty(items: ProductionItem[]) {
 function syncChildrenQty(parentItem: ProductionItem) {
   // 用 item 自身更新后的做货量，逐层驱动其子级（递归时始终用当前节点的量，而非顶层父级）
   const sync = (item: ProductionItem) => {
-    const qty = (item.produceQty || 0) > 0
-      ? (item.produceQty || 0)
-      : (item.purchaseQty || 0);
+    const qty = (item.produceQty || 0) > 0 ? item.produceQty || 0 : item.purchaseQty || 0;
     if (item.children && item.children.length > 0) {
-      item.children.forEach(child => {
+      item.children.forEach((child) => {
         const usage = child.usage || 0;
         if (qty <= 0) {
           // 当前节点不需要生产/采购，子件的生产数与采购数都归 0
@@ -2025,11 +2037,9 @@ function syncChildrenQty(parentItem: ProductionItem) {
     }
   };
   // 先用 parentItem 自身做货量驱动其直接子级，再逐层递归其子级
-  const parentQty = (parentItem.produceQty || 0) > 0
-    ? (parentItem.produceQty || 0)
-    : (parentItem.purchaseQty || 0);
+  const parentQty = (parentItem.produceQty || 0) > 0 ? parentItem.produceQty || 0 : parentItem.purchaseQty || 0;
   if (parentItem.children && parentItem.children.length > 0) {
-    parentItem.children.forEach(child => {
+    parentItem.children.forEach((child) => {
       const usage = child.usage || 0;
       if (parentQty <= 0) {
         child.produceQty = 0;
@@ -2047,7 +2057,7 @@ function syncChildrenQty(parentItem: ProductionItem) {
 
 // 遍历整棵树，对所有父级节点同步其直接子级的生产数/采购数（全局联动时使用）
 function syncAllChildrenQty(items: ProductionItem[]) {
-  items.forEach(item => {
+  items.forEach((item) => {
     syncChildrenQty(item);
     if (item.children && item.children.length > 0) {
       syncAllChildrenQty(item.children);
@@ -2073,7 +2083,7 @@ function convertToWorkOrderSalesControl(item: ProductionItem, index: number): Wo
   sc.货号 = item.partNo || `TEMP-${index}`;
   sc.品名 = item.name || '';
   sc.规格 = item.spec || '';
-  const totalQty = item.produceQty > 0 ? item.produceQty : (item.needQty || 0);
+  const totalQty = item.produceQty > 0 ? item.produceQty : item.needQty || 0;
   sc.工单总数 = String(totalQty);
   sc.已入库数 = '0';
   sc.在产数量 = String(item.wip || 0);
@@ -2093,23 +2103,25 @@ type VersionedRecord = {
 async function attachExistingRowVersions<T extends VersionedRecord>(
   incoming: T[],
   loadExisting: (request: PMCRequestDto) => Promise<T[]>,
-  keyOf: (item: T) => string,
+  keyOf: (item: T) => string
 ) {
   if (incoming.length === 0) return;
 
-  const analysisNos = Array.from(new Set(
-    incoming.map((item) => item.分析单号).filter((value): value is string => !!value)
-  ));
-  const idsWithoutAnalysis = Array.from(new Set(
-    incoming
-      .filter((item) => !item.分析单号)
-      .map((item) => item.编号)
-      .filter((value): value is string => !!value)
-  ));
+  const analysisNos = Array.from(
+    new Set(incoming.map((item) => item.分析单号).filter((value): value is string => !!value))
+  );
+  const idsWithoutAnalysis = Array.from(
+    new Set(
+      incoming
+        .filter((item) => !item.分析单号)
+        .map((item) => item.编号)
+        .filter((value): value is string => !!value)
+    )
+  );
 
   const existingGroups = await Promise.all([
     ...analysisNos.map((analysisNo) => loadExisting(new PMCRequestDto({ 分析单号: analysisNo }))),
-    ...idsWithoutAnalysis.map((id) => loadExisting(new PMCRequestDto({ 编号: id }))),
+    ...idsWithoutAnalysis.map((id) => loadExisting(new PMCRequestDto({ 编号: id })))
   ]);
   const existingMap = new Map<string, T>();
   existingGroups.flat().forEach((item) => existingMap.set(keyOf(item), item));
@@ -2140,7 +2152,7 @@ async function handleSchSave() {
     // 建立货号→{分析单号, 编号} 的映射，供后续明细使用（不查库，用内存返回值）
     const bomAnalysisNoMap = new Map<string, string>();
     const bomIdMap = new Map<string, string>();
-    (savedBomList || []).forEach((b: any) => {
+    (savedBomList || []).forEach((b: ExternalProductionBOM) => {
       if (b.货号) {
         bomAnalysisNoMap.set(b.货号, b.分析单号 || '');
         if (b.编号) bomIdMap.set(b.货号, String(b.编号));
@@ -2176,10 +2188,13 @@ async function handleSchSave() {
 
     // 仅校验实际会保存工单的节点；父级生产数为 0 的分支无需选择工序车间
     const missingWorkshop = productionNodes.filter(
-      item => !item.workshop || item.workshop === '-' || item.workshop.trim() === ''
+      (item) => !item.workshop || item.workshop === '-' || item.workshop.trim() === ''
     );
     if (missingWorkshop.length > 0) {
-      const names = missingWorkshop.map(i => i.partNo || i.key).slice(0, 3).join('、');
+      const names = missingWorkshop
+        .map((i) => i.partNo || i.key)
+        .slice(0, 3)
+        .join('、');
       const tip = missingWorkshop.length > 3 ? `等${missingWorkshop.length}条` : '';
       message.warning(`以下货号，请选择合适的车间：${names}${tip}`);
       schSaveLoading.value = false;
@@ -2205,9 +2220,7 @@ async function handleSchSave() {
       mergedNodes
         .map((item) => item.partNo)
         .filter((partNo): partNo is string => !!partNo)
-        .map((partNo) => workOrderSalesControlService.getWorkOrderSalesControlList(
-          new PMCRequestDto({ 货号: partNo })
-        ))
+        .map((partNo) => workOrderSalesControlService.getWorkOrderSalesControlList(new PMCRequestDto({ 货号: partNo })))
     );
     const existingMap = new Map<string, WorkOrderSalesControl>();
     existingGroups.flat().forEach((item) => {
@@ -2232,25 +2245,24 @@ async function handleSchSave() {
 
     const updatedMainList = await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlList(salesControlList);
     const mainNoMap = new Map<string, string>();
-    (updatedMainList || []).forEach((item: any) => {
+    (updatedMainList || []).forEach((item: SavedWorkOrderRow) => {
       if (item.货号 && (item.编号 || item.id)) {
-        mainNoMap.set(item.货号, item.编号 || item.id);
+        mainNoMap.set(item.货号, item.编号 || item.id || '');
       }
     });
-
 
     // 工单销控表明细：遍历当前主表记录，货号/品名/规格取自主表，区别仅在于交货日期与工单单号
     // 生产数/待产数取本次 BOM 的原始数量（非主表累加值），保证每次保存时记录的是当次实际数量
     const mergedQtyMap = new Map<string, number>();
     for (const node of mergedNodes) {
       const key = node.partNo || '';
-      if (key) mergedQtyMap.set(key, node.produceQty > 0 ? node.produceQty : (node.needQty || 0));
+      if (key) mergedQtyMap.set(key, node.produceQty > 0 ? node.produceQty : node.needQty || 0);
     }
 
     // 当前评审对应的排产用户（明细与主表共用同一排产用户）
     const schedulingUser = getSchedulingUserName();
 
-    const detailList = salesControlList.map(item => {
+    const detailList = salesControlList.map((item) => {
       const detail = new WorkOrderSalesControlDetail();
       detail.货号 = item.货号 || '';
       detail.品名 = item.品名 || '';
@@ -2264,7 +2276,7 @@ async function handleSchSave() {
       if (no) detail.父级编号 = no;
       // 关联外产BOM的分析单号 + 编号（从已保存的BOM返回值中按货号匹配，不查库）
       const analysisNo = bomAnalysisNoMap.get(item.货号 || '');
-      if (analysisNo)       detail.分析单号 = analysisNo;
+      if (analysisNo) detail.分析单号 = analysisNo;
       // 明细编号直接取外产BOM对应的编号，使两表通过编号强关联
       const bomId = bomIdMap.get(item.货号 || '');
       if (bomId) detail.编号 = bomId;
@@ -2285,33 +2297,33 @@ async function handleSchSave() {
       await attachExistingRowVersions(
         detailList,
         (request) => workOrderSalesControlService.getWorkOrderSalesControlDetailList(request),
-        (item) => `${item.货号 || ''}\u0000${item.分析单号 || ''}`,
+        (item) => `${item.货号 || ''}\u0000${item.分析单号 || ''}`
       );
       await workOrderSalesControlService.addOrUpdateWorkOrderSalesControlDetailList(detailList);
     }
 
     // 构建 编号 -> 生产数 映射，用于按父级编号取生产数
     const bomProduceMap = new Map<string, string>();
-    (savedBomList || []).forEach((b: any) => {
-      if (b.编号) bomProduceMap.set(b.编号, b.生产数);
+    (savedBomList || []).forEach((b: ExternalProductionBOM) => {
+      if (b.编号) bomProduceMap.set(b.编号, b.生产数 || '');
     });
 
     // 来源编号统一取整棵 BOM 最顶层根节点的编号（savedBomList 第一条即根）
-    const rootBomNo = (savedBomList && savedBomList.length > 0) ? (savedBomList[0].编号 || '') : '';
+    const rootBomNo = savedBomList && savedBomList.length > 0 ? savedBomList[0].编号 || '' : '';
 
     // ========== 保存外产领料：基于外产BOM数据，编号/货号直接赋值 ==========
-    const pickMaterialList = (savedBomList || []).map((b: any) => {
+    const pickMaterialList = (savedBomList || []).map((b: ExternalProductionBOM) => {
       const pick = new ExternalProductionPickMaterial();
-      pick.编号 = b.编号;            // 直接取外产BOM的编号
-      pick.货号 = b.货号;            // 直接取外产BOM的货号
-      pick.分析单号 = b.分析单号;    // 关联外产BOM的分析单号
-      pick.父级编号 = b.父级编号;    // 父级编号取自外产BOM
-      pick.来源编号 = rootBomNo;     // 来源编号 = 整棵BOM最顶层根节点的编号
+      pick.编号 = b.编号; // 直接取外产BOM的编号
+      pick.货号 = b.货号; // 直接取外产BOM的货号
+      pick.分析单号 = b.分析单号; // 关联外产BOM的分析单号
+      pick.父级编号 = b.父级编号; // 父级编号取自外产BOM
+      pick.来源编号 = rootBomNo; // 来源编号 = 整棵BOM最顶层根节点的编号
 
       // 生产数：按父级编号去外产BOM中找到编号等于父级编号的记录，取其生产数
       // 用量：取外产BOM中相同编号（自身）的用量
       // 需求量 = 父级生产数 × 自身用量
-      const parentProduce = b.父级编号 ? (Number(bomProduceMap.get(b.父级编号)) || 0) : 0;
+      const parentProduce = b.父级编号 ? Number(bomProduceMap.get(b.父级编号)) || 0 : 0;
       const usage = Number(b.用量) || 0;
       pick.需求量 = parentProduce > 0 ? String(Math.ceil(parentProduce * usage)) : '';
       // 其他字段不赋值
@@ -2321,19 +2333,19 @@ async function handleSchSave() {
       await attachExistingRowVersions(
         pickMaterialList,
         (request) => externalProductionService.getExternalProductionPickMaterialList(request),
-        (item) => item.编号 || '',
+        (item) => item.编号 || ''
       );
       await externalProductionService.addOrUpdateExternalProductionPickMaterialList(pickMaterialList);
     }
 
     // ========== 保存外产入库：基于工单销控表明细，编号/货号直接赋值，需求量=生产数，入库数量不赋值 ==========
-    const warehousingList = detailList.map(item => {
+    const warehousingList = detailList.map((item) => {
       const wh = new ExternalProductionWarehousing();
-      wh.编号 = item.编号;           // 直接取明细的编号
-      wh.货号 = item.货号;           // 直接取明细的货号
-      wh.需求量 = item.生产数;       // 需求量 = 生产数
-      wh.入库数量="0";
-      wh.分析单号 = item.分析单号;   // 关联明细的分析单号
+      wh.编号 = item.编号; // 直接取明细的编号
+      wh.货号 = item.货号; // 直接取明细的货号
+      wh.需求量 = item.生产数; // 需求量 = 生产数
+      wh.入库数量 = '0';
+      wh.分析单号 = item.分析单号; // 关联明细的分析单号
       // 入库数量不赋值
       return wh;
     });
@@ -2341,21 +2353,21 @@ async function handleSchSave() {
       await attachExistingRowVersions(
         warehousingList,
         (request) => externalProductionService.getExternalProductionWarehousingList(request),
-        (item) => item.编号 || '',
+        (item) => item.编号 || ''
       );
       await externalProductionService.addOrUpdateExternalProductionWarehousingList(warehousingList);
     }
 
     // ========== 保存外产生产：基于工单销控表明细，编号/货号/分析单号/排产编号直接赋值，需求量=生产数 ==========
-    const externalProductionList = detailList.map(item => {
+    const externalProductionList = detailList.map((item) => {
       const ep = new ExternalProduction();
       const matchedProductionItem = mergedMap.get(item.货号 || '');
-      ep.编号 = item.编号;            // 直接取明细的编号
-      ep.货号 = item.货号;            // 直接取明细的货号
-      ep.分析单号 = item.分析单号;    // 关联明细的分析单号
-      ep.排产编号 = item.排产编号;    // 关联明细的排产编号
-      ep.需求量 = item.生产数;        // 需求量 = 生产数
-      ep.生产数量 = '0';              // 生产数量默认为0
+      ep.编号 = item.编号; // 直接取明细的编号
+      ep.货号 = item.货号; // 直接取明细的货号
+      ep.分析单号 = item.分析单号; // 关联明细的分析单号
+      ep.排产编号 = item.排产编号; // 关联明细的排产编号
+      ep.需求量 = item.生产数; // 需求量 = 生产数
+      ep.生产数量 = '0'; // 生产数量默认为0
       ep.工单单号 = item.工单单号 || ''; // 关联明细的工单单号
       // 外产生产扩展字段：从排产分析树中匹配同货号节点取值
       ep.来源 = matchedProductionItem?.source || '';
@@ -2375,33 +2387,30 @@ async function handleSchSave() {
       await attachExistingRowVersions(
         externalProductionList,
         (request) => externalProductionService.getExternalProductionList(request),
-        (item) => `${item.分析单号 || ''}\u0000${item.货号 || ''}`,
+        (item) => `${item.分析单号 || ''}\u0000${item.货号 || ''}`
       );
       await externalProductionService.addOrUpdateExternalProductionList(externalProductionList);
     }
 
     // ========== 保存外产发运：逻辑同外产生产，基于工单销控表明细，编号/货号/分析单号/排产编号直接赋值，需求量=生产数 ==========
-    const externalShipmentList = detailList.map(item => {
+    const externalShipmentList = detailList.map((item) => {
       const ship = new ExternalProductionShipment();
-      ship.编号 = item.编号;            // 直接取明细的编号
-      ship.货号 = item.货号;            // 直接取明细的货号
-      ship.分析单号 = item.分析单号;    // 关联明细的分析单号
-      ship.排产编号 = item.排产编号;    // 关联明细的排产编号
-      ship.需求量 = item.生产数;        // 需求量 = 生产数
-      ship.发运数量 = '0';              // 发运数量默认为0
+      ship.编号 = item.编号; // 直接取明细的编号
+      ship.货号 = item.货号; // 直接取明细的货号
+      ship.分析单号 = item.分析单号; // 关联明细的分析单号
+      ship.排产编号 = item.排产编号; // 关联明细的排产编号
+      ship.需求量 = item.生产数; // 需求量 = 生产数
+      ship.发运数量 = '0'; // 发运数量默认为0
       return ship;
     });
     if (externalShipmentList.length > 0) {
       await attachExistingRowVersions(
         externalShipmentList,
         (request) => externalProductionService.getExternalProductionShipmentList(request),
-        (item) => `${item.分析单号 || ''}\u0000${item.货号 || ''}`,
+        (item) => `${item.分析单号 || ''}\u0000${item.货号 || ''}`
       );
       await externalProductionService.addOrUpdateExternalProductionShipmentList(externalShipmentList);
     }
-
-    const bomCount = savedBomList?.length || 0;
-    //message.success(`已保存 ${salesControlList.length} 条到工单销控表，${detailList.length} 条明细，${bomCount} 条BOM数据，${pickMaterialList.length} 条领料，${warehousingList.length} 条入库，${externalProductionList.length} 条外产生产，${externalShipmentList.length} 条外产发运`);
 
     // 排产分析保存成功后，才真正提交评审结果
     const mappedStatus = await doSubmitReview();
@@ -2409,12 +2418,13 @@ async function handleSchSave() {
     emit('confirm', { id: props.record!.编号 || '', status: mappedStatus });
     emit('refresh');
     message.success('评审结果提交成功!');
-  } catch (error: any) {
+  } catch (error) {
     console.error('保存分析失败:', error);
+    const err = error instanceof Error ? (error as Error & { status?: number }) : undefined;
     message.error(
-      error?.status === 409
-        ? (error.message || '数据已被其他用户修改，请刷新后重试')
-        : (error?.message || '保存分析失败，请稍后重试')
+      err?.status === 409
+        ? err.message || '数据已被其他用户修改，请刷新后重试'
+        : err?.message || '保存分析失败，请稍后重试'
     );
   } finally {
     schSaveLoading.value = false;
@@ -2449,12 +2459,12 @@ async function handleSchSaveBOM(): Promise<ExternalProductionBOM[] | null> {
         仓库名称: item.warehouse || '',
         仓库数: String(item.stock || ''),
         // 仅可见且生产数>0 的节点才保存生产数，否则为 null
-        生产数: ((visible && Number(item.produceQty) > 0) ? String(item.produceQty) : null) as any,
+        生产数: (visible && Number(item.produceQty) > 0 ? String(item.produceQty) : null) as string | undefined,
         交货日期: schedulingForm.deliveryDate || '',
         产品属性: item.attr || '',
         来源: item.source || '',
         单位: item.unit || '',
-        备注: item.remark || '',
+        备注: item.remark || ''
       });
 
     const traverse = (items: ProductionItem[], parentPartNo: string, parentVisible: boolean) => {
@@ -2480,7 +2490,7 @@ async function handleSchSaveBOM(): Promise<ExternalProductionBOM[] | null> {
     }
     // 后端返回 Data = savedList（包含填好的分析单号等字段）
     const response = await externalProductionService.saveExternalProductionBOM(
-      "user",
+      'user',
       props.record?.排产编号 || '',
       bomList
     );
@@ -2504,10 +2514,10 @@ async function loadSchedulingData() {
   try {
     const requestDto = new PMCRequestDto({
       货号: schedulingProduct.partNo,
-      排产编号: props.record?.排产编号,
+      排产编号: props.record?.排产编号
     });
     console.log('[排产分析详情] 请求参数:', JSON.parse(JSON.stringify(requestDto)));
-    const bomData = await schedulingAnalysisService.getSchedulingAnalysisList(requestDto);
+    const bomData: SchedulingBomRow[] = await schedulingAnalysisService.getSchedulingAnalysisList(requestDto);
     console.log('[排产分析详情] 后端返回原始数据:', bomData);
 
     // 竞态保护：若本次调用期间已有更新的 loadSchedulingData 启动，丢弃本次响应
@@ -2523,7 +2533,7 @@ async function loadSchedulingData() {
 
     // 如果线圈货号已修改，从后端返回的根节点（第0层）更新头部品名和规格
     if (isCoilModified.value && bomData.length > 0) {
-      const rootNode = bomData.find((item: any) => Number(item.层) === 0) || bomData[0];
+      const rootNode = bomData.find((item) => Number(item.层) === 0) || bomData[0];
       if (rootNode) {
         schedulingProduct.productName = rootNode.品名 || schedulingProduct.productName;
         schedulingProduct.spec = rootNode.规格 || schedulingProduct.spec;
@@ -2538,7 +2548,7 @@ async function loadSchedulingData() {
 
     schDataSource.value = treeData;
     selectedLevel.value = 1;
-    selectedRowKey.value = '';          // 切换数据时清空选中行
+    selectedRowKey.value = ''; // 切换数据时清空选中行
     schExpandedKeys.value = getExpandedKeysForFiltered(filteredSchDataSource.value);
 
     // 在 schExpandedKeys 设置之后再计算层序号（依赖 schExpandedKeys）
@@ -2548,7 +2558,6 @@ async function loadSchedulingData() {
     message.error('加载排产分析数据失败，请稍后重试');
   } finally {
     schedulingLoading.value = false;
-
   }
 }
 
@@ -3045,9 +3054,15 @@ watch(
   line-height: 1.6;
 }
 
-.sch-value.w-220 { width: 220px; }
-.sch-value.w-300 { width: 300px; }
-.sch-value.w-200 { width: 200px; }
+.sch-value.w-220 {
+  width: 220px;
+}
+.sch-value.w-300 {
+  width: 300px;
+}
+.sch-value.w-200 {
+  width: 200px;
+}
 
 .sch-analysis-modes {
   display: flex;

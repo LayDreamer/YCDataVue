@@ -7,9 +7,7 @@
       </div>
       <div class="header-right">
         <a-badge :count="notificationCount" :offset="[-5, 5]">
-          <a-button @click="showNotifications = true">
-            <BellOutlined /> 通知
-          </a-button>
+          <a-button @click="showNotifications = true"> <BellOutlined /> 通知 </a-button>
         </a-badge>
         <a-dropdown :trigger="['click']">
           <a-button>
@@ -131,7 +129,7 @@
                     v-for="(task, index) in dragTasks"
                     :key="task.id"
                     class="drag-item"
-                    :class="{ 'dragging': draggingIndex === index }"
+                    :class="{ dragging: draggingIndex === index }"
                     draggable="true"
                     @dragstart="handleDragStart($event, index)"
                     @dragover.prevent
@@ -151,7 +149,7 @@
                   placeholder="添加新任务，按回车确认"
                   enter-button="添加"
                   @search="addTask"
-                  style="margin-top: 12px;"
+                  style="margin-top: 12px"
                 />
               </a-card>
 
@@ -245,7 +243,8 @@
                         <a-col :span="12">
                           <a-form-item label="项目类型">
                             <a-select v-model:value="wizardForm.basic.type" placeholder="请选择">
-                              { id: 2, icon: '✅', avatarBg: '#52c41a', title: '审批通过', content: '您提交的采购申请已审批通过', time: '1小时前', read: false },
+                              { id: 2, icon: '✅', avatarBg: '#52c41a', title: '审批通过', content:
+                              '您提交的采购申请已审批通过', time: '1小时前', read: false },
                               <a-select-option value="web">Web应用</a-select-option>
                               <a-select-option value="mobile">移动端</a-select-option>
                               <a-select-option value="desktop">桌面应用</a-select-option>
@@ -264,17 +263,32 @@
                       <a-row :gutter="16">
                         <a-col :span="8">
                           <a-form-item label="CPU核心数">
-                            <a-slider v-model:value="wizardForm.config.cpu" :min="1" :max="32" :marks="{ 1: '1', 4: '4', 8: '8', 16: '16', 32: '32' }" />
+                            <a-slider
+                              v-model:value="wizardForm.config.cpu"
+                              :min="1"
+                              :max="32"
+                              :marks="{ 1: '1', 4: '4', 8: '8', 16: '16', 32: '32' }"
+                            />
                           </a-form-item>
                         </a-col>
                         <a-col :span="8">
                           <a-form-item label="内存大小(GB)">
-                            <a-input-number v-model:value="wizardForm.config.memory" :min="1" :max="256" style="width: 100%" />
+                            <a-input-number
+                              v-model:value="wizardForm.config.memory"
+                              :min="1"
+                              :max="256"
+                              style="width: 100%"
+                            />
                           </a-form-item>
                         </a-col>
                         <a-col :span="8">
                           <a-form-item label="存储空间(GB)">
-                            <a-input-number v-model:value="wizardForm.config.storage" :min="10" :max="10000" style="width: 100%" />
+                            <a-input-number
+                              v-model:value="wizardForm.config.storage"
+                              :min="10"
+                              :max="10000"
+                              style="width: 100%"
+                            />
                           </a-form-item>
                         </a-col>
                       </a-row>
@@ -296,17 +310,20 @@
                       <a-descriptions-item label="CPU核心">{{ wizardForm.config.cpu || '-' }}核</a-descriptions-item>
                       <a-descriptions-item label="内存">{{ wizardForm.config.memory || '-' }}GB</a-descriptions-item>
                       <a-descriptions-item label="存储">{{ wizardForm.config.storage || '-' }}GB</a-descriptions-item>
-                      <a-descriptions-item label="功能特性">{{ (wizardForm.config.features || []).join('、') || '-' }}</a-descriptions-item>
+                      <a-descriptions-item label="功能特性">{{
+                        (wizardForm.config.features || []).join('、') || '-'
+                      }}</a-descriptions-item>
                     </a-descriptions>
-                    <a-alert message="请仔细核对以上信息，确认无误后点击完成" type="info" show-icon style="margin-top: 16px;" />
+                    <a-alert
+                      message="请仔细核对以上信息，确认无误后点击完成"
+                      type="info"
+                      show-icon
+                      style="margin-top: 16px"
+                    />
                   </div>
 
                   <div v-show="currentStep === 3" class="step-form success-step">
-                    <a-result
-                      status="success"
-                      title="创建成功！"
-                      sub-title="您的项目已成功创建，可以开始部署了"
-                    >
+                    <a-result status="success" title="创建成功！" sub-title="您的项目已成功创建，可以开始部署了">
                       <template #extra>
                         <a-button type="primary" @click="resetWizard">再创建一个</a-button>
                         <a-button>查看详情</a-button>
@@ -354,12 +371,12 @@
                     change-on-select
                     expand-trigger="hover"
                   />
-                  <br><br>
+                  <br /><br />
                   <a-cascader
                     v-model:value="categoryValue"
                     :options="categoryOptions"
                     placeholder="选择商品分类"
-                    style="margin-top: 8px;"
+                    style="margin-top: 8px"
                   />
                 </a-card>
               </a-col>
@@ -371,7 +388,7 @@
                     v-model:target-keys="transferTargetKeys"
                     :data-source="transferData"
                     :titles="['可选人员', '已选人员']"
-                    :render="item => item.title"
+                    :render="(item) => item.title"
                     show-search
                     :filter-option="filterOption"
                   />
@@ -390,7 +407,7 @@
                     </a-timeline-item>
                     <a-timeline-item>
                       <a-card size="small" title="异常报告单">
-                        发生时间：2019-11-01<br>
+                        发生时间：2019-11-01<br />
                         异常描述：服务器响应超时
                       </a-card>
                     </a-timeline-item>
@@ -474,12 +491,7 @@
             </a-space>
           </template>
           <div ref="logContainerRef" class="log-container">
-            <div
-              v-for="(log, index) in logs"
-              :key="index"
-              class="log-entry"
-              :class="'log-' + log.type"
-            >
+            <div v-for="(log, index) in logs" :key="index" class="log-entry" :class="'log-' + log.type">
               <span class="log-time">{{ log.time }}</span>
               <span class="log-level">{{ log.level }}</span>
               <span class="log-message">{{ log.message }}</span>
@@ -488,32 +500,20 @@
         </a-card>
 
         <!-- 快捷操作 -->
-        <a-card title="快捷操作面板" class="quick-actions-card" style="margin-top: 16px;">
+        <a-card title="快捷操作面板" class="quick-actions-card" style="margin-top: 16px">
           <a-collapse v-model:activeKey="collapseKey" accordion>
             <a-collapse-panel key="1" header="📤 数据导出">
-              <a-space direction="vertical" style="width: 100%;">
-                <a-button block @click="exportData('excel')">
-                  <FileExcelOutlined /> 导出 Excel
-                </a-button>
-                <a-button block @click="exportData('csv')">
-                  <FileTextOutlined /> 导出 CSV
-                </a-button>
-                <a-button block @click="exportData('pdf')">
-                  <FilePdfOutlined /> 导出 PDF
-                </a-button>
+              <a-space direction="vertical" style="width: 100%">
+                <a-button block @click="exportData('excel')"> <FileExcelOutlined /> 导出 Excel </a-button>
+                <a-button block @click="exportData('csv')"> <FileTextOutlined /> 导出 CSV </a-button>
+                <a-button block @click="exportData('pdf')"> <FilePdfOutlined /> 导出 PDF </a-button>
               </a-space>
             </a-collapse-panel>
             <a-collapse-panel key="2" header="⚙️ 系统工具">
               <a-list size="small" :split="false">
-                <a-list-item @click="openTool('cache')">
-                  <ClearOutlined /> 清除缓存
-                </a-list-item>
-                <a-list-item @click="openTool('backup')">
-                  <CloudUploadOutlined /> 数据备份
-                </a-list-item>
-                <a-list-item @click="openTool('restore')">
-                  <CloudDownloadOutlined /> 数据恢复
-                </a-list-item>
+                <a-list-item @click="openTool('cache')"> <ClearOutlined /> 清除缓存 </a-list-item>
+                <a-list-item @click="openTool('backup')"> <CloudUploadOutlined /> 数据备份 </a-list-item>
+                <a-list-item @click="openTool('restore')"> <CloudDownloadOutlined /> 数据恢复 </a-list-item>
               </a-list>
             </a-collapse-panel>
             <a-collapse-panel key="3" header="🔔 通知设置">
@@ -533,7 +533,7 @@
         </a-card>
 
         <!-- 团队成员在线状态 -->
-        <a-card title="团队成员" class="team-card" style="margin-top: 16px;">
+        <a-card title="团队成员" class="team-card" style="margin-top: 16px">
           <a-list :data-source="teamMembers" size="small" :split="false">
             <template #renderItem="{ item }">
               <a-list-item>
@@ -564,12 +564,7 @@
     </a-row>
 
     <!-- 通知抽屉 -->
-    <a-drawer
-      v-model:open="showNotifications"
-      title="通知中心"
-      placement="right"
-      width="400"
-    >
+    <a-drawer v-model:open="showNotifications" title="通知中心" placement="right" width="400">
       <a-tabs v-model:activeKey="notifTabKey">
         <a-tab-pane key="all" :tab="`全部 (${notifications.length})`">
           <a-list :data-source="notifications" :split="false">
@@ -604,10 +599,25 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import * as echarts from 'echarts';
 import {
-  BellOutlined, UserOutlined, DownOutlined, ArrowUpOutlined, ArrowDownOutlined,
-  ReloadOutlined, HolderOutlined, DeleteOutlined, EditOutlined, SettingOutlined,
-  LogoutOutlined, CheckOutlined, RightOutlined, FileExcelOutlined, FileTextOutlined,
-  FilePdfOutlined, ClearOutlined, CloudUploadOutlined, CloudDownloadOutlined,
+  BellOutlined,
+  UserOutlined,
+  DownOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  ReloadOutlined,
+  HolderOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+  CheckOutlined,
+  RightOutlined,
+  FileExcelOutlined,
+  FileTextOutlined,
+  FilePdfOutlined,
+  ClearOutlined,
+  CloudUploadOutlined,
+  CloudDownloadOutlined,
   MessageOutlined
 } from '@ant-design/icons-vue';
 
@@ -644,13 +654,45 @@ let performanceChart = null;
 let resourceChart = null;
 let requestChart = null;
 let refreshTimer = null;
-let logTimer = null;
+const logTimer = null;
 
 const statsData = ref([
-  { icon: '👥', label: '活跃用户', value: 12847, trend: 12.5, gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#667eea', sparkline: [30, 45, 35, 50, 40, 60, 55, 70, 65, 75] },
-  { icon: '💰', label: '今日收入', value: 89234, trend: 8.3, gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: '#f5576c', sparkline: [20, 35, 30, 55, 45, 65, 60, 80, 70, 85] },
-  { icon: '📦', label: '订单数量', value: 1567, trend: -2.1, gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: '#4facfe', sparkline: [50, 42, 48, 38, 45, 52, 48, 58, 55, 62] },
-  { icon: '⚡', label: '转化率', value: 23.8, trend: 5.7, gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: '#43e97b', sparkline: [15, 18, 22, 20, 25, 23, 28, 26, 30, 28] }
+  {
+    icon: '👥',
+    label: '活跃用户',
+    value: 12847,
+    trend: 12.5,
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: '#667eea',
+    sparkline: [30, 45, 35, 50, 40, 60, 55, 70, 65, 75]
+  },
+  {
+    icon: '💰',
+    label: '今日收入',
+    value: 89234,
+    trend: 8.3,
+    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    color: '#f5576c',
+    sparkline: [20, 35, 30, 55, 45, 65, 60, 80, 70, 85]
+  },
+  {
+    icon: '📦',
+    label: '订单数量',
+    value: 1567,
+    trend: -2.1,
+    gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    color: '#4facfe',
+    sparkline: [50, 42, 48, 38, 45, 52, 48, 58, 55, 62]
+  },
+  {
+    icon: '⚡',
+    label: '转化率',
+    value: 23.8,
+    trend: 5.7,
+    gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    color: '#43e97b',
+    sparkline: [15, 18, 22, 20, 25, 23, 28, 26, 30, 28]
+  }
 ]);
 
 const dragTasks = ref([
@@ -684,8 +726,22 @@ const treeData = [
     title: '技术部',
     value: 'tech',
     children: [
-      { title: '前端组', value: 'frontend', children: [{ title: '张三', value: 'zhangsan' }, { title: '李四', value: 'lisi' }] },
-      { title: '后端组', value: 'backend', children: [{ title: '王五', value: 'wangwu' }, { title: '赵六', value: 'zhaoliu' }] }
+      {
+        title: '前端组',
+        value: 'frontend',
+        children: [
+          { title: '张三', value: 'zhangsan' },
+          { title: '李四', value: 'lisi' }
+        ]
+      },
+      {
+        title: '后端组',
+        value: 'backend',
+        children: [
+          { title: '王五', value: 'wangwu' },
+          { title: '赵六', value: 'zhaoliu' }
+        ]
+      }
     ]
   },
   {
@@ -699,15 +755,57 @@ const treeData = [
 ];
 
 const cascaderOptions = [
-  { value: 'beijing', label: '北京', children: [{ value: 'chaoyang', label: '朝阳区' }, { value: 'haidian', label: '海淀区' }] },
-  { value: 'shanghai', label: '上海', children: [{ value: 'pudong', label: '浦东新区' }, { value: 'jingan', label: '静安区' }] },
-  { value: 'guangzhou', label: '广州', children: [{ value: 'tianhe', label: '天河区' }, { value: 'yuexiu', label: '越秀区' }] }
+  {
+    value: 'beijing',
+    label: '北京',
+    children: [
+      { value: 'chaoyang', label: '朝阳区' },
+      { value: 'haidian', label: '海淀区' }
+    ]
+  },
+  {
+    value: 'shanghai',
+    label: '上海',
+    children: [
+      { value: 'pudong', label: '浦东新区' },
+      { value: 'jingan', label: '静安区' }
+    ]
+  },
+  {
+    value: 'guangzhou',
+    label: '广州',
+    children: [
+      { value: 'tianhe', label: '天河区' },
+      { value: 'yuexiu', label: '越秀区' }
+    ]
+  }
 ];
 
 const categoryOptions = [
-  { value: 'electronics', label: '电子产品', children: [{ value: 'phone', label: '手机' }, { value: 'laptop', label: '笔记本' }] },
-  { value: 'clothing', label: '服装', children: [{ value: 'men', label: '男装' }, { value: 'women', label: '女装' }] },
-  { value: 'food', label: '食品', children: [{ value: 'snacks', label: '零食' }, { value: 'drinks', label: '饮料' }] }
+  {
+    value: 'electronics',
+    label: '电子产品',
+    children: [
+      { value: 'phone', label: '手机' },
+      { value: 'laptop', label: '笔记本' }
+    ]
+  },
+  {
+    value: 'clothing',
+    label: '服装',
+    children: [
+      { value: 'men', label: '男装' },
+      { value: 'women', label: '女装' }
+    ]
+  },
+  {
+    value: 'food',
+    label: '食品',
+    children: [
+      { value: 'snacks', label: '零食' },
+      { value: 'drinks', label: '饮料' }
+    ]
+  }
 ];
 
 const transferData = [];
@@ -719,8 +817,24 @@ const logs = ref([]);
 const notifySettings = ref({ email: true, message: true, popup: true });
 
 const notifications = ref([
-  { id: 1, icon: '📢', avatarBg: '#1890ff', title: '系统维护通知', content: '计划于今晚23:00进行系统维护升级', time: '5分钟前', read: false },
-  { id: 3, icon: '💬', avatarBg: '#faad14', title: '新消息', content: '李四给您发了一条私信', time: '2小时前', read: true }
+  {
+    id: 1,
+    icon: '📢',
+    avatarBg: '#1890ff',
+    title: '系统维护通知',
+    content: '计划于今晚23:00进行系统维护升级',
+    time: '5分钟前',
+    read: false
+  },
+  {
+    id: 3,
+    icon: '💬',
+    avatarBg: '#faad14',
+    title: '新消息',
+    content: '李四给您发了一条私信',
+    time: '2小时前',
+    read: true
+  }
 ]);
 
 const teamMembers = ref([
@@ -738,7 +852,7 @@ const ratingItems = ref([
   { label: '性能稳定性', value: 4.8 }
 ]);
 
-const unreadCount = computed(() => notifications.value.filter(n => !n.read).length);
+const unreadCount = computed(() => notifications.value.filter((n) => !n.read).length);
 
 function formatNumber(num) {
   return num.toLocaleString();
@@ -790,7 +904,7 @@ function initCharts() {
 function getPerformanceOption() {
   const hours = [];
   for (let i = 0; i < 24; i++) hours.push(`${String(i).padStart(2, '0')}:00`);
-  
+
   return {
     tooltip: { trigger: 'axis' },
     legend: { data: ['CPU使用率', '内存使用率', '磁盘I/O'], bottom: 0 },
@@ -798,9 +912,27 @@ function getPerformanceOption() {
     xAxis: { type: 'category', boundaryGap: false, data: hours.slice(-12) },
     yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
     series: [
-      { name: 'CPU使用率', type: 'line', smooth: true, areaStyle: { opacity: 0.15 }, data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 40 + 30)) },
-      { name: '内存使用率', type: 'line', smooth: true, areaStyle: { opacity: 0.15 }, data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 30 + 40)) },
-      { name: '磁盘I/O', type: 'line', smooth: true, areaStyle: { opacity: 0.15 }, data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 50 + 20)) }
+      {
+        name: 'CPU使用率',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.15 },
+        data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 40 + 30))
+      },
+      {
+        name: '内存使用率',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.15 },
+        data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 30 + 40))
+      },
+      {
+        name: '磁盘I/O',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.15 },
+        data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 50 + 20))
+      }
     ]
   };
 }
@@ -810,8 +942,28 @@ function getResourceOption() {
     tooltip: { formatter: '{a}: {c}%' },
     legend: { bottom: 0 },
     series: [
-      { type: 'gauge', radius: '70%', center: ['25%', '55%'], startAngle: 200, endAngle: -20, axisLine: { lineStyle: { width: 15 } }, pointer: { length: '60%', width: 6 }, detail: { fontSize: 14, offsetCenter: [0, '60%'] }, data: [{ value: 65, name: 'CPU' }] },
-      { type: 'gauge', radius: '70%', center: ['75%', '55%'], startAngle: 200, endAngle: -20, axisLine: { lineStyle: { width: 15 } }, pointer: { length: '60%', width: 6 }, detail: { fontSize: 14, offsetCenter: [0, '60%'] }, data: [{ value: 78, name: '内存' }] }
+      {
+        type: 'gauge',
+        radius: '70%',
+        center: ['25%', '55%'],
+        startAngle: 200,
+        endAngle: -20,
+        axisLine: { lineStyle: { width: 15 } },
+        pointer: { length: '60%', width: 6 },
+        detail: { fontSize: 14, offsetCenter: [0, '60%'] },
+        data: [{ value: 65, name: 'CPU' }]
+      },
+      {
+        type: 'gauge',
+        radius: '70%',
+        center: ['75%', '55%'],
+        startAngle: 200,
+        endAngle: -20,
+        axisLine: { lineStyle: { width: 15 } },
+        pointer: { length: '60%', width: 6 },
+        detail: { fontSize: 14, offsetCenter: [0, '60%'] },
+        data: [{ value: 78, name: '内存' }]
+      }
     ]
   };
 }
@@ -820,20 +972,22 @@ function getRequestOption() {
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { orient: 'vertical', left: 'left' },
-    series: [{
-      type: 'pie',
-      radius: ['35%', '65%'],
-      avoidLabelOverlap: false,
-      label: { show: false },
-      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-      data: [
-        { value: 450, name: 'GET请求', itemStyle: { color: '#1890ff' } },
-        { value: 280, name: 'POST请求', itemStyle: { color: '#52c41a' } },
-        { value: 120, name: 'PUT请求', itemStyle: { color: '#faad14' } },
-        { value: 80, name: 'DELETE请求', itemStyle: { color: '#ff4d4f' } },
-        { value: 50, name: '其他', itemStyle: { color: '#722ed1' } }
-      ]
-    }]
+    series: [
+      {
+        type: 'pie',
+        radius: ['35%', '65%'],
+        avoidLabelOverlap: false,
+        label: { show: false },
+        emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+        data: [
+          { value: 450, name: 'GET请求', itemStyle: { color: '#1890ff' } },
+          { value: 280, name: 'POST请求', itemStyle: { color: '#52c41a' } },
+          { value: 120, name: 'PUT请求', itemStyle: { color: '#faad14' } },
+          { value: 80, name: 'DELETE请求', itemStyle: { color: '#ff4d4f' } },
+          { value: 50, name: '其他', itemStyle: { color: '#722ed1' } }
+        ]
+      }
+    ]
   };
 }
 
@@ -872,10 +1026,14 @@ function clearLogs() {
 
 function getTaskPriorityColor(priority) {
   switch (priority) {
-    case '紧急': return 'red';
-    case '高': return 'orange';
-    case '中': return 'blue';
-    default: return 'default';
+    case '紧急':
+      return 'red';
+    case '高':
+      return 'orange';
+    case '中':
+      return 'blue';
+    default:
+      return 'default';
   }
 }
 
@@ -940,7 +1098,10 @@ function prevStep() {
 
 function resetWizard() {
   currentStep.value = 0;
-  wizardForm.value = { basic: { name: '', type: '', description: '' }, config: { cpu: 4, memory: 8, storage: 100, features: ['ssl', 'monitor'] } };
+  wizardForm.value = {
+    basic: { name: '', type: '', description: '' },
+    config: { cpu: 4, memory: 8, storage: 100, features: ['ssl', 'monitor'] }
+  };
 }
 
 function handleSliderVerify(e) {
@@ -974,7 +1135,7 @@ onMounted(() => {
     lastUpdateTime.value = new Date().toLocaleTimeString();
     onlineUsers.value += Math.floor(Math.random() * 5) - 2;
     serverLoad.value = Math.min(100, Math.max(20, serverLoad.value + Math.floor(Math.random() * 10) - 5));
-    
+
     if (Math.random() > 0.7) {
       const types = ['info', 'warning', 'error'];
       const levels = ['INFO', 'WARN', 'ERROR'];
@@ -1042,13 +1203,13 @@ onUnmounted(() => {
 }
 
 .header-right .ant-btn {
-  background: rgba(255,255,255,0.2);
-  border-color: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
   color: white;
 }
 .header-right .ant-btn:hover {
-  background: rgba(255,255,255,0.3);
-  border-color: rgba(255,255,255,0.5);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
   color: white;
 }
 
@@ -1060,7 +1221,7 @@ onUnmounted(() => {
   background: white;
   border-radius: 10px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   font-size: 13px;
   flex-wrap: wrap;
 }
@@ -1071,11 +1232,21 @@ onUnmounted(() => {
   gap: 6px;
 }
 
-.status-item .label { color: #999; }
-.status-item .value { color: #333; font-weight: 500; }
-.status-item .value.highlight { color: #1890ff; font-weight: 700; }
+.status-item .label {
+  color: #999;
+}
+.status-item .value {
+  color: #333;
+  font-weight: 500;
+}
+.status-item .value.highlight {
+  color: #1890ff;
+  font-weight: 700;
+}
 
-.stats-grid { margin-bottom: 16px; }
+.stats-grid {
+  margin-bottom: 16px;
+}
 
 .stat-card {
   border-radius: 12px;
@@ -1086,7 +1257,7 @@ onUnmounted(() => {
 
 .stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
 }
 
 .stat-header {
@@ -1105,7 +1276,9 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.stat-emoji { font-size: 24px; }
+.stat-emoji {
+  font-size: 24px;
+}
 
 .trend-indicator {
   display: flex;
@@ -1117,8 +1290,14 @@ onUnmounted(() => {
   border-radius: 6px;
 }
 
-.trend-indicator.up { background: #f6ffed; color: #52c41a; }
-.trend-indicator.down { background: #fff2f0; color: #ff4d4f; }
+.trend-indicator.up {
+  background: #f6ffed;
+  color: #52c41a;
+}
+.trend-indicator.down {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
 
 .stat-value {
   font-size: 28px;
@@ -1138,21 +1317,57 @@ onUnmounted(() => {
   margin-top: 8px;
 }
 
-.main-tabs { background: transparent; }
-.main-tabs :deep(.ant-tabs-nav) { margin-bottom: 0; }
-.main-tabs :deep(.ant-tabs-content) { background: white; border-radius: 12px; padding: 16px; }
-.main-tabs :deep(.ant-tabs-tab) { background: white; border-radius: 8px 8px 0 0; margin-right: 4px; }
+.main-tabs {
+  background: transparent;
+}
+.main-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 0;
+}
+.main-tabs :deep(.ant-tabs-content) {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+}
+.main-tabs :deep(.ant-tabs-tab) {
+  background: white;
+  border-radius: 8px 8px 0 0;
+  margin-right: 4px;
+}
 
-.monitor-panel { padding: 0; }
-.panel-toolbar { margin-bottom: 16px; padding: 12px; background: #fafafa; border-radius: 8px; }
-.chart-card { margin-bottom: 16px; border-radius: 12px; }
-.chart-container.large { height: 300px; }
-.chart-container { height: 250px; }
+.monitor-panel {
+  padding: 0;
+}
+.panel-toolbar {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+.chart-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+.chart-container.large {
+  height: 300px;
+}
+.chart-container {
+  height: 250px;
+}
 
-.interactive-demo { display: flex; flex-direction: column; gap: 16px; }
-.demo-card { border-radius: 12px; }
+.interactive-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.demo-card {
+  border-radius: 12px;
+}
 
-.drag-list { display: flex; flex-direction: column; gap: 8px; }
+.drag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .drag-item {
   display: flex;
   align-items: center;
@@ -1164,10 +1379,22 @@ onUnmounted(() => {
   cursor: grab;
   transition: all 0.2s;
 }
-.drag-item:hover { border-color: #1890ff; box-shadow: 0 2px 8px rgba(24,144,255,0.15); }
-.drag-item.dragging { opacity: 0.5; transform: scale(0.98); }
-.drag-handle { cursor: grab; color: #bbb; font-size: 16px; }
-.drag-item:hover .drag-handle { color: #1890ff; }
+.drag-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+.drag-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+.drag-handle {
+  cursor: grab;
+  color: #bbb;
+  font-size: 16px;
+}
+.drag-item:hover .drag-handle {
+  color: #1890ff;
+}
 
 .editable-cell {
   cursor: pointer;
@@ -1178,24 +1405,56 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
 }
-.editable-cell:hover { background: #f0f5ff; }
-.edit-icon { color: #bbb; font-size: 12px; }
+.editable-cell:hover {
+  background: #f0f5ff;
+}
+.edit-icon {
+  color: #bbb;
+  font-size: 12px;
+}
 
-.wizard-steps { margin-bottom: 24px; }
-.wizard-content { min-height: 200px; }
-.step-form { padding: 16px 0; }
-.wizard-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
-.success-step { text-align: center; padding: 40px 0; }
+.wizard-steps {
+  margin-bottom: 24px;
+}
+.wizard-content {
+  min-height: 200px;
+}
+.step-form {
+  padding: 16px 0;
+}
+.wizard-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+.success-step {
+  text-align: center;
+  padding: 40px 0;
+}
 
-.component-card { border-radius: 12px; margin-bottom: 16px; }
+.component-card {
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
 
 .progress-rings {
   display: flex;
   justify-content: space-around;
   text-align: center;
 }
-.ring-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.ring-label { font-size: 13px; color: #666; }
+.ring-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.ring-label {
+  font-size: 13px;
+  color: #666;
+}
 
 .slider-verify {
   position: relative;
@@ -1225,12 +1484,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: right 0.3s;
   color: #ccc;
   font-size: 14px;
 }
-.slider-thumb.verified { right: calc(100% - 19px); color: #52c41a; }
+.slider-thumb.verified {
+  right: calc(100% - 19px);
+  color: #52c41a;
+}
 .slider-text {
   position: absolute;
   top: 50%;
@@ -1241,15 +1503,39 @@ onUnmounted(() => {
   white-space: nowrap;
   pointer-events: none;
 }
-.slider-text.success { color: #52c41a; }
+.slider-text.success {
+  color: #52c41a;
+}
 
-.rating-section { padding: 8px 0; }
-.big-rating { display: flex; align-items: center; gap: 16px; justify-content: center; margin-bottom: 16px; }
-.rating-value { font-size: 24px; font-weight: 700; color: #1890ff; }
-.detail-ratings { display: flex; flex-direction: column; gap: 12px; }
-.detail-rating-item { display: flex; justify-content: space-between; align-items: center; }
+.rating-section {
+  padding: 8px 0;
+}
+.big-rating {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.rating-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1890ff;
+}
+.detail-ratings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.detail-rating-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-.log-card { border-radius: 12px; }
+.log-card {
+  border-radius: 12px;
+}
 .log-container {
   height: 300px;
   overflow-y: auto;
@@ -1266,24 +1552,62 @@ onUnmounted(() => {
   line-height: 1.6;
   border-bottom: 1px solid #2a2a2a;
 }
-.log-time { color: #888; min-width: 70px; }
-.log-log-info .log-level { color: #52c41a; }
-.log-log-warning .log-level { color: #faad14; }
-.log-log-error .log-level { color: #ff4d4f; }
-.log-log-system .log-level { color: #1890ff; }
-.log-message { color: #ddd; flex: 1; word-break: break-all; }
+.log-time {
+  color: #888;
+  min-width: 70px;
+}
+.log-log-info .log-level {
+  color: #52c41a;
+}
+.log-log-warning .log-level {
+  color: #faad14;
+}
+.log-log-error .log-level {
+  color: #ff4d4f;
+}
+.log-log-system .log-level {
+  color: #1890ff;
+}
+.log-message {
+  color: #ddd;
+  flex: 1;
+  word-break: break-all;
+}
 
-.quick-actions-card, .team-card { border-radius: 12px; }
-.team-card :deep(.ant-list-item) { padding: 12px 0; }
+.quick-actions-card,
+.team-card {
+  border-radius: 12px;
+}
+.team-card :deep(.ant-list-item) {
+  padding: 12px 0;
+}
 
-.notif-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-.notif-item.unread { background: #f6fffe; }
-.notif-desc { color: #666; font-size: 13px; margin: 4px 0; }
-.notif-time { color: #bbb; font-size: 12px; }
+.notif-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.notif-item.unread {
+  background: #f6fffe;
+}
+.notif-desc {
+  color: #666;
+  font-size: 13px;
+  margin: 4px 0;
+}
+.notif-time {
+  color: #bbb;
+  font-size: 12px;
+}
 
 @media (max-width: 992px) {
-  .advanced-test-container { padding: 12px; }
-  .page-header { flex-direction: column; }
-  .stats-grid .ant-col { margin-bottom: 12px; }
+  .advanced-test-container {
+    padding: 12px;
+  }
+  .page-header {
+    flex-direction: column;
+  }
+  .stats-grid .ant-col {
+    margin-bottom: 12px;
+  }
 }
 </style>

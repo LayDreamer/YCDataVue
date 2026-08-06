@@ -1,52 +1,52 @@
-import { post } from '@/api'
-import { toCamelCase, ApiResponse } from '@/services'
+import { post } from '@/api';
+import { toCamelCase, ApiResponse } from '@/utils/api';
 
 /** 登录请求参数 */
 export interface LoginRequest {
-  userName: string
-  password: string
-  rememberMe?: boolean
+  userName: string;
+  password: string;
+  rememberMe?: boolean;
 }
 
 /** 登录成功返回的用户信息 */
 export interface UserInfo {
-  id?: string
-  userName?: string
-  displayName?: string
-  role?: string
-  email?: string
-  phoneNumber?: string
+  id?: string;
+  userName?: string;
+  displayName?: string;
+  role?: string;
+  email?: string;
+  phoneNumber?: string;
 }
 
 /** 登录结果 */
 export interface LoginResult {
-  success?: boolean
-  message?: string
-  token?: string
-  user?: UserInfo
+  success?: boolean;
+  message?: string;
+  token?: string;
+  user?: UserInfo;
 }
 
 /** 注册请求参数 */
 export interface RegisterRequest {
-  userName: string
-  password: string
-  displayName?: string
-  email?: string
-  phoneNumber?: string
-  role?: string
+  userName: string;
+  password: string;
+  displayName?: string;
+  email?: string;
+  phoneNumber?: string;
+  role?: string;
 }
 
 /** 修改密码请求参数 */
 export interface ChangePasswordRequest {
-  oldPassword: string
-  newPassword: string
+  oldPassword: string;
+  newPassword: string;
 }
 
 /** 更新个人资料请求参数 */
 export interface UpdateProfileRequest {
-  displayName?: string
-  email?: string
-  phoneNumber?: string
+  displayName?: string;
+  email?: string;
+  phoneNumber?: string;
 }
 
 /**
@@ -67,14 +67,14 @@ export const authService = {
       UserName: params.userName,
       Password: params.password,
       RememberMe: !!params.rememberMe
-    })
+    });
 
     if (!response.Success) {
-      throw new Error(response.Message || '登录失败')
+      throw new Error(response.Message || '登录失败');
     }
 
     // 后端 PascalCase -> 前端 camelCase
-    return toCamelCase(response.Data)
+    return toCamelCase(response.Data);
   },
 
   /**
@@ -89,10 +89,10 @@ export const authService = {
       Email: params.email,
       PhoneNumber: params.phoneNumber,
       Role: params.role
-    })
+    });
 
     if (!response.Success) {
-      throw new Error(response.Message || '注册失败')
+      throw new Error(response.Message || '注册失败');
     }
   },
 
@@ -104,10 +104,10 @@ export const authService = {
     const response = await post<ApiResponse<unknown>>('/api/Auth/change-password', {
       OldPassword: params.oldPassword,
       NewPassword: params.newPassword
-    })
+    });
 
     if (!response.Success) {
-      throw new Error(response.Message || '修改密码失败')
+      throw new Error(response.Message || '修改密码失败');
     }
   },
 
@@ -120,14 +120,14 @@ export const authService = {
       DisplayName: params.displayName,
       Email: params.email,
       PhoneNumber: params.phoneNumber
-    })
+    });
 
     if (!response.Success) {
-      throw new Error(response.Message || '更新资料失败')
+      throw new Error(response.Message || '更新资料失败');
     }
 
-    return toCamelCase(response.Data) as UserInfo
+    return toCamelCase(response.Data) as UserInfo;
   }
-}
+};
 
-export default authService
+export default authService;

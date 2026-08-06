@@ -9,24 +9,36 @@
     </template>
     <template #extra>
       <a-space>
-        <a-button :icon="h(ReloadOutlined)" @click="loadProducts" :loading="loading">
-          刷新
-        </a-button>
+        <a-button :icon="h(ReloadOutlined)" @click="loadProducts" :loading="loading"> 刷新 </a-button>
       </a-space>
     </template>
 
     <!-- 搜索工具栏 -->
     <div class="table-toolbar">
-      <a-input-search v-model:value="searchText" placeholder="搜索工单号或比例阀编号" style="width: 300px" allow-clear />
+      <a-input-search
+        v-model:value="searchText"
+        placeholder="搜索工单号或比例阀编号"
+        style="width: 300px"
+        allow-clear
+      />
     </div>
 
     <!-- 产品表格 -->
-    <a-table :data-source="filteredBLFParameters" :columns="blfParameterTableColumns" :loading="loading"
-      :scroll="{ x: 'max-content' }" :pagination="{
+    <a-table
+      :data-source="filteredBLFParameters"
+      :columns="blfParameterTableColumns"
+      :loading="loading"
+      :scroll="{ x: 'max-content' }"
+      :pagination="{
         pageSize: 10,
         showQuickJumper: true,
         showTotal: (total: string) => `共 ${total} 条记录`
-      }" row-key="id" bordered size="middle" style="min-height: 600px">
+      }"
+      row-key="id"
+      bordered
+      size="middle"
+      style="min-height: 600px"
+    >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'currentFlowRateCurve' || column.dataIndex === 'pressureFlowRateCurve'">
           <a class="curve-link" @click="navigateToCurveDetail(record, column.dataIndex)">
@@ -43,31 +55,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, h } from 'vue'
-import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import { ShoppingOutlined, LineChartOutlined, ReloadOutlined } from '@ant-design/icons-vue'
-import { blfParameterService, type BLFParameter } from '../services/blfParameterService'
-import { blfParameterTableColumns } from '../types/blfParameterTable'
+import { ref, onMounted, computed, h } from 'vue';
+import { useRouter } from 'vue-router';
+import { message } from 'ant-design-vue';
+import { ShoppingOutlined, LineChartOutlined, ReloadOutlined } from '@ant-design/icons-vue';
+import { blfParameterService, type BLFParameter } from '../services/blfParameterService';
+import { blfParameterTableColumns } from '../types/blfParameterTable';
 
-const router = useRouter()
+const router = useRouter();
 
-const blfParameters = ref<BLFParameter[]>([])
-const loading = ref(false)
-const searchText = ref('')
+const blfParameters = ref<BLFParameter[]>([]);
+const loading = ref(false);
+const searchText = ref('');
 
 const filteredBLFParameters = computed(() => {
-  const search = searchText.value.trim().toLowerCase()
-  if (!search) return blfParameters.value
-  return blfParameters.value.filter(item =>
-    item.blfNumber?.toLowerCase().includes(search) ||
-    item.workOrderNumber.toLowerCase().includes(search)
-  )
-})
+  const search = searchText.value.trim().toLowerCase();
+  if (!search) return blfParameters.value;
+  return blfParameters.value.filter(
+    (item) => item.blfNumber?.toLowerCase().includes(search) || item.workOrderNumber.toLowerCase().includes(search)
+  );
+});
 
 const getRowIndex = (record: BLFParameter): number => {
-  return filteredBLFParameters.value.findIndex(item => item.id === record.id) + 1
-}
+  return filteredBLFParameters.value.findIndex((item) => item.id === record.id) + 1;
+};
 
 const navigateToCurveDetail = (record: BLFParameter, dataIndex: string): void => {
   router.push({
@@ -75,33 +86,36 @@ const navigateToCurveDetail = (record: BLFParameter, dataIndex: string): void =>
     query: {
       id: record.blfNumber.toString(),
       index: dataIndex,
-      tabTitle:dataIndex === 'currentFlowRateCurve' ? `电流流量曲线详情: ${record.blfNumber.toString()}` : `压力流量曲线详情: ${record.blfNumber.toString()}` 
+      tabTitle:
+        dataIndex === 'currentFlowRateCurve'
+          ? `电流流量曲线详情: ${record.blfNumber.toString()}`
+          : `压力流量曲线详情: ${record.blfNumber.toString()}`
     }
-  })
-}
+  });
+};
 
 const loadProducts = async (): Promise<void> => {
-  loading.value = true
+  loading.value = true;
   try {
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('请求超时')), 10000)
-    })
-    const dataPromise = blfParameterService.getAll()
-    blfParameters.value = await Promise.race([dataPromise, timeoutPromise]) as BLFParameter[]
+      setTimeout(() => reject(new Error('请求超时')), 10000);
+    });
+    const dataPromise = blfParameterService.getAll();
+    blfParameters.value = (await Promise.race([dataPromise, timeoutPromise])) as BLFParameter[];
     if (blfParameters.value.length === 0) {
-      message.info('暂无产品数据，请添加新产品')
+      message.info('暂无产品数据，请添加新产品');
     }
-  } catch (error: any) {
-    console.error('加载比例阀参数失败:', error)
-    message.error('加载比例阀参数失败，API服务可能未启动')
+  } catch (error) {
+    console.error('加载比例阀参数失败:', error);
+    message.error('加载比例阀参数失败，API服务可能未启动');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  loadProducts()
-})
+  loadProducts();
+});
 </script>
 <style scoped>
 /* ==================== 产品列表卡片 ==================== */
@@ -221,7 +235,7 @@ onMounted(() => {
   .table-toolbar :deep(.ant-input-search) {
     width: 100% !important;
   }
-  
+
   .product-list-card {
     border-radius: 8px;
   }
